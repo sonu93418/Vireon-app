@@ -104,6 +104,15 @@ export const changePasswordSchema = z
     path: ['confirmPassword'],
   });
 
+export const loginWithGoogleSchema = z.object({
+  idToken: z.string().min(1, 'Google ID token is required'),
+  fcmToken: z.string().optional(),
+});
+
+export const registerFcmTokenSchema = z.object({
+  fcmToken: z.string().min(1, 'FCM token is required'),
+});
+
 // ─── User Schemas ─────────────────────────────────────────────────────────────
 
 export const updateProfileSchema = z.object({
@@ -336,6 +345,8 @@ export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type VerifyOtpInput = z.infer<typeof verifyOtpSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export type LoginWithGoogleInput = z.infer<typeof loginWithGoogleSchema>;
+export type RegisterFcmTokenInput = z.infer<typeof registerFcmTokenSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type CreateTeacherInput = z.infer<typeof createTeacherSchema>;
 export type UpdateTeacherInput = z.infer<typeof updateTeacherSchema>;

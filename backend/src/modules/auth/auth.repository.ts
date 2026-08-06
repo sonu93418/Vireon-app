@@ -101,4 +101,14 @@ export class AuthRepository extends BaseRepository<IUserDocument> {
       $addToSet: { fcmTokens: fcmToken },
     });
   }
+
+  async removeFcmToken(userId: string, fcmToken: string): Promise<void> {
+    await UserModel.findByIdAndUpdate(userId, {
+      $pull: { fcmTokens: fcmToken },
+    });
+  }
+
+  async findByGoogleId(googleId: string): Promise<IUserDocument | null> {
+    return UserModel.findOne({ googleId }).exec();
+  }
 }

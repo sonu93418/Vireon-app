@@ -92,8 +92,9 @@ export function Sidebar() {
 
       {/* Header / Logo */}
       <div className="flex items-center gap-3 p-4 border-b border-white/[0.06] flex-shrink-0">
-        <div className="w-10 h-10 rounded-xl bg-vireon-accent-green/10 border border-vireon-accent-green/30 flex items-center justify-center flex-shrink-0 shadow-glow-green">
-          <Shield className="w-5 h-5 text-vireon-success" />
+        <div className="w-10 h-10 rounded-xl overflow-hidden border border-vireon-accent-green/30 flex items-center justify-center flex-shrink-0 shadow-glow-green bg-[#030712]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Vireon Safety Logo" className="w-full h-full object-cover" />
         </div>
         <AnimatePresence>
           {!isCollapsed && (

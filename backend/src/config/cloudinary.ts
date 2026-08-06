@@ -23,24 +23,31 @@ export const configureCloudinary = (): void => {
 
 export { cloudinary };
 
-// ─── Upload Folders ───────────────────────────────────────────────────────────
+// ─── Upload Folders (Configurable & Standardized) ──────────────────────────────
 export const CLOUDINARY_FOLDERS = {
-  AVATARS: 'vireon/avatars',
   TEACHERS: 'vireon/teachers',
   COURSES: 'vireon/courses',
+  GALLERY: 'vireon/gallery',
+  BLOGS: 'vireon/blogs',
+  BANNERS: 'vireon/banners',
+  STUDENTS: 'vireon/students',
+  CERTIFICATES: 'vireon/certificates',
+  SYLLABUS: 'vireon/syllabus',
+  VIDEOS: 'vireon/videos',
+  DOCUMENTS: 'vireon/documents',
+  AVATARS: 'vireon/avatars',
   SYLLABI: 'vireon/syllabi',
   BROCHURES: 'vireon/brochures',
-  GALLERY_IMAGES: 'vireon/gallery/images',
-  GALLERY_VIDEOS: 'vireon/gallery/videos',
-  BLOG_COVERS: 'vireon/blogs',
-  BANNERS: 'vireon/banners',
-  REPORTS: 'vireon/reports',
   LOGOS: 'vireon/logos',
+  REPORTS: 'vireon/reports',
 } as const;
+
+export type CloudinaryFolder = typeof CLOUDINARY_FOLDERS[keyof typeof CLOUDINARY_FOLDERS] | string;
 
 // ─── Resource Type Config ─────────────────────────────────────────────────────
 export const CLOUDINARY_RESOURCE_TYPES = {
   IMAGE: 'image',
   VIDEO: 'video',
   PDF: 'raw',
+  DOCUMENT: 'raw',
 } as const;

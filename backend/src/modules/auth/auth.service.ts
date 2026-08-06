@@ -18,15 +18,17 @@ import {
   UnauthorizedError,
   NotFoundError,
 } from '../../core/errors';
-import { UserStatus, OtpPurpose } from '@vireon/shared';
+import { UserStatus, OtpPurpose, AuthProvider } from '@vireon/shared';
 import type {
   RegisterInput,
   LoginWithEmailInput,
   LoginWithPhoneInput,
   VerifyOtpInput,
   ChangePasswordInput,
+  LoginWithGoogleInput,
 } from '@vireon/shared/schemas';
 import { IUserDocument } from '../../models/user.model';
+import { admin } from '../../config/firebase';
 
 interface AuthTokens {
   accessToken: string;
@@ -140,6 +142,64 @@ export class AuthService {
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
       throw new UnauthorizedError('Invalid phone number or password');
+    }
+
+    return this.generateAuthResult(user, fcmToken);
+  }
+
+  async loginWithGoogle(input: LoginWithGoogleInput): Promise<AuthResult> {
+    const { idToken, fcmToken } = input;
+
+    // Verify Google ID token using Firebase Admin SDK
+    let decodedToken;
+    try {
+      decodedToken = await admin.auth().verifyIdToken(idToken);
+    } catch {
+      throw new UnauthorizedError('Invalid or expired Google token');
+    }
+
+    const { uid: googleId, email, name, picture } = decodedToken;
+
+    if (!email) {
+      throw new BadRequestError('Google account does not have an email address');
+    }
+
+    // Try to find existing user by googleId or email
+    let user = await this.repo.findByGoogleId(googleId);
+
+    if (!user) {
+      // Check if a user with this email already exists (registered via email)
+      user = await this.repo.findByEmail(email);
+
+      if (user) {
+        // Link Google account to existing email user
+        await this.repo.updateById(String(user._id), {
+          googleId,
+          authProvider: AuthProvider.GOOGLE,
+          isEmailVerified: true,
+          avatarUrl: user.avatarUrl || picture || undefined,
+        });
+        // Re-fetch to get updated data
+        user = await this.repo.findById(String(user._id));
+        if (!user) throw new NotFoundError('User');
+      } else {
+        // Create new user from Google profile
+        user = await this.repo.create({
+          fullName: (name || email.split('@')[0]).trim(),
+          email: email.toLowerCase(),
+          phone: '0000000000', // Placeholder — user can update later
+          googleId,
+          authProvider: AuthProvider.GOOGLE,
+          isEmailVerified: true,
+          status: UserStatus.ACTIVE,
+          avatarUrl: picture || undefined,
+        });
+      }
+    } else {
+      // Existing Google user — check status
+      if (user.status === UserStatus.SUSPENDED) {
+        throw new UnauthorizedError('Your account has been suspended. Contact support.', 'ACCOUNT_SUSPENDED');
+      }
     }
 
     return this.generateAuthResult(user, fcmToken);

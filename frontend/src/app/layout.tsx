@@ -39,7 +39,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
-      <body className={`${inter.variable} ${poppins.variable} antialiased`}>
+      <body className={`${inter.variable} ${poppins.variable} antialiased bg-[#030712] text-[#F1F5F9] min-h-screen selection:bg-green-500/30 selection:text-green-400`}>
         <Providers>{children}</Providers>
       </body>
     </html>

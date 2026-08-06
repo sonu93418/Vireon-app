@@ -15,13 +15,18 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction
 ): void => {
-  logger.error({
-    message: error.message,
-    stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
-    path: req.path,
-    method: req.method,
-    ip: req.ip,
-  });
+  const isOperational = (error instanceof AppError && error.isOperational) || error instanceof ValidationError;
+  const statusCode = (error as AppError).statusCode || 500;
+
+  if (statusCode >= 500 || !isOperational) {
+    logger.error(`🚨 Server Error [${req.method} ${req.path}]:`, {
+      message: error.message,
+      stack: error.stack,
+      ip: req.ip,
+    });
+  } else {
+    logger.warn(`⚠️ Client Error [${req.method} ${req.path}]: ${error.message}`);
+  }
 
   // ─── Known Operational Errors ─────────────────────────────
   if (error instanceof ValidationError) {

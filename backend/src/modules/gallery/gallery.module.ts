@@ -2,7 +2,7 @@
 // VIREON — GALLERY MODULE
 // ============================================================
 import { Router, Request, Response, NextFunction } from 'express';
-import { Model } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import { z } from 'zod';
 import { GalleryModel, IGalleryDocument } from '../../models/gallery.model';
 import { BaseRepository } from '../../core/base.repository';
@@ -21,7 +21,7 @@ class GalleryRepository extends BaseRepository<IGalleryDocument> {
 class GalleryService {
   private repo = new GalleryRepository();
   async getAll(query: Record<string, unknown>) {
-    const filter: Record<string, unknown> = { isActive: true };
+    const filter: Record<string, unknown> = {};
     if (query.category) filter.category = query.category;
     return this.repo.findAll(filter, query as Parameters<GalleryRepository['findAll']>[1]);
   }
@@ -43,8 +43,29 @@ class GalleryController {
   };
   create = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const data = await this.svc.create(req.body as Record<string, unknown>);
-      ResponseHandler.created(res, data, 'Gallery item uploaded');
+      const body = req.body as Record<string, unknown>;
+      const mediaUrl = (body.mediaUrl || body.imageUrl) as string;
+      const mediaPublicId = (body.mediaPublicId || body.imagePublicId || 'vireon-gallery-img') as string;
+
+      let category = String(body.category || 'EVENT').toUpperCase();
+      if (category === 'EVENTS') category = 'EVENT';
+      if (category === 'PRACTICALS') category = 'PRACTICAL';
+      if (category === 'ACHIEVEMENTS') category = 'ACHIEVEMENT';
+      if (category === 'WORKSHOPS') category = 'WORKSHOP';
+
+      const payload = {
+        title: body.title,
+        category,
+        type: body.type || 'IMAGE',
+        mediaUrl,
+        mediaPublicId,
+        description: body.description,
+        thumbnailUrl: (body.thumbnailUrl || mediaUrl) as string,
+        uploadedBy: new mongoose.Types.ObjectId(req.user!.userId),
+      };
+
+      const data = await this.svc.create(payload);
+      ResponseHandler.created(res, data, 'Gallery item created');
     } catch (e) { next(e); }
   };
   delete = async (req: Request, res: Response, next: NextFunction) => {
@@ -67,8 +88,11 @@ router.post(
     body: z.object({
       title: z.string().min(1),
       category: z.string().min(1),
-      imageUrl: z.string().url(),
-      imagePublicId: z.string().min(1),
+      mediaUrl: z.string().optional(),
+      imageUrl: z.string().optional(),
+      mediaPublicId: z.string().optional(),
+      imagePublicId: z.string().optional(),
+      type: z.string().optional(),
       description: z.string().optional(),
     }),
   }),

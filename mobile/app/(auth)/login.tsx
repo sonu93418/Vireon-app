@@ -1,17 +1,36 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { Shield, Eye, EyeOff, Lock, Mail, Phone } from 'lucide-react-native';
+import { Shield, Eye, EyeOff, Lock, Mail } from 'lucide-react-native';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOW, FONT_SIZE } from '@/src/theme/tokens';
 import apiClient, { setAccessToken, setRefreshToken } from '@/src/services/api';
+import { configureGoogleSignIn, signInWithGoogle } from '@/src/services/google-auth';
+import { registerForPushNotifications, sendFcmTokenToServer } from '@/src/services/notifications';
 
 export default function MobileLoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  useEffect(() => {
+    configureGoogleSignIn();
+  }, []);
+
+  const onLoginSuccess = async (accessToken: string, refreshToken: string) => {
+    setAccessToken(accessToken);
+    setRefreshToken(refreshToken);
+
+    // Register FCM token after successful login
+    const fcmToken = await registerForPushNotifications();
+    if (fcmToken) {
+      await sendFcmTokenToServer(fcmToken);
+    }
+
+    router.replace('/(tabs)');
+  };
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -22,14 +41,33 @@ export default function MobileLoginScreen() {
     try {
       const res = await apiClient.post('/auth/login/email', { email, password });
       const { accessToken, refreshToken } = res.data.data.tokens;
-      setAccessToken(accessToken);
-      setRefreshToken(refreshToken);
-      router.replace('/(tabs)');
+      await onLoginSuccess(accessToken, refreshToken);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Login failed';
       Alert.alert('Login Failed', msg);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
+    try {
+      const idToken = await signInWithGoogle();
+      if (!idToken) {
+        setGoogleLoading(false);
+        return; // User cancelled
+      }
+
+      const res = await apiClient.post('/auth/login/google', { idToken });
+      const { accessToken, refreshToken } = res.data.data.tokens;
+      await onLoginSuccess(accessToken, refreshToken);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+        ?? (err instanceof Error ? err.message : 'Google Sign-In failed');
+      Alert.alert('Google Sign-In Failed', msg);
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -73,8 +111,31 @@ export default function MobileLoginScreen() {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={[styles.btn, SHADOW.card]} onPress={handleLogin} disabled={loading}>
+          <TouchableOpacity style={[styles.btn, SHADOW.card]} onPress={handleLogin} disabled={loading || googleLoading}>
             <Text style={styles.btnText}>{loading ? 'Signing in...' : 'Sign In'}</Text>
+          </TouchableOpacity>
+
+          {/* ─── Divider ─────────────────────────────────── */}
+          <View style={styles.dividerWrap}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or continue with</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* ─── Google Sign-In ──────────────────────────── */}
+          <TouchableOpacity
+            style={[styles.googleBtn, SHADOW.card]}
+            onPress={handleGoogleLogin}
+            disabled={loading || googleLoading}
+          >
+            {googleLoading ? (
+              <ActivityIndicator size="small" color={COLORS.textPrimary} />
+            ) : (
+              <>
+                <Text style={styles.googleIcon}>G</Text>
+                <Text style={styles.googleBtnText}>Sign in with Google</Text>
+              </>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => router.push('/(auth)/register')} style={styles.linkWrap}>
@@ -99,6 +160,26 @@ const styles = StyleSheet.create({
   input: { flex: 1, color: COLORS.textPrimary, fontSize: FONT_SIZE.sm },
   btn: { backgroundColor: COLORS.accentGreen, borderRadius: BORDER_RADIUS.md, height: 48, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
   btnText: { color: '#fff', fontSize: FONT_SIZE.sm, fontWeight: '700' },
+  dividerWrap: { flexDirection: 'row', alignItems: 'center', marginVertical: 4 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: COLORS.border },
+  dividerText: { color: COLORS.textMuted, fontSize: FONT_SIZE.xs, marginHorizontal: 12 },
+  googleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.card,
+    borderRadius: BORDER_RADIUS.md,
+    height: 48,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    gap: 10,
+  },
+  googleIcon: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#4285F4',
+  },
+  googleBtnText: { color: COLORS.textPrimary, fontSize: FONT_SIZE.sm, fontWeight: '600' },
   linkWrap: { alignItems: 'center', marginTop: 16 },
   linkText: { fontSize: FONT_SIZE.xs, color: COLORS.textMuted },
   linkBold: { color: COLORS.success, fontWeight: '700' },

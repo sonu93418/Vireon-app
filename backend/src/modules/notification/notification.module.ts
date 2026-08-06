@@ -10,7 +10,7 @@ import { BaseRepository } from '../../core/base.repository';
 import { ResponseHandler } from '../../core/response';
 import { authenticate, authorize } from '../../middlewares/auth.middleware';
 import { validate } from '../../middlewares/validate.middleware';
-import { sendNotificationSchema, paginationSchema, objectIdSchema } from '@vireon/shared/schemas';
+import { sendNotificationSchema, paginationSchema, objectIdSchema, registerFcmTokenSchema } from '@vireon/shared/schemas';
 import { UserRole } from '@vireon/shared';
 import { getFirebaseMessaging } from '../../config/firebase';
 import { logger } from '../../config/logger';
@@ -116,5 +116,22 @@ router.patch('/:id/read', authenticate, idV, ctrl.markRead);
 router.get('/', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), validate({ query: paginationSchema }), ctrl.getAll);
 router.post('/send', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), validate({ body: sendNotificationSchema }), ctrl.send);
 router.delete('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), idV, ctrl.delete);
+
+// ─── FCM Token Management ─────────────────────────────────────────────────────
+router.post('/fcm-token', authenticate, validate({ body: registerFcmTokenSchema }), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { fcmToken } = req.body as { fcmToken: string };
+    await UserModel.findByIdAndUpdate(req.user!.userId, { $addToSet: { fcmTokens: fcmToken } });
+    ResponseHandler.success(res, null, 'FCM token registered');
+  } catch (e) { next(e); }
+});
+
+router.delete('/fcm-token', authenticate, validate({ body: registerFcmTokenSchema }), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { fcmToken } = req.body as { fcmToken: string };
+    await UserModel.findByIdAndUpdate(req.user!.userId, { $pull: { fcmTokens: fcmToken } });
+    ResponseHandler.success(res, null, 'FCM token removed');
+  } catch (e) { next(e); }
+});
 
 export default router;

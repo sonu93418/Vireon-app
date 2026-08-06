@@ -131,3 +131,8 @@ export enum SyllabusDomain {
   CONSTRUCTION_SAFETY = 'CONSTRUCTION_SAFETY',
   CHEMICAL_SAFETY = 'CHEMICAL_SAFETY',
 }
+
+export enum AuthProvider {
+  EMAIL = 'EMAIL',
+  GOOGLE = 'GOOGLE',
+}

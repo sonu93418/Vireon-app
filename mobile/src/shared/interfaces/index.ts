@@ -4,6 +4,7 @@
 // ============================================================
 
 import {
+  AuthProvider,
   BlogCategory,
   ClassStatus,
   CmsPageSlug,
@@ -50,6 +51,8 @@ export interface IUser extends BaseDocument {
   gender?: 'MALE' | 'FEMALE' | 'OTHER';
   lastLoginAt?: Date;
   refreshTokens: string[];
+  googleId?: string;
+  authProvider: AuthProvider;
 }
 
 export interface IAddress {

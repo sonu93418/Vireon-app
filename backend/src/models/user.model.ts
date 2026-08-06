@@ -3,13 +3,13 @@
 // ============================================================
 import mongoose, { Schema, Document, Model } from 'mongoose';
 import bcrypt from 'bcryptjs';
-import { UserRole, UserStatus } from '@vireon/shared';
+import { AuthProvider, UserRole, UserStatus } from '@vireon/shared';
 
 export interface IUserDocument extends Document {
   fullName: string;
   email: string;
   phone: string;
-  passwordHash: string;
+  passwordHash?: string;
   role: UserRole;
   status: UserStatus;
   avatarUrl?: string;
@@ -30,6 +30,8 @@ export interface IUserDocument extends Document {
   lastLoginAt?: Date;
   refreshTokens: string[];
   tokenVersion: number;
+  googleId?: string;
+  authProvider: AuthProvider;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -70,7 +72,7 @@ const UserSchema = new Schema<IUserDocument>(
     },
     passwordHash: {
       type: String,
-      required: true,
+      required: false,
       select: false, // never return in queries by default
     },
     role: {
@@ -95,6 +97,12 @@ const UserSchema = new Schema<IUserDocument>(
     lastLoginAt: { type: Date },
     refreshTokens: [{ type: String, select: false }],
     tokenVersion: { type: Number, default: 0, select: false },
+    googleId: { type: String, sparse: true, unique: true },
+    authProvider: {
+      type: String,
+      enum: Object.values(AuthProvider),
+      default: AuthProvider.EMAIL,
+    },
   },
   {
     timestamps: true,
@@ -115,6 +123,7 @@ UserSchema.index({ email: 1 });
 UserSchema.index({ phone: 1 });
 UserSchema.index({ role: 1, status: 1 });
 UserSchema.index({ createdAt: -1 });
+UserSchema.index({ googleId: 1 }, { sparse: true });
 UserSchema.index({ '$**': 'text' }); // full-text search
 
 // ─── Instance Methods ─────────────────────────────────────────────────────────

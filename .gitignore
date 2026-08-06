@@ -9,10 +9,9 @@ node_modules/
 # Environment Variables
 # ========================================
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
+*.env
 backend/.env
 frontend/.env
 mobile/.env
@@ -26,16 +25,23 @@ build/
 out/
 
 # ========================================
-# Expo / React Native
+# Expo / React Native Builds
 # ========================================
+.expo/
 mobile/.expo/
+android/
+ios/
+mobile/android/
+mobile/ios/
 *.jks
+*.keystore
 *.p8
 *.p12
 *.key
 *.mobileprovision
 *.orig.*
 web-build/
+convert-png.js
 
 # ========================================
 # Logs
@@ -72,22 +78,22 @@ Desktop.ini
 *.tsbuildinfo
 
 # ========================================
-# Testing
+# Testing & Coverage
 # ========================================
 coverage/
 
 # ========================================
-# Misc
+# Sensitive Credentials & Keys
 # ========================================
 *.pem
 .vercel
 .turbo
-
-# ========================================
-# Sensitive / Credentials
-# ========================================
 google-services.json
 GoogleService-Info.plist
+mobile/google-services.json
+mobile/GoogleService-Info.plist
+firebase-service-account.json
+service-account*.json
 
 # ========================================
 # Auto-generated Type Declarations

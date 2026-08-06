@@ -11,6 +11,7 @@ import {
   registerSchema,
   loginWithEmailSchema,
   loginWithPhoneSchema,
+  loginWithGoogleSchema,
   forgotPasswordSchema,
   verifyOtpSchema,
   refreshTokenSchema,
@@ -86,6 +87,32 @@ router.post('/login/email', authRateLimiter, validate({ body: loginWithEmailSche
  *     summary: Login with phone number and password
  */
 router.post('/login/phone', authRateLimiter, validate({ body: loginWithPhoneSchema }), controller.loginWithPhone);
+
+/**
+ * @swagger
+ * /api/v1/auth/login/google:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Login or register with Google OAuth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [idToken]
+ *             properties:
+ *               idToken:
+ *                 type: string
+ *               fcmToken:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *       401:
+ *         description: Invalid Google token
+ */
+router.post('/login/google', authRateLimiter, validate({ body: loginWithGoogleSchema }), controller.loginWithGoogle);
 
 /**
  * @swagger
