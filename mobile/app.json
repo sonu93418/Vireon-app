@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "Vireon Safety Institute",
+    "slug": "vireon-safety",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "vireon",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.vireon.safety"
+    },
+    "android": {
+      "package": "com.vireon.safety",
+      "googleServicesFile": "./google-services.json"
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "5cf5c01f-43f5-4d28-80cb-db1b63e4652a"
+      }
+    }
+  }
+}

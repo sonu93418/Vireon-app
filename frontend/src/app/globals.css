@@ -1,0 +1,260 @@
+/* ============================================================
+   VIREON SAFETY INSTITUTE — GLOBAL CSS
+   Dark Industrial Design System with Glassmorphism & Bento Grid
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── CSS Variables (Dark Theme Design Tokens) ─────────────────────────────── */
+@layer base {
+  :root {
+    /* Dark Industrial Theme */
+    --background: 222.2 84% 4.9%;      /* #030712 */
+    --foreground: 210 40% 98%;          /* #F1F5F9 */
+    --card: 222.2 47.4% 11.2%;         /* #0F172A */
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 47.4% 11.2%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 142.1 76.2% 36.3%;      /* #16A34A accent green */
+    --primary-foreground: 355.7 100% 97.3%;
+    --secondary: 217.2 32.6% 17.5%;    /* #111827 */
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%; /* #94A3B8 */
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;      /* #EF4444 */
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 142.1 76.2% 36.3%;         /* Accent green ring */
+    --radius: 0.75rem;
+  }
+}
+
+/* ─── Base Styles ─────────────────────────────────────────────────────────── */
+@layer base {
+  * {
+    @apply border-border;
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-vireon-bg text-vireon-text-primary font-sans;
+    background-image: 
+      radial-gradient(ellipse at 20% 50%, rgba(22, 163, 74, 0.05) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 10%, rgba(22, 163, 74, 0.03) 0%, transparent 50%),
+      linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+    min-height: 100vh;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading font-semibold;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #0F172A; }
+  ::-webkit-scrollbar-thumb { background: rgba(22, 163, 74, 0.4); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(22, 163, 74, 0.7); }
+  * { scrollbar-width: thin; scrollbar-color: rgba(22, 163, 74, 0.4) #0F172A; }
+}
+
+/* ─── Vireon Component Classes ─────────────────────────────────────────────── */
+@layer components {
+
+  /* Glass Card */
+  .vireon-card {
+    @apply bg-vireon-card/60 backdrop-blur-md border border-white/[0.08] rounded-2xl shadow-glass;
+  }
+  .vireon-card-hover {
+    @apply vireon-card transition-all duration-300 hover:border-white/[0.15] hover:shadow-glass-lg hover:-translate-y-1;
+  }
+
+  /* Bento Grid Cards */
+  .bento-card {
+    @apply vireon-card p-6 overflow-hidden relative;
+  }
+  .bento-card-lg {
+    @apply bento-card col-span-2 row-span-2;
+  }
+  .bento-card-wide {
+    @apply bento-card col-span-2;
+  }
+  .bento-card-tall {
+    @apply bento-card row-span-2;
+  }
+
+  /* Gradient Border */
+  .gradient-border {
+    position: relative;
+  }
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(22, 163, 74, 0.5), rgba(255, 255, 255, 0.05), rgba(22, 163, 74, 0.2));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Accent Badge */
+  .vireon-badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+  .vireon-badge-green {
+    @apply vireon-badge bg-vireon-accent-green/10 text-vireon-success border border-vireon-accent-green/30;
+  }
+  .vireon-badge-warning {
+    @apply vireon-badge bg-yellow-500/10 text-yellow-400 border border-yellow-500/30;
+  }
+  .vireon-badge-danger {
+    @apply vireon-badge bg-red-500/10 text-red-400 border border-red-500/30;
+  }
+
+  /* Stat Card */
+  .stat-card {
+    @apply bento-card flex flex-col gap-2 min-h-[120px];
+  }
+  .stat-value {
+    @apply font-heading text-3xl font-bold text-vireon-text-primary;
+  }
+  .stat-label {
+    @apply text-sm text-vireon-text-muted font-medium;
+  }
+  .stat-change-positive {
+    @apply text-xs text-vireon-success font-semibold flex items-center gap-1;
+  }
+  .stat-change-negative {
+    @apply text-xs text-vireon-danger font-semibold flex items-center gap-1;
+  }
+
+  /* Sidebar */
+  .sidebar-item {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-vireon-text-secondary text-sm font-medium
+           transition-all duration-200 cursor-pointer;
+  }
+  .sidebar-item:hover {
+    @apply bg-white/[0.05] text-vireon-text-primary;
+  }
+  .sidebar-item-active {
+    @apply sidebar-item bg-vireon-accent-green/10 text-vireon-success border border-vireon-accent-green/20
+           shadow-glow-green;
+  }
+
+  /* Vireon Button */
+  .vireon-btn-primary {
+    @apply inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
+           bg-vireon-accent-green text-white transition-all duration-200
+           hover:bg-green-500 hover:shadow-glow-green active:scale-[0.98];
+  }
+  .vireon-btn-secondary {
+    @apply inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
+           bg-white/[0.06] text-vireon-text-primary border border-white/[0.1] transition-all duration-200
+           hover:bg-white/[0.1] hover:border-white/[0.2] active:scale-[0.98];
+  }
+  .vireon-btn-danger {
+    @apply inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
+           bg-red-500/10 text-red-400 border border-red-500/20 transition-all duration-200
+           hover:bg-red-500/20 hover:border-red-500/40 active:scale-[0.98];
+  }
+
+  /* Input */
+  .vireon-input {
+    @apply w-full bg-white/[0.04] border border-white/[0.1] rounded-xl px-4 py-2.5 text-sm
+           text-vireon-text-primary placeholder:text-vireon-text-muted transition-all duration-200
+           focus:outline-none focus:border-vireon-accent-green/50 focus:bg-white/[0.06] focus:ring-1 focus:ring-vireon-accent-green/30;
+  }
+
+  /* Table */
+  .vireon-table {
+    @apply w-full text-sm;
+  }
+  .vireon-table th {
+    @apply text-left px-4 py-3 text-vireon-text-muted font-semibold text-xs uppercase tracking-wider
+           border-b border-white/[0.06];
+  }
+  .vireon-table td {
+    @apply px-4 py-3 text-vireon-text-secondary border-b border-white/[0.04];
+  }
+  .vireon-table tr:hover td {
+    @apply bg-white/[0.02] text-vireon-text-primary;
+  }
+
+  /* Skeleton Loading */
+  .vireon-skeleton {
+    @apply bg-white/[0.06] rounded-xl animate-shimmer;
+    background-image: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%);
+    background-size: 200% 100%;
+  }
+
+  /* Section Header */
+  .section-header {
+    @apply flex items-center justify-between mb-6;
+  }
+  .section-title {
+    @apply font-heading text-xl font-semibold text-vireon-text-primary;
+  }
+  .section-subtitle {
+    @apply text-sm text-vireon-text-muted mt-0.5;
+  }
+
+  /* Live Indicator */
+  .live-dot {
+    @apply relative inline-flex h-2.5 w-2.5;
+  }
+  .live-dot::before {
+    @apply absolute inline-flex h-full w-full rounded-full bg-vireon-success opacity-75 animate-ping;
+    content: '';
+  }
+  .live-dot::after {
+    @apply relative inline-flex rounded-full h-2.5 w-2.5 bg-vireon-success;
+    content: '';
+  }
+}
+
+/* ─── Utility Extensions ───────────────────────────────────────────────────── */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .glass-effect {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    background: rgba(17, 24, 39, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .green-glow-bg {
+    background: radial-gradient(ellipse at center, rgba(22, 163, 74, 0.1) 0%, transparent 70%);
+  }
+}

@@ -1,0 +1,133 @@
+// ============================================================
+// VIREON SAFETY INSTITUTE — SHARED ENUMS
+// All platform-wide constant enumerations
+// ============================================================
+
+export enum UserRole {
+  STUDENT = 'STUDENT',
+  FACULTY = 'FACULTY',
+  ADMIN = 'ADMIN',
+  SUPER_ADMIN = 'SUPER_ADMIN',
+}
+
+export enum UserStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  SUSPENDED = 'SUSPENDED',
+  PENDING_VERIFICATION = 'PENDING_VERIFICATION',
+}
+
+export enum CourseLevel {
+  DIPLOMA = 'DIPLOMA',
+  ADVANCED_DIPLOMA = 'ADVANCED_DIPLOMA',
+  PG_DIPLOMA = 'PG_DIPLOMA',
+  CERTIFICATION = 'CERTIFICATION',
+  BSC = 'BSC',
+  BTECH = 'BTECH',
+  MBA = 'MBA',
+}
+
+export enum CourseDurationType {
+  MONTHS = 'MONTHS',
+  YEARS = 'YEARS',
+  WEEKS = 'WEEKS',
+}
+
+export enum ClassStatus {
+  SCHEDULED = 'SCHEDULED',
+  LIVE = 'LIVE',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+  POSTPONED = 'POSTPONED',
+}
+
+export enum BlogCategory {
+  INDUSTRIAL_SAFETY = 'INDUSTRIAL_SAFETY',
+  OSHA_STANDARDS = 'OSHA_STANDARDS',
+  IOSH_GUIDELINES = 'IOSH_GUIDELINES',
+  CAREER_GUIDANCE = 'CAREER_GUIDANCE',
+  GOVERNMENT_REGULATIONS = 'GOVERNMENT_REGULATIONS',
+  PLACEMENT_STORIES = 'PLACEMENT_STORIES',
+  ANNOUNCEMENTS = 'ANNOUNCEMENTS',
+  EVENTS = 'EVENTS',
+}
+
+export enum GalleryCategory {
+  EVENT = 'EVENT',
+  PRACTICAL = 'PRACTICAL',
+  ACHIEVEMENT = 'ACHIEVEMENT',
+  CAMPUS = 'CAMPUS',
+  PLACEMENT = 'PLACEMENT',
+  WORKSHOP = 'WORKSHOP',
+}
+
+export enum MediaType {
+  IMAGE = 'IMAGE',
+  VIDEO = 'VIDEO',
+  PDF = 'PDF',
+}
+
+export enum NotificationType {
+  CLASS_REMINDER = 'CLASS_REMINDER',
+  CLASS_STARTED = 'CLASS_STARTED',
+  COURSE_UPDATE = 'COURSE_UPDATE',
+  NEW_BLOG = 'NEW_BLOG',
+  ANNOUNCEMENT = 'ANNOUNCEMENT',
+  SYSTEM = 'SYSTEM',
+  PLACEMENT = 'PLACEMENT',
+}
+
+export enum CmsPageSlug {
+  ABOUT_US = 'about-us',
+  CONTACT = 'contact',
+  TERMS_AND_CONDITIONS = 'terms-and-conditions',
+  PRIVACY_POLICY = 'privacy-policy',
+  REFUND_POLICY = 'refund-policy',
+  FAQ = 'faq',
+}
+
+export enum ContactStatus {
+  NEW = 'NEW',
+  CONTACTED = 'CONTACTED',
+  CLOSED = 'CLOSED',
+}
+
+export enum ReportType {
+  USER_SUMMARY = 'USER_SUMMARY',
+  TEACHER_SUMMARY = 'TEACHER_SUMMARY',
+  COURSE_ENROLLMENT = 'COURSE_ENROLLMENT',
+  CLASS_ATTENDANCE = 'CLASS_ATTENDANCE',
+  PLACEMENT_STATS = 'PLACEMENT_STATS',
+  MONTHLY_ANALYTICS = 'MONTHLY_ANALYTICS',
+}
+
+export enum IsoCertification {
+  ISO_45001 = 'ISO_45001',
+  ISO_9001 = 'ISO_9001',
+  ISO_14001 = 'ISO_14001',
+}
+
+export enum TeacherCertification {
+  OSHA_CERTIFIED = 'OSHA_CERTIFIED',
+  IOSH_CERTIFIED = 'IOSH_CERTIFIED',
+  HSE_LEAD_AUDITOR = 'HSE_LEAD_AUDITOR',
+  NEBOSH = 'NEBOSH',
+  EOSH = 'EOSH',
+  FIRST_AID = 'FIRST_AID',
+}
+
+export enum OtpPurpose {
+  EMAIL_VERIFICATION = 'EMAIL_VERIFICATION',
+  PHONE_VERIFICATION = 'PHONE_VERIFICATION',
+  FORGOT_PASSWORD = 'FORGOT_PASSWORD',
+  LOGIN = 'LOGIN',
+}
+
+export enum SyllabusDomain {
+  INDUSTRIAL_SAFETY = 'INDUSTRIAL_SAFETY',
+  FIRE_SAFETY = 'FIRE_SAFETY',
+  ENVIRONMENTAL_SAFETY = 'ENVIRONMENTAL_SAFETY',
+  OCCUPATIONAL_HEALTH = 'OCCUPATIONAL_HEALTH',
+  CONSTRUCTION_SAFETY = 'CONSTRUCTION_SAFETY',
+  CHEMICAL_SAFETY = 'CHEMICAL_SAFETY',
+}
