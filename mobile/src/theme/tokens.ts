@@ -5,38 +5,38 @@
 
 export const COLORS = {
   // ─── Background Layers ──────────────────────────────────────
-  bg: '#030712',
-  primary: '#0F172A',
-  secondary: '#111827',
-  card: '#111827',
-  cardLight: '#1A2332',
+  bg: '#F4FAF6',
+  primary: '#16A34A',
+  secondary: '#DCFCE7',
+  card: '#FFFFFF',
+  cardLight: '#F0FDF4',
 
   // ─── Accent ──────────────────────────────────────────────────
   accentGreen: '#16A34A',
-  success: '#22C55E',
+  success: '#16A34A',
   warning: '#F59E0B',
   danger: '#EF4444',
   info: '#3B82F6',
 
   // ─── Text ────────────────────────────────────────────────────
-  textPrimary: '#F1F5F9',
-  textSecondary: '#94A3B8',
+  textPrimary: '#0F172A',
+  textSecondary: '#475569',
   textMuted: '#64748B',
-  textDisabled: '#334155',
+  textDisabled: '#94A3B8',
 
   // ─── Border ──────────────────────────────────────────────────
-  border: 'rgba(255, 255, 255, 0.08)',
-  borderStrong: 'rgba(255, 255, 255, 0.15)',
-  borderGreen: 'rgba(22, 163, 74, 0.3)',
+  border: 'rgba(22, 163, 74, 0.2)',
+  borderStrong: 'rgba(22, 163, 74, 0.35)',
+  borderGreen: 'rgba(22, 163, 74, 0.6)',
 
   // ─── Gradient Colors ──────────────────────────────────────────
-  gradientStart: '#0F172A',
-  gradientEnd: '#111827',
-  greenGlow: 'rgba(22, 163, 74, 0.15)',
+  gradientStart: '#16A34A',
+  gradientEnd: '#15803D',
+  greenGlow: 'rgba(22, 163, 74, 0.25)',
 
   // ─── Overlay ─────────────────────────────────────────────────
-  overlay: 'rgba(3, 7, 18, 0.8)',
-  overlayLight: 'rgba(15, 23, 42, 0.6)',
+  overlay: 'rgba(15, 23, 42, 0.5)',
+  overlayLight: 'rgba(244, 250, 246, 0.8)',
 } as const;
 
 export const SPACING = {
@@ -88,25 +88,25 @@ export const BORDER_RADIUS = {
 
 export const SHADOW = {
   card: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    elevation: 4,
   },
   cardLarge: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
-    elevation: 16,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.18,
+    shadowRadius: 22,
+    elevation: 8,
   },
   greenGlow: {
-    shadowColor: '#16A34A',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
     shadowRadius: 16,
-    elevation: 8,
+    elevation: 6,
   },
 } as const;
 

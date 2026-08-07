@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,12 @@ import {
   Dimensions,
   StyleSheet,
   Image,
+  FlatList,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { FlashList } from '@shopify/flash-list';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import Animated, {
@@ -22,18 +24,92 @@ import Animated, {
   useSharedValue,
   interpolate,
 } from 'react-native-reanimated';
-import { Shield, Award, ChevronRight, Video, BookOpen, Star, Bell } from 'lucide-react-native';
+import { Shield, Award, ChevronRight, Video, BookOpen, Bell } from 'lucide-react-native';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOW, FONT_SIZE } from '@/src/theme/tokens';
 import apiClient from '@/src/services/api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH * 0.72;
+const POSTER_WIDTH = SCREEN_WIDTH - SPACING.base * 2;
+const POSTER_HEIGHT = POSTER_WIDTH * 0.48;
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
+
+// ─── Poster Data ──────────────────────────────────────────────────────────────
+const POSTERS = [
+  { id: '1', image: require('../../assets/poster_placement.png') },
+  { id: '2', image: require('../../assets/poster_courses.png') },
+  { id: '3', image: require('../../assets/poster_drive.png') },
+];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Course { _id: string; title: string; level: string; duration: number; durationType: string; feeAmount: number; thumbnailUrl?: string; isPlacementGuaranteed: boolean }
 interface Teacher { _id: string; designation: string; certifications: string[]; profileImageUrl?: string; userId: { fullName: string; avatarUrl?: string } }
 interface ClassItem { _id: string; title: string; subject: string; scheduledAt: string; zoomJoinUrl: string; teacherId: { userId: { fullName: string } } }
+
+// ─── Auto-Scrolling Poster Carousel ───────────────────────────────────────────
+function PosterCarousel() {
+  const flatListRef = useRef<FlatList>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const autoScrollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const startAutoScroll = useCallback(() => {
+    if (autoScrollTimer.current) clearInterval(autoScrollTimer.current);
+    autoScrollTimer.current = setInterval(() => {
+      setActiveIndex((prev) => {
+        const next = (prev + 1) % POSTERS.length;
+        flatListRef.current?.scrollToIndex({ index: next, animated: true });
+        return next;
+      });
+    }, 3500);
+  }, []);
+
+  useEffect(() => {
+    startAutoScroll();
+    return () => { if (autoScrollTimer.current) clearInterval(autoScrollTimer.current); };
+  }, [startAutoScroll]);
+
+  const onScrollEnd = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const idx = Math.round(e.nativeEvent.contentOffset.x / POSTER_WIDTH);
+    setActiveIndex(idx);
+    // Reset auto-scroll timer on manual swipe
+    startAutoScroll();
+  }, [startAutoScroll]);
+
+  return (
+    <View style={styles.posterContainer}>
+      <FlatList
+        ref={flatListRef}
+        data={POSTERS}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={onScrollEnd}
+        snapToInterval={POSTER_WIDTH}
+        decelerationRate="fast"
+        contentContainerStyle={{ gap: 0 }}
+        keyExtractor={(item) => item.id}
+        getItemLayout={(_data, index) => ({ length: POSTER_WIDTH, offset: POSTER_WIDTH * index, index })}
+        renderItem={({ item }) => (
+          <View style={styles.posterSlide}>
+            <Image source={item.image} style={styles.posterImage} resizeMode="cover" />
+          </View>
+        )}
+      />
+      {/* Dot Indicators */}
+      <View style={styles.dotsRow}>
+        {POSTERS.map((_, i) => (
+          <View
+            key={i}
+            style={[
+              styles.dot,
+              i === activeIndex ? styles.dotActive : styles.dotInactive,
+            ]}
+          />
+        ))}
+      </View>
+    </View>
+  );
+}
 
 // ─── Registration Badge Component ─────────────────────────────────────────────
 function RegBadge({ label }: { label: string }) {
@@ -73,7 +149,7 @@ function CourseCard({ item, index }: { item: Course; index: number }) {
         activeOpacity={0.85}
       >
         <LinearGradient
-          colors={[COLORS.primary, COLORS.secondary]}
+          colors={['#FFFFFF', '#ECFDF5']}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={styles.courseCardGradient}
         >
@@ -214,7 +290,7 @@ export default function HomeScreen() {
               <Text style={styles.welcomeText}>Welcome to</Text>
               <Text style={styles.instituteName}>Vireon Safety{'\n'}Institute</Text>
             </View>
-            <TouchableOpacity style={[styles.notifBtn, SHADOW.card]} accessibilityLabel="Notifications">
+            <TouchableOpacity onPress={() => router.push('/notifications')} style={[styles.notifBtn, SHADOW.card]} accessibilityLabel="Notifications">
               <Bell size={20} color={COLORS.textSecondary} />
               <View style={styles.notifDot} />
             </TouchableOpacity>
@@ -229,25 +305,11 @@ export default function HomeScreen() {
             <RegBadge label="ISO 9001" />
             <RegBadge label="ISO 14001" />
           </ScrollView>
+        </Animated.View>
 
-          {/* Placement Stats Bento */}
-          <LinearGradient
-            colors={[COLORS.primary, COLORS.secondary]}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-            style={[styles.statsBento, { borderColor: COLORS.borderGreen }]}
-          >
-            {[
-              { label: 'Placed Students', value: '5000+' },
-              { label: 'Partner Companies', value: '200+' },
-              { label: 'Job Placement', value: '100%' },
-              { label: 'Expert Trainers', value: '15+' },
-            ].map((stat, i) => (
-              <View key={i} style={styles.statItem}>
-                <Text style={styles.statValue}>{stat.value}</Text>
-                <Text style={styles.statLabel}>{stat.label}</Text>
-              </View>
-            ))}
-          </LinearGradient>
+        {/* ★ Auto-Scrolling Poster Carousel ★ */}
+        <Animated.View entering={FadeInDown.delay(100).duration(500)}>
+          <PosterCarousel />
         </Animated.View>
 
         {/* Popular Courses */}
@@ -297,71 +359,102 @@ const styles = StyleSheet.create({
   scrollContent: { paddingBottom: SPACING['4xl'] },
 
   // Hero
-  heroHeader: { paddingHorizontal: SPACING.base, paddingTop: SPACING.base, paddingBottom: SPACING.xl },
+  heroHeader: { paddingHorizontal: SPACING.base, paddingTop: SPACING.base, paddingBottom: SPACING.md },
   heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: SPACING.lg },
-  welcomeText: { fontSize: FONT_SIZE.sm, color: COLORS.textMuted, fontWeight: '500', letterSpacing: 0.5 },
+  welcomeText: { fontSize: FONT_SIZE.sm, color: COLORS.textMuted, fontWeight: '600', letterSpacing: 0.5 },
   instituteName: { fontSize: FONT_SIZE['3xl'], color: COLORS.textPrimary, fontWeight: '800', lineHeight: 40, letterSpacing: -0.5, marginTop: 2 },
 
-  notifBtn: { width: 44, height: 44, borderRadius: BORDER_RADIUS.md, backgroundColor: COLORS.primary, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center' },
+  notifBtn: { width: 44, height: 44, borderRadius: BORDER_RADIUS.md, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center' },
   notifDot: { position: 'absolute', top: 10, right: 10, width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.success },
 
   badgesRow: { marginHorizontal: -SPACING.base },
   badgesContent: { paddingHorizontal: SPACING.base, gap: 8, paddingBottom: SPACING.md },
-  regBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: BORDER_RADIUS.full, borderWidth: 1, backgroundColor: 'rgba(22,163,74,0.06)' },
-  regBadgeText: { fontSize: 10, color: COLORS.success, fontWeight: '600' },
+  regBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: BORDER_RADIUS.full, borderWidth: 1, backgroundColor: '#D1FAE5' },
+  regBadgeText: { fontSize: 10, color: '#047857', fontWeight: '700' },
 
-  statsBento: { flexDirection: 'row', flexWrap: 'wrap', borderRadius: BORDER_RADIUS.xl, borderWidth: 1, padding: SPACING.md, gap: 0 },
-  statItem: { width: '50%', alignItems: 'center', padding: SPACING.md },
-  statValue: { fontSize: FONT_SIZE.xl, color: COLORS.success, fontWeight: '800' },
-  statLabel: { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, marginTop: 2, textAlign: 'center' },
+  // ★ Poster Carousel
+  posterContainer: { marginHorizontal: SPACING.base, marginBottom: SPACING.xl },
+  posterSlide: {
+    width: POSTER_WIDTH,
+    height: POSTER_HEIGHT,
+    borderRadius: BORDER_RADIUS.xl,
+    overflow: 'hidden',
+  },
+  posterImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: BORDER_RADIUS.xl,
+  },
+  dotsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: SPACING.sm,
+    gap: 6,
+  },
+  dot: {
+    borderRadius: 10,
+  },
+  dotActive: {
+    width: 20,
+    height: 6,
+    backgroundColor: COLORS.success,
+    borderRadius: 3,
+  },
+  dotInactive: {
+    width: 6,
+    height: 6,
+    backgroundColor: COLORS.border,
+    borderRadius: 3,
+  },
 
   // Sections
   section: { marginBottom: SPACING['2xl'] },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', paddingHorizontal: SPACING.base, marginBottom: SPACING.md },
-  sectionTitle: { fontSize: FONT_SIZE.lg, color: COLORS.textPrimary, fontWeight: '700' },
-  sectionSubtitle: { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, marginTop: 2 },
+  sectionTitle: { fontSize: FONT_SIZE.lg, color: COLORS.textPrimary, fontWeight: '800' },
+  sectionSubtitle: { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, marginTop: 2, fontWeight: '500' },
   seeAllBtn: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  seeAllText: { fontSize: FONT_SIZE.sm, color: COLORS.success, fontWeight: '600' },
+  seeAllText: { fontSize: FONT_SIZE.sm, color: COLORS.success, fontWeight: '700' },
   horizontalList: { paddingHorizontal: SPACING.base, gap: 12 },
 
   // Course Card
-  courseCard: { width: CARD_WIDTH, borderRadius: BORDER_RADIUS.xl, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border },
+  courseCard: { width: CARD_WIDTH, borderRadius: BORDER_RADIUS.xl, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border, backgroundColor: '#FFFFFF' },
   courseCardGradient: { padding: 0 },
   courseThumbnail: { width: '100%', height: 140 },
-  courseIconBg: { width: '100%', height: 120, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(22,163,74,0.05)' },
+  courseIconBg: { width: '100%', height: 120, alignItems: 'center', justifyContent: 'center', backgroundColor: '#ECFDF5' },
   courseCardContent: { padding: SPACING.md },
-  levelBadge: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: BORDER_RADIUS.full, borderWidth: 1, marginBottom: 8 },
-  levelBadgeText: { fontSize: 9, color: COLORS.success, fontWeight: '700', letterSpacing: 0.5 },
+  levelBadge: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: BORDER_RADIUS.full, borderWidth: 1, marginBottom: 8, backgroundColor: '#D1FAE5' },
+  levelBadgeText: { fontSize: 9, color: '#047857', fontWeight: '700', letterSpacing: 0.5 },
   courseTitle: { fontSize: FONT_SIZE.md, color: COLORS.textPrimary, fontWeight: '700', lineHeight: 22 },
   courseMeta: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
-  courseMetaText: { fontSize: FONT_SIZE.xs, color: COLORS.textMuted },
-  courseFee: { fontSize: FONT_SIZE.sm, color: COLORS.success, fontWeight: '700' },
+  courseMetaText: { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, fontWeight: '500' },
+  courseFee: { fontSize: FONT_SIZE.sm, color: COLORS.success, fontWeight: '800' },
   placementBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: COLORS.border },
-  placementText: { fontSize: 10, color: COLORS.success, fontWeight: '600' },
+  placementText: { fontSize: 10, color: COLORS.success, fontWeight: '700' },
 
   // Teacher Card
   teacherCard: { width: 140, borderRadius: BORDER_RADIUS.xl, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, padding: SPACING.md, alignItems: 'center' },
-  teacherAvatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(22,163,74,0.1)', borderWidth: 2, borderColor: COLORS.borderGreen, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+  teacherAvatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#ECFDF5', borderWidth: 2, borderColor: COLORS.borderGreen, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   teacherAvatarImg: { width: 60, height: 60, borderRadius: 30 },
   teacherAvatarText: { fontSize: FONT_SIZE.xl, color: COLORS.success, fontWeight: '800' },
   teacherName: { fontSize: FONT_SIZE.sm, color: COLORS.textPrimary, fontWeight: '700', textAlign: 'center' },
   teacherDesignation: { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, marginTop: 2, textAlign: 'center' },
-  certBadge: { marginTop: 6, paddingHorizontal: 6, paddingVertical: 3, borderRadius: BORDER_RADIUS.full, backgroundColor: 'rgba(22,163,74,0.06)', borderWidth: 1, borderColor: COLORS.borderGreen },
-  certText: { fontSize: 9, color: COLORS.success, fontWeight: '600', textAlign: 'center' },
+  certBadge: { marginTop: 6, paddingHorizontal: 6, paddingVertical: 3, borderRadius: BORDER_RADIUS.full, backgroundColor: '#D1FAE5', borderWidth: 1, borderColor: COLORS.borderGreen },
+  certText: { fontSize: 9, color: '#047857', fontWeight: '700', textAlign: 'center' },
 
   // Class Card
   classesList: { paddingHorizontal: SPACING.base, gap: 10 },
-  classCard: { borderRadius: BORDER_RADIUS.xl, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border },
+  classCard: { borderRadius: BORDER_RADIUS.xl, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border, backgroundColor: '#FFFFFF' },
   classCardGradient: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: SPACING.md },
   classTime: { alignItems: 'center', minWidth: 48 },
   classDay: { fontSize: 10, color: COLORS.textMuted, fontWeight: '600', textTransform: 'uppercase' },
   classHour: { fontSize: FONT_SIZE.sm, color: COLORS.textPrimary, fontWeight: '700', marginTop: 2 },
   classInfo: { flex: 1 },
-  classTitle: { fontSize: FONT_SIZE.sm, color: COLORS.textPrimary, fontWeight: '600', lineHeight: 18 },
+  classTitle: { fontSize: FONT_SIZE.sm, color: COLORS.textPrimary, fontWeight: '700', lineHeight: 18 },
   classByTeacher: { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, marginTop: 2 },
   joinBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: COLORS.accentGreen, paddingHorizontal: 10, paddingVertical: 6, borderRadius: BORDER_RADIUS.sm },
   joinBtnText: { fontSize: FONT_SIZE.xs, color: '#fff', fontWeight: '700' },
 
   // Skeleton
-  skeleton: { backgroundColor: 'rgba(255,255,255,0.05)', height: 220 },
+  skeleton: { backgroundColor: 'rgba(16,185,129,0.06)', height: 220 },
 });

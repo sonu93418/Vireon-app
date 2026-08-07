@@ -94,6 +94,8 @@ export default function CoursesAdminPage() {
                   <option value="CERTIFICATION">Certification (OSHA/IOSH)</option>
                   <option value="BSC">B.Sc</option>
                   <option value="BTECH">B.Tech</option>
+                  <option value="MSC">M.Sc</option>
+                  <option value="MTECH">M.Tech</option>
                   <option value="MBA">MBA</option>
                 </select>
               </div>

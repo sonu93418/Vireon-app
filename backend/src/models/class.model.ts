@@ -27,10 +27,10 @@ export interface IClassDocument extends Document {
 
 const ClassSchema = new Schema<IClassDocument>(
   {
-    title: { type: String, required: true, trim: true, minlength: 5, maxlength: 200 },
-    subject: { type: String, required: true, trim: true, maxlength: 100 },
+    title: { type: String, required: true, trim: true, minlength: 3, maxlength: 200 },
+    subject: { type: String, required: true, trim: true, maxlength: 100, default: 'Industrial Safety' },
     description: { type: String, maxlength: 1000 },
-    courseId: { type: Schema.Types.ObjectId, ref: 'Course', required: true },
+    courseId: { type: Schema.Types.ObjectId, ref: 'Course', required: false },
     teacherId: { type: Schema.Types.ObjectId, ref: 'Teacher', required: true },
     scheduledAt: { type: Date, required: true },
     durationMinutes: { type: Number, required: true, min: 15, max: 480 },

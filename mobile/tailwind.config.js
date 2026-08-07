@@ -6,18 +6,19 @@ module.exports = {
     extend: {
       colors: {
         vireon: {
-          bg: '#030712',
-          primary: '#0F172A',
-          secondary: '#111827',
-          card: '#111827',
+          bg: '#F4FAF6',
+          primary: '#16A34A',
+          secondary: '#DCFCE7',
+          card: '#FFFFFF',
+          'card-mint': '#F0FDF4',
           'accent-green': '#16A34A',
-          success: '#22C55E',
+          success: '#16A34A',
           warning: '#F59E0B',
           danger: '#EF4444',
-          'text-primary': '#F1F5F9',
-          'text-secondary': '#94A3B8',
+          'text-primary': '#0F172A',
+          'text-secondary': '#475569',
           'text-muted': '#64748B',
-          border: 'rgba(255, 255, 255, 0.08)',
+          border: 'rgba(22, 163, 74, 0.2)',
         },
       },
       fontFamily: {

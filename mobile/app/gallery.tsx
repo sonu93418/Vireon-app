@@ -46,7 +46,6 @@ export default function GalleryScreen() {
           horizontal
           data={CATEGORIES}
           showsHorizontalScrollIndicator={false}
-          estimatedItemSize={100}
           renderItem={({ item }) => (
             <TouchableOpacity
               onPress={() => setSelectedCat(item)}
@@ -69,7 +68,6 @@ export default function GalleryScreen() {
           data={data ?? []}
           numColumns={2}
           keyExtractor={(item) => item._id}
-          estimatedItemSize={180}
           contentContainerStyle={{ padding: SPACING.base }}
           renderItem={({ item }) => (
             <TouchableOpacity
@@ -108,27 +106,27 @@ export default function GalleryScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },
-  navBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.base, paddingVertical: SPACING.md, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  navBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.base, paddingVertical: SPACING.md, borderBottomWidth: 1, borderBottomColor: COLORS.border, backgroundColor: '#FFFFFF' },
   backBtn: { padding: 4, marginRight: 12 },
-  navTitle: { fontSize: FONT_SIZE.lg, color: COLORS.textPrimary, fontWeight: '700' },
+  navTitle: { fontSize: FONT_SIZE.lg, color: COLORS.textPrimary, fontWeight: '800' },
   catRow: { paddingHorizontal: SPACING.base, paddingVertical: SPACING.md },
-  catChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: BORDER_RADIUS.full, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, marginRight: 8 },
-  catChipActive: { backgroundColor: 'rgba(22,163,74,0.1)', borderColor: COLORS.borderGreen },
+  catChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: BORDER_RADIUS.full, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: COLORS.border, marginRight: 8 },
+  catChipActive: { backgroundColor: '#D1FAE5', borderColor: COLORS.borderGreen },
   catText: { fontSize: 10, color: COLORS.textMuted, fontWeight: '600' },
-  catTextActive: { color: COLORS.success },
+  catTextActive: { color: '#047857', fontWeight: '700' },
   loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  loadingText: { color: COLORS.textMuted, fontSize: FONT_SIZE.sm },
+  loadingText: { color: COLORS.textMuted, fontSize: FONT_SIZE.sm, fontWeight: '600' },
 
-  gridCard: { flex: 1, margin: 6, borderRadius: BORDER_RADIUS.md, overflow: 'hidden', backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border },
+  gridCard: { flex: 1, margin: 6, borderRadius: BORDER_RADIUS.md, overflow: 'hidden', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: COLORS.border },
   gridImg: { width: '100%', height: 130 },
   cardOverlay: { padding: 8 },
-  cardCat: { fontSize: 8, color: COLORS.success, fontWeight: '700', letterSpacing: 0.5 },
+  cardCat: { fontSize: 8, color: COLORS.success, fontWeight: '800', letterSpacing: 0.5 },
   cardTitle: { fontSize: 11, color: COLORS.textPrimary, fontWeight: '700', marginTop: 2 },
 
-  modalBg: { flex: 1, backgroundColor: 'rgba(3,7,18,0.95)', justifyContent: 'center', alignItems: 'center', padding: SPACING.lg },
+  modalBg: { flex: 1, backgroundColor: 'rgba(15,23,42,0.92)', justifyContent: 'center', alignItems: 'center', padding: SPACING.lg },
   closeBtn: { position: 'absolute', top: 50, right: 20, zIndex: 10, padding: 8 },
   modalContent: { width: '100%', alignItems: 'center' },
   fullImg: { width: '100%', height: 320, borderRadius: BORDER_RADIUS.lg },
-  fullTitle: { fontSize: FONT_SIZE.md, color: COLORS.textPrimary, fontWeight: '700', marginTop: 16, textAlign: 'center' },
-  fullDesc: { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, marginTop: 4, textAlign: 'center' },
+  fullTitle: { fontSize: FONT_SIZE.md, color: '#FFFFFF', fontWeight: '800', marginTop: 16, textAlign: 'center' },
+  fullDesc: { fontSize: FONT_SIZE.xs, color: '#94A3B8', marginTop: 4, textAlign: 'center' },
 });

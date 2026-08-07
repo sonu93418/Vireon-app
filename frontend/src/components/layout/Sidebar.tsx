@@ -2,26 +2,26 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   Users,
   GraduationCap,
   BookOpen,
   Video,
-  Image,
+  Image as ImageIcon,
   FileText,
   Bell,
   BarChart3,
   Settings,
-  Shield,
   ChevronLeft,
   LogOut,
+  X,
+  Shield,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebarStore } from '@/store/ui.store';
 import { useAuthStore } from '@/store/auth.store';
-import { useRouter } from 'next/navigation';
 
 interface NavItem {
   id: string;
@@ -51,7 +51,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
     label: 'Content',
     items: [
       { id: 'blogs', label: 'Blogs', href: '/dashboard/blogs', icon: FileText },
-      { id: 'gallery', label: 'Gallery', href: '/dashboard/gallery', icon: Image },
+      { id: 'gallery', label: 'Gallery', href: '/dashboard/gallery', icon: ImageIcon },
       { id: 'cms', label: 'CMS Pages', href: '/dashboard/cms', icon: FileText },
     ],
   },
@@ -67,171 +67,182 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { isCollapsed, toggle } = useSidebarStore();
-  const { user, logout } = useAuthStore();
   const router = useRouter();
+  const { isCollapsed, toggle, isMobileOpen, setMobileOpen } = useSidebarStore();
+  const { user, logout } = useAuthStore();
 
   const handleLogout = () => {
     logout();
+    setMobileOpen(false);
     router.push('/login');
   };
 
+  const handleNavClick = () => {
+    setMobileOpen(false);
+  };
+
   return (
-    <motion.aside
-      initial={false}
-      animate={{ width: isCollapsed ? 72 : 280 }}
-      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-      className="fixed left-0 top-0 h-screen z-50 flex flex-col overflow-hidden"
-      style={{ background: 'linear-gradient(180deg, #0F172A 0%, #0b1120 100%)' }}
-    >
-      {/* Gradient Border Right */}
-      <div
-        className="absolute right-0 top-0 h-full w-px"
-        style={{ background: 'linear-gradient(180deg, transparent, rgba(22,163,74,0.3), transparent)' }}
-      />
-
-      {/* Header / Logo */}
-      <div className="flex items-center gap-3 p-4 border-b border-white/[0.06] flex-shrink-0">
-        <div className="w-10 h-10 rounded-xl overflow-hidden border border-vireon-accent-green/30 flex items-center justify-center flex-shrink-0 shadow-glow-green bg-[#030712]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="Vireon Safety Logo" className="w-full h-full object-cover" />
-        </div>
-        <AnimatePresence>
-          {!isCollapsed && (
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.2 }}
-              className="flex-1 min-w-0"
-            >
-              <p className="font-heading text-sm font-bold text-vireon-text-primary leading-tight">
-                Vireon Safety
-              </p>
-              <p className="text-xs text-vireon-text-muted truncate">Admin Console</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        <button
-          onClick={toggle}
-          className="ml-auto w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center
-                     text-vireon-text-muted hover:text-vireon-text-primary hover:bg-white/[0.08] transition-all duration-200 flex-shrink-0"
-          aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          id="sidebar-toggle-btn"
-        >
-          <motion.div animate={{ rotate: isCollapsed ? 180 : 0 }} transition={{ duration: 0.3 }}>
-            <ChevronLeft className="w-4 h-4" />
-          </motion.div>
-        </button>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-6">
-        {NAV_GROUPS.map((group) => (
-          <div key={group.label}>
-            <AnimatePresence>
-              {!isCollapsed && (
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="text-[10px] font-bold uppercase tracking-widest text-vireon-text-muted px-3 mb-2"
-                >
-                  {group.label}
-                </motion.p>
-              )}
-            </AnimatePresence>
-            <ul className="space-y-0.5">
-              {group.items.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-                return (
-                  <li key={item.id}>
-                    <Link
-                      href={item.href}
-                      id={`nav-${item.id}`}
-                      title={isCollapsed ? item.label : undefined}
-                      className={cn(
-                        'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative',
-                        isActive
-                          ? 'bg-vireon-accent-green/10 text-vireon-success border border-vireon-accent-green/20 shadow-glow-green'
-                          : 'text-vireon-text-secondary hover:bg-white/[0.05] hover:text-vireon-text-primary'
-                      )}
-                    >
-                      {/* Active indicator */}
-                      {isActive && (
-                        <motion.div
-                          layoutId="active-nav"
-                          className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-vireon-success rounded-full"
-                          transition={{ duration: 0.2 }}
-                        />
-                      )}
-                      <Icon className={cn('w-4.5 h-4.5 flex-shrink-0', isActive ? 'text-vireon-success' : '')} />
-                      <AnimatePresence>
-                        {!isCollapsed && (
-                          <motion.span
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -10 }}
-                            transition={{ duration: 0.15 }}
-                            className="flex-1"
-                          >
-                            {item.label}
-                          </motion.span>
-                        )}
-                      </AnimatePresence>
-                      {item.badge && !isCollapsed && (
-                        <span className="vireon-badge-green text-[10px] px-1.5 py-0.5">{item.badge}</span>
-                      )}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
-      </nav>
-
-      {/* User Footer */}
-      <div className="flex-shrink-0 p-3 border-t border-white/[0.06]">
-        {user && (
-          <div className={cn('flex items-center gap-3 p-2 rounded-xl', !isCollapsed && 'mb-2')}>
-            <div className="w-8 h-8 rounded-lg bg-vireon-accent-green/10 border border-vireon-accent-green/20 flex items-center justify-center flex-shrink-0 text-xs font-bold text-vireon-success">
-              {user.fullName.charAt(0).toUpperCase()}
-            </div>
-            <AnimatePresence>
-              {!isCollapsed && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex-1 min-w-0"
-                >
-                  <p className="text-xs font-semibold text-vireon-text-primary truncate">{user.fullName}</p>
-                  <p className="text-[10px] text-vireon-text-muted truncate">{user.role}</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+    <>
+      {/* ── Mobile Backdrop Overlay ── */}
+      <AnimatePresence>
+        {isMobileOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setMobileOpen(false)}
+            className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-xs md:hidden"
+          />
         )}
-        <button
-          onClick={handleLogout}
-          id="sidebar-logout-btn"
-          title={isCollapsed ? 'Logout' : undefined}
-          className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-vireon-text-muted
-                     hover:bg-red-500/10 hover:text-red-400 hover:border hover:border-red-500/20
-                     transition-all duration-200 w-full"
-        >
-          <LogOut className="w-4 h-4 flex-shrink-0" />
-          <AnimatePresence>
-            {!isCollapsed && (
-              <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                Logout
-              </motion.span>
+      </AnimatePresence>
+
+      {/* ── Main Sidebar Drawer / Panel ── */}
+      <aside
+        className={cn(
+          'fixed left-0 top-0 h-screen z-50 flex flex-col bg-white border-r border-emerald-500/15 shadow-xl transition-all duration-300 ease-in-out',
+          // Mobile responsive drawer positioning
+          isMobileOpen ? 'translate-x-0 w-72' : '-translate-x-full md:translate-x-0',
+          // Desktop collapsed vs expanded width
+          !isMobileOpen && (isCollapsed ? 'md:w-20' : 'md:w-68')
+        )}
+      >
+        {/* Decorative subtle border gradient */}
+        <div
+          className="absolute right-0 top-0 h-full w-px pointer-events-none"
+          style={{ background: 'linear-gradient(180deg, transparent, rgba(16,185,129,0.25), transparent)' }}
+        />
+
+        {/* ── Header / Logo Section ── */}
+        <div className="flex items-center justify-between h-16 px-4 border-b border-emerald-500/10 flex-shrink-0 bg-emerald-50/40">
+          <Link href="/dashboard" className="flex items-center gap-3 min-w-0" onClick={handleNavClick}>
+            <div className="w-10 h-10 rounded-2xl bg-white border border-emerald-500/30 flex items-center justify-center flex-shrink-0 shadow-sm overflow-hidden p-1.5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.png" alt="Vireon Safety Logo" className="w-full h-full object-contain" />
+            </div>
+            {(!isCollapsed || isMobileOpen) && (
+              <div className="flex flex-col min-w-0">
+                <span className="font-heading text-sm font-black text-slate-900 leading-none truncate">
+                  Vireon Safety
+                </span>
+                <span className="text-[11px] text-emerald-700 font-extrabold tracking-wider uppercase mt-1 truncate">
+                  Admin Console
+                </span>
+              </div>
             )}
-          </AnimatePresence>
-        </button>
-      </div>
-    </motion.aside>
+          </Link>
+
+          {/* Desktop Collapse Toggle */}
+          <button
+            onClick={toggle}
+            id="sidebar-toggle-btn"
+            className="hidden md:flex w-7 h-7 rounded-xl bg-white border border-emerald-500/20 items-center justify-center
+                       text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 transition-all duration-200 shadow-sm flex-shrink-0"
+            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            <ChevronLeft className={cn('w-4 h-4 transition-transform duration-300', isCollapsed && 'rotate-180')} />
+          </button>
+
+          {/* Mobile Close Button */}
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="flex md:hidden w-8 h-8 rounded-xl bg-white border border-slate-200 items-center justify-center text-slate-600 hover:text-slate-900 shadow-xs"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* ── Navigation Items ── */}
+        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-6 scrollbar-thin">
+          {NAV_GROUPS.map((group) => (
+            <div key={group.label}>
+              {(!isCollapsed || isMobileOpen) && (
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-3 mb-2">
+                  {group.label}
+                </p>
+              )}
+              <ul className="space-y-1">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
+                  const showFullLabel = !isCollapsed || isMobileOpen;
+
+                  return (
+                    <li key={item.id} className="relative group">
+                      <Link
+                        href={item.href}
+                        id={`nav-${item.id}`}
+                        onClick={handleNavClick}
+                        className={cn(
+                          'flex items-center gap-3.5 px-3.5 py-2.5 rounded-2xl text-sm font-semibold transition-all duration-200 relative',
+                          isActive
+                            ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25 font-bold'
+                            : 'text-slate-600 hover:bg-emerald-50/70 hover:text-emerald-800'
+                        )}
+                      >
+                        <Icon className={cn('w-5 h-5 flex-shrink-0', isActive ? 'text-white' : 'text-slate-500 group-hover:text-emerald-600')} />
+
+                        {showFullLabel && (
+                          <span className="truncate flex-1">{item.label}</span>
+                        )}
+
+                        {item.badge && showFullLabel && (
+                          <span className="ml-auto bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                            {item.badge}
+                          </span>
+                        )}
+                      </Link>
+
+                      {/* Desktop Hover Floating Tooltip when Collapsed */}
+                      {isCollapsed && !isMobileOpen && (
+                        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-3 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-xl shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-200 z-50 whitespace-nowrap">
+                          {item.label}
+                          <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 border-4 border-transparent border-r-slate-900" />
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </nav>
+
+        {/* ── Footer / User Profile & Logout ── */}
+        <div className="flex-shrink-0 p-3 border-t border-emerald-500/10 bg-emerald-50/30 space-y-2">
+          {user && (
+            <div className={cn('flex items-center gap-3 p-2 rounded-2xl bg-white border border-emerald-500/15 shadow-xs', isCollapsed && !isMobileOpen && 'justify-center')}>
+              <div className="w-8.5 h-8.5 rounded-xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 text-xs font-black shadow-xs">
+                {user.fullName ? user.fullName.charAt(0).toUpperCase() : 'A'}
+              </div>
+              {(!isCollapsed || isMobileOpen) && (
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-extrabold text-slate-900 truncate leading-tight">{user.fullName}</p>
+                  <p className="text-[10px] text-emerald-700 font-bold tracking-wide uppercase truncate mt-0.5">
+                    {user.role}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <button
+            onClick={handleLogout}
+            id="sidebar-logout-btn"
+            title={isCollapsed && !isMobileOpen ? 'Logout' : undefined}
+            className={cn(
+              'flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm font-semibold text-slate-500',
+              'hover:bg-red-50 hover:text-red-600 hover:border hover:border-red-200/60 transition-all duration-200 w-full',
+              isCollapsed && !isMobileOpen && 'justify-center px-0'
+            )}
+          >
+            <LogOut className="w-4.5 h-4.5 flex-shrink-0" />
+            {(!isCollapsed || isMobileOpen) && (
+              <span className="font-semibold">Logout</span>
+            )}
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }

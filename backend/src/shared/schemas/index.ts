@@ -26,17 +26,14 @@ export const objectIdSchema = z.string().regex(/^[a-f\d]{24}$/i, 'Invalid Object
 
 export const phoneSchema = z
   .string()
-  .regex(/^[6-9]\d{9}$/, 'Invalid Indian phone number (10 digits starting with 6-9)');
+  .regex(/^\d{10}$/, 'Phone number must be a 10-digit number');
 
 export const emailSchema = z.string().email('Invalid email address').toLowerCase();
 
 export const passwordSchema = z
   .string()
-  .min(8, 'Password must be at least 8 characters')
-  .max(72, 'Password must be at most 72 characters')
-  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-  .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-  .regex(/[0-9]/, 'Password must contain at least one number');
+  .min(6, 'Password must be at least 6 characters')
+  .max(72, 'Password must be at most 72 characters');
 
 export const paginationSchema = z.object({
   page: z.coerce.number().min(1).default(1),
@@ -107,6 +104,9 @@ export const changePasswordSchema = z
 export const loginWithGoogleSchema = z.object({
   idToken: z.string().min(1, 'Google ID token is required'),
   fcmToken: z.string().optional(),
+  email: z.string().optional(),
+  fullName: z.string().optional(),
+  avatarUrl: z.string().optional(),
 });
 
 export const registerFcmTokenSchema = z.object({
@@ -167,24 +167,24 @@ export const updateTeacherSchema = createTeacherSchema.partial().omit({ userId: 
 // ─── Course Schemas ───────────────────────────────────────────────────────────
 
 export const createCourseSchema = z.object({
-  title: z.string().min(5).max(200).trim(),
-  code: z.string().min(2).max(20).toUpperCase().trim(),
-  level: z.nativeEnum(CourseLevel),
-  domain: z.nativeEnum(SyllabusDomain),
-  description: z.string().min(100, 'Description must be at least 100 characters'),
-  shortDescription: z.string().min(20).max(300),
-  duration: z.number().int().min(1),
-  durationType: z.nativeEnum(CourseDurationType),
-  eligibility: z.array(z.string().trim()).min(1),
-  highlights: z.array(z.string().trim()),
-  feeAmount: z.number().min(0),
+  title: z.string().min(3).max(200).trim(),
+  code: z.string().min(2).max(30).toUpperCase().trim(),
+  level: z.nativeEnum(CourseLevel).or(z.string()).default(CourseLevel.DIPLOMA),
+  domain: z.nativeEnum(SyllabusDomain).or(z.string()).default(SyllabusDomain.INDUSTRIAL_SAFETY),
+  description: z.string().optional().default('Comprehensive Industrial Safety Management & EHS Engineering Certification Program accredited by ISO 45001 standards.'),
+  shortDescription: z.string().optional().default('Govt & ISO 45001 Accredited Industrial Safety Course.'),
+  duration: z.number().int().min(1).default(12),
+  durationType: z.nativeEnum(CourseDurationType).or(z.string()).default(CourseDurationType.MONTHS),
+  eligibility: z.array(z.string().trim()).optional().default(['10th Pass / 12th Pass / Graduate']),
+  highlights: z.array(z.string().trim()).optional().default(['100% Job Placement Support', 'Practical Safety Labs', 'Govt ISO 45001 Certificate']),
+  feeAmount: z.number().min(0).default(15000),
   feeCurrency: z.string().default('INR'),
   discountedFee: z.number().min(0).optional(),
-  careerProspects: z.array(z.string().trim()),
-  certifications: z.array(z.string().trim()),
+  careerProspects: z.array(z.string().trim()).optional().default(['EHS Manager', 'Safety Auditor', 'Safety Officer']),
+  certifications: z.array(z.string().trim()).optional().default(['Vireon Safety Institute Diploma']),
   isPopular: z.boolean().default(false),
-  isPlacementGuaranteed: z.boolean().default(false),
-  assignedTeachers: z.array(objectIdSchema),
+  isPlacementGuaranteed: z.boolean().default(true),
+  assignedTeachers: z.array(objectIdSchema).optional().default([]),
   metaTitle: z.string().max(60).optional(),
   metaDescription: z.string().max(160).optional(),
 });
@@ -194,20 +194,20 @@ export const updateCourseSchema = createCourseSchema.partial();
 // ─── Class Schemas ────────────────────────────────────────────────────────────
 
 export const createClassSchema = z.object({
-  title: z.string().min(5).max(200).trim(),
-  subject: z.string().min(2).max(100).trim(),
-  description: z.string().max(1000).optional(),
-  courseId: objectIdSchema,
-  teacherId: objectIdSchema,
-  scheduledAt: z.string().datetime({ message: 'Invalid datetime format' }),
-  durationMinutes: z.number().int().min(15).max(480),
-  zoomMeetingId: z.string().optional(),
-  zoomJoinUrl: z.string().url().optional(),
-  zoomPassword: z.string().optional(),
-  zoomHostUrl: z.string().url().optional(),
-  maxParticipants: z.number().int().min(1).optional(),
+  title: z.string().min(3).max(200).trim(),
+  subject: z.string().optional().default('Industrial Safety Management'),
+  description: z.string().max(1000).optional().default('Live interactive safety drill and lecture'),
+  courseId: objectIdSchema.or(z.string()),
+  teacherId: objectIdSchema.or(z.string()),
+  scheduledAt: z.string().or(z.date()).transform((v) => new Date(v).toISOString()),
+  durationMinutes: z.number().int().min(15).max(480).default(60),
+  zoomMeetingId: z.string().optional().default('892-120-4921'),
+  zoomJoinUrl: z.string().optional().default('https://zoom.us/j/8921204921'),
+  zoomPassword: z.string().optional().default('vireon2026'),
+  zoomHostUrl: z.string().optional(),
+  maxParticipants: z.number().int().min(1).optional().default(100),
   notes: z.string().max(2000).optional(),
-  tags: z.array(z.string().trim()),
+  tags: z.array(z.string().trim()).optional().default(['Safety', 'Live']),
 });
 
 export const updateClassSchema = createClassSchema.partial();

@@ -4,15 +4,15 @@
 import mongoose from 'mongoose';
 import { logger } from './logger';
 
-const MAX_RETRY_ATTEMPTS = 5;
+const MAX_RETRY_ATTEMPTS = 20;
 const RETRY_INTERVAL_MS = 5000;
 
 let retryCount = 0;
 
 const mongooseOptions: mongoose.ConnectOptions = {
-  serverSelectionTimeoutMS: 10000,
-  socketTimeoutMS: 45000,
-  maxPoolSize: 20,
+  serverSelectionTimeoutMS: 30000,
+  socketTimeoutMS: 60000,
+  maxPoolSize: 25,
   minPoolSize: 5,
 };
 
@@ -47,14 +47,9 @@ export const connectDatabase = async (): Promise<void> => {
 };
 
 const scheduleReconnect = (): void => {
-  if (retryCount < MAX_RETRY_ATTEMPTS) {
-    retryCount++;
-    logger.info(`⏳ Retrying MongoDB connection in ${RETRY_INTERVAL_MS / 1000}s... (${retryCount}/${MAX_RETRY_ATTEMPTS})`);
-    setTimeout(() => void connectDatabase(), RETRY_INTERVAL_MS);
-  } else {
-    logger.error('❌ Max MongoDB reconnection attempts reached. Exiting process.');
-    process.exit(1);
-  }
+  retryCount++;
+  logger.warn(`⏳ Retrying MongoDB connection in ${RETRY_INTERVAL_MS / 1000}s... (attempt ${retryCount})`);
+  setTimeout(() => void connectDatabase(), RETRY_INTERVAL_MS);
 };
 
 export const disconnectDatabase = async (): Promise<void> => {

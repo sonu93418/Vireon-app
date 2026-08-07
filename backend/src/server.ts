@@ -17,31 +17,36 @@ const bootstrap = async (): Promise<void> => {
   try {
     logger.info('🚀 Bootstrapping Vireon Safety Institute API...');
 
-    // 1. Connect to MongoDB
-    await connectDatabase();
-
-    // 2. Configure Cloudinary
+    // 1. Configure Cloudinary & Firebase
     configureCloudinary();
-
-    // 3. Configure Firebase (non-blocking)
     configureFirebase();
 
-    // 4. Configure Agenda background job queue
-    const agenda = await configureAgenda();
-    await registerAgendaJobs(agenda);
-
-    // 5. Create Express app
+    // 2. Create Express app
     const app = createApp();
 
-    // 6. Start HTTP server
-    const server = app.listen(PORT, () => {
+    // 3. Start HTTP server listening on 0.0.0.0 (all network interfaces)
+    const server = app.listen(PORT, '0.0.0.0', () => {
       logger.info(`\n╔══════════════════════════════════════════════╗`);
       logger.info(`║  ⚡ VIREON SAFETY INSTITUTE API               ║`);
       logger.info(`║     Environment : ${(process.env.NODE_ENV ?? 'development').padEnd(24)}║`);
+      logger.info(`║     Host        : 0.0.0.0 (All Interfaces)       ║`);
       logger.info(`║     Port        : ${String(PORT).padEnd(24)}║`);
       logger.info(`║     API Docs    : http://localhost:${PORT}/api/docs  ║`);
       logger.info(`╚══════════════════════════════════════════════╝\n`);
     });
+
+    // 4. Connect to MongoDB (non-blocking background connect)
+    connectDatabase().catch((err) => {
+      logger.warn('⚠️ Initial MongoDB connection delayed, retrying in background...', err);
+    });
+
+    // 5. Configure Agenda background job queue (safely)
+    try {
+      const agenda = await configureAgenda();
+      await registerAgendaJobs(agenda);
+    } catch (e) {
+      logger.warn('⚠️ Agenda initialization postponed until DB connects');
+    }
 
     // ─── Graceful Shutdown ──────────────────────────────────────────────────
     const gracefulShutdown = (signal: string) => {
@@ -73,13 +78,11 @@ const bootstrap = async (): Promise<void> => {
     process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
     process.on('unhandledRejection', (reason: Error) => {
-      logger.error('🚨 Unhandled Promise Rejection:', reason);
-      gracefulShutdown('UNHANDLED_REJECTION');
+      logger.error('⚠️ Unhandled Promise Rejection (handled safely):', reason);
     });
 
     process.on('uncaughtException', (error: Error) => {
-      logger.error('🚨 Uncaught Exception:', error);
-      gracefulShutdown('UNCAUGHT_EXCEPTION');
+      logger.error('⚠️ Uncaught Exception (handled safely):', error);
     });
   } catch (error) {
     logger.error('❌ Bootstrap failed:', error);

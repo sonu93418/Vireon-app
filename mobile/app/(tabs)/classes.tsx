@@ -113,7 +113,6 @@ export default function ClassesScreen() {
         <FlashList
           data={data}
           keyExtractor={(item) => item._id}
-          estimatedItemSize={160}
           contentContainerStyle={{ padding: SPACING.base }}
           ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
           ListEmptyComponent={() => (

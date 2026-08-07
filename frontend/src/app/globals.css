@@ -1,6 +1,6 @@
 /* ============================================================
-   VIREON SAFETY INSTITUTE — GLOBAL CSS
-   Dark Industrial Design System with Glassmorphism & Bento Grid
+   VIREON SAFETY INSTITUTE — CLAYMORPHISM GREEN & WHITE DESIGN SYSTEM
+   Claymorphism Theme with Dual Inset Shadows & Emerald Accents
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800;900&display=swap');
@@ -9,43 +9,42 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── CSS Variables (Dark Theme Design Tokens) ─────────────────────────────── */
+/* ─── CSS Variables (Claymorphism Light Theme Tokens with Solid Green) ─────────────────────────────── */
 @layer base {
   :root {
-    /* Dark Industrial Theme */
-    --background: 222.2 84% 4.9%;      /* #030712 */
-    --foreground: 210 40% 98%;          /* #F1F5F9 */
-    --card: 222.2 47.4% 11.2%;         /* #0F172A */
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 47.4% 11.2%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 142.1 76.2% 36.3%;      /* #16A34A accent green */
-    --primary-foreground: 355.7 100% 97.3%;
-    --secondary: 217.2 32.6% 17.5%;    /* #111827 */
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%; /* #94A3B8 */
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;      /* #EF4444 */
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 142.1 76.2% 36.3%;         /* Accent green ring */
-    --radius: 0.75rem;
+    --background: 144 30% 97%;          /* #F4FAF6 */
+    --foreground: 222 47% 11%;          /* #0F172A */
+    --card: 0 0% 100%;                  /* #FFFFFF */
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 142 76% 36%;             /* #16A34A solid green */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 142 60% 95%;           /* #DCFCE7 soft mint */
+    --secondary-foreground: 142 76% 25%;
+    --muted: 150 20% 94%;
+    --muted-foreground: 215 16% 47%;    /* #64748B */
+    --accent: 142 60% 95%;
+    --accent-foreground: 142 76% 25%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 142 50% 85%;
+    --input: 142 30% 93%;
+    --ring: 142 76% 36%;                /* Solid Green Ring */
+    --radius: 1.25rem;
   }
 }
 
 /* ─── Base Styles ─────────────────────────────────────────────────────────── */
 @layer base {
   * {
-    border-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba(22, 163, 74, 0.2);
     box-sizing: border-box;
   }
 
   html {
-    background-color: #030712;
-    color: #F1F5F9;
+    background-color: #F4FAF6;
+    color: #0F172A;
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -53,44 +52,79 @@
   }
 
   body {
-    background-color: #030712;
-    color: #F1F5F9;
+    background-color: #F4FAF6;
+    color: #0F172A;
     font-family: var(--font-inter), 'Inter', system-ui, sans-serif;
     background-image: 
-      radial-gradient(ellipse at 20% 50%, rgba(22, 163, 74, 0.05) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 10%, rgba(22, 163, 74, 0.03) 0%, transparent 50%),
-      linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
-    background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+      radial-gradient(ellipse at 10% 20%, rgba(22, 163, 74, 0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 90% 80%, rgba(22, 163, 74, 0.06) 0%, transparent 60%),
+      linear-gradient(rgba(22, 163, 74, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(22, 163, 74, 0.03) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 48px 48px, 48px 48px;
     min-height: 100vh;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-heading font-semibold;
+    @apply font-heading font-semibold text-slate-900;
   }
 
-  /* Custom scrollbar */
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: #0F172A; }
-  ::-webkit-scrollbar-thumb { background: rgba(22, 163, 74, 0.4); border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(22, 163, 74, 0.7); }
-  * { scrollbar-width: thin; scrollbar-color: rgba(22, 163, 74, 0.4) #0F172A; }
+  /* Custom Clay Scrollbar */
+  ::-webkit-scrollbar { width: 7px; height: 7px; }
+  ::-webkit-scrollbar-track { background: #EBF5F0; }
+  ::-webkit-scrollbar-thumb { background: rgba(22, 163, 74, 0.45); border-radius: 9999px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(22, 163, 74, 0.8); }
+  * { scrollbar-width: thin; scrollbar-color: rgba(22, 163, 74, 0.45) #EBF5F0; }
 }
 
-/* ─── Vireon Component Classes ─────────────────────────────────────────────── */
+/* ─── Claymorphism Component Classes ─────────────────────────────────────────────── */
 @layer components {
 
-  /* Glass Card */
+  /* Pure White Clay Card */
+  .clay-card {
+    background: #FFFFFF;
+    border-radius: 1.5rem;
+    border: 1px solid rgba(22, 163, 74, 0.2);
+    box-shadow: 
+      8px 8px 18px rgba(22, 163, 74, 0.08),
+      -8px -8px 18px #FFFFFF,
+      inset 3px 3px 6px rgba(255, 255, 255, 0.9),
+      inset -3px -3px 6px rgba(22, 163, 74, 0.12);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .clay-card-hover {
+    @apply clay-card;
+  }
+  .clay-card-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: 
+      12px 12px 28px rgba(22, 163, 74, 0.15),
+      -12px -12px 28px #FFFFFF,
+      inset 4px 4px 8px rgba(255, 255, 255, 1),
+      inset -4px -4px 8px rgba(22, 163, 74, 0.18);
+  }
+
+  /* Solid Green Clay Surface */
+  .clay-card-green {
+    background: #16A34A;
+    color: #FFFFFF;
+    border-radius: 1.5rem;
+    box-shadow: 
+      6px 6px 16px rgba(22, 163, 74, 0.4),
+      inset 3px 3px 6px rgba(255, 255, 255, 0.4),
+      inset -3px -3px 6px rgba(21, 128, 61, 0.6);
+  }
+
+  /* Backward Compatible Card Class */
   .vireon-card {
-    @apply bg-vireon-card/60 backdrop-blur-md border border-white/[0.08] rounded-2xl shadow-glass;
+    @apply clay-card;
   }
   .vireon-card-hover {
-    @apply vireon-card transition-all duration-300 hover:border-white/[0.15] hover:shadow-glass-lg hover:-translate-y-1;
+    @apply clay-card-hover;
   }
 
   /* Bento Grid Cards */
   .bento-card {
-    @apply vireon-card p-6 overflow-hidden relative;
+    @apply clay-card p-6 overflow-hidden relative;
   }
   .bento-card-lg {
     @apply bento-card col-span-2 row-span-2;
@@ -111,8 +145,8 @@
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    padding: 1px;
-    background: linear-gradient(135deg, rgba(22, 163, 74, 0.5), rgba(255, 255, 255, 0.05), rgba(22, 163, 74, 0.2));
+    padding: 1.5px;
+    background: linear-gradient(135deg, rgba(22, 163, 74, 0.5), rgba(255, 255, 255, 0.8), rgba(22, 163, 74, 0.3));
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
@@ -120,93 +154,141 @@
     pointer-events: none;
   }
 
-  /* Accent Badge */
+  /* Solid Green Accent Badges */
   .vireon-badge {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold;
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold shadow-sm;
   }
   .vireon-badge-green {
-    @apply vireon-badge bg-vireon-accent-green/10 text-vireon-success border border-vireon-accent-green/30;
+    background: #16A34A;
+    color: #FFFFFF;
+    border: 1px solid #15803D;
   }
   .vireon-badge-warning {
-    @apply vireon-badge bg-yellow-500/10 text-yellow-400 border border-yellow-500/30;
+    background: #F59E0B;
+    color: #FFFFFF;
+    border: 1px solid #D97706;
   }
   .vireon-badge-danger {
-    @apply vireon-badge bg-red-500/10 text-red-400 border border-red-500/30;
+    background: #EF4444;
+    color: #FFFFFF;
+    border: 1px solid #DC2626;
   }
 
   /* Stat Card */
   .stat-card {
-    @apply bento-card flex flex-col gap-2 min-h-[120px];
+    @apply bento-card flex flex-col gap-2 min-h-[120px] transition-all duration-200;
   }
   .stat-value {
-    @apply font-heading text-3xl font-bold text-vireon-text-primary;
+    @apply font-heading text-3xl font-extrabold text-slate-900;
   }
   .stat-label {
-    @apply text-sm text-vireon-text-muted font-medium;
+    @apply text-sm text-slate-500 font-bold;
   }
   .stat-change-positive {
-    @apply text-xs text-vireon-success font-semibold flex items-center gap-1;
+    @apply text-xs text-green-700 font-extrabold flex items-center gap-1;
   }
   .stat-change-negative {
-    @apply text-xs text-vireon-danger font-semibold flex items-center gap-1;
+    @apply text-xs text-red-600 font-extrabold flex items-center gap-1;
   }
 
-  /* Sidebar */
+  /* Sidebar Clay Style */
   .sidebar-item {
-    @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-vireon-text-secondary text-sm font-medium
+    @apply flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-slate-700 text-sm font-bold
            transition-all duration-200 cursor-pointer;
   }
   .sidebar-item:hover {
-    @apply bg-white/[0.05] text-vireon-text-primary;
+    @apply bg-green-50 text-green-800;
   }
   .sidebar-item-active {
-    @apply sidebar-item bg-vireon-accent-green/10 text-vireon-success border border-vireon-accent-green/20
-           shadow-glow-green;
+    background: #16A34A !important;
+    color: #FFFFFF !important;
+    border-radius: 1.25rem;
+    box-shadow: 
+      4px 4px 12px rgba(22, 163, 74, 0.4),
+      inset 2px 2px 4px rgba(255, 255, 255, 0.4),
+      inset -2px -2px 4px rgba(21, 128, 61, 0.6);
   }
 
-  /* Vireon Button */
-  .vireon-btn-primary {
-    @apply inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
-           bg-vireon-accent-green text-white transition-all duration-200
-           hover:bg-green-500 hover:shadow-glow-green active:scale-[0.98];
+  /* Clay Buttons — Solid Rich Green */
+  .clay-btn-primary, .vireon-btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-extrabold text-white
+           transition-all duration-200 active:scale-95 cursor-pointer;
+    background: #16A34A;
+    box-shadow: 
+      4px 4px 12px rgba(22, 163, 74, 0.4),
+      inset 2px 2px 4px rgba(255, 255, 255, 0.4),
+      inset -2px -2px 4px rgba(21, 128, 61, 0.6);
   }
-  .vireon-btn-secondary {
-    @apply inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
-           bg-white/[0.06] text-vireon-text-primary border border-white/[0.1] transition-all duration-200
-           hover:bg-white/[0.1] hover:border-white/[0.2] active:scale-[0.98];
-  }
-  .vireon-btn-danger {
-    @apply inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
-           bg-red-500/10 text-red-400 border border-red-500/20 transition-all duration-200
-           hover:bg-red-500/20 hover:border-red-500/40 active:scale-[0.98];
+  .clay-btn-primary:hover, .vireon-btn-primary:hover {
+    background: #15803D;
+    box-shadow: 
+      6px 6px 16px rgba(22, 163, 74, 0.5),
+      inset 2px 2px 4px rgba(255, 255, 255, 0.5),
+      inset -2px -2px 4px rgba(21, 128, 61, 0.6);
   }
 
-  /* Input */
-  .vireon-input {
-    @apply w-full bg-white/[0.04] border border-white/[0.1] rounded-xl px-4 py-2.5 text-sm
-           text-vireon-text-primary placeholder:text-vireon-text-muted transition-all duration-200
-           focus:outline-none focus:border-vireon-accent-green/50 focus:bg-white/[0.06] focus:ring-1 focus:ring-vireon-accent-green/30;
+  .clay-btn-secondary, .vireon-btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-extrabold text-slate-800
+           bg-white border-2 border-green-600 transition-all duration-200 active:scale-95 cursor-pointer;
+    box-shadow: 
+      4px 4px 10px rgba(22, 163, 74, 0.12),
+      -4px -4px 10px #FFFFFF,
+      inset 2px 2px 4px rgba(255, 255, 255, 0.9),
+      inset -2px -2px 4px rgba(22, 163, 74, 0.15);
+  }
+  .clay-btn-secondary:hover, .vireon-btn-secondary:hover {
+    @apply bg-green-50 text-green-900 border-green-700;
+  }
+
+  .clay-btn-danger, .vireon-btn-danger {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-extrabold text-white
+           bg-red-600 border border-red-700 transition-all duration-200 active:scale-95 cursor-pointer;
+    box-shadow: 
+      3px 3px 8px rgba(239, 68, 68, 0.3),
+      inset 2px 2px 4px rgba(255, 255, 255, 0.4),
+      inset -2px -2px 4px rgba(185, 28, 28, 0.5);
+  }
+
+  /* Inset Clay Input */
+  .clay-input, .vireon-input {
+    @apply w-full rounded-2xl px-4 py-2.5 text-sm text-slate-900 font-semibold placeholder:text-slate-400
+           transition-all duration-200 focus:outline-none bg-[#F8FAF9] border border-green-600/30;
+    box-shadow: 
+      inset 3px 3px 6px rgba(0, 0, 0, 0.05),
+      inset -3px -3px 6px rgba(255, 255, 255, 0.8);
+  }
+  .clay-input:focus, .vireon-input:focus {
+    @apply bg-white border-green-600 ring-2 ring-green-600/30;
+    box-shadow: 
+      0 0 0 3px rgba(22, 163, 74, 0.25),
+      inset 2px 2px 4px rgba(0, 0, 0, 0.03);
   }
 
   /* Table */
   .vireon-table {
-    @apply w-full text-sm;
+    @apply w-full text-sm border-separate border-spacing-0;
   }
   .vireon-table th {
-    @apply text-left px-4 py-3 text-vireon-text-muted font-semibold text-xs uppercase tracking-wider
-           border-b border-white/[0.06];
+    @apply text-left px-4 py-3.5 text-slate-500 font-bold text-xs uppercase tracking-wider
+           bg-emerald-50/40 border-b border-emerald-500/10 first:rounded-tl-2xl last:rounded-tr-2xl;
   }
   .vireon-table td {
-    @apply px-4 py-3 text-vireon-text-secondary border-b border-white/[0.04];
+    @apply px-4 py-3.5 text-slate-700 font-medium border-b border-emerald-500/10 bg-white;
+  }
+  .vireon-table tr:last-child td:first-child {
+    @apply rounded-bl-2xl;
+  }
+  .vireon-table tr:last-child td:last-child {
+    @apply rounded-br-2xl;
   }
   .vireon-table tr:hover td {
-    @apply bg-white/[0.02] text-vireon-text-primary;
+    @apply bg-emerald-50/30 text-slate-900;
   }
 
   /* Skeleton Loading */
   .vireon-skeleton {
-    @apply bg-white/[0.06] rounded-xl animate-shimmer;
-    background-image: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%);
+    @apply bg-slate-200/60 rounded-2xl animate-shimmer;
+    background-image: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.7) 50%, transparent 100%);
     background-size: 200% 100%;
   }
 
@@ -215,10 +297,10 @@
     @apply flex items-center justify-between mb-6;
   }
   .section-title {
-    @apply font-heading text-xl font-semibold text-vireon-text-primary;
+    @apply font-heading text-xl font-bold text-slate-900;
   }
   .section-subtitle {
-    @apply text-sm text-vireon-text-muted mt-0.5;
+    @apply text-sm text-slate-500 mt-0.5 font-medium;
   }
 
   /* Live Indicator */
@@ -226,11 +308,11 @@
     @apply relative inline-flex h-2.5 w-2.5;
   }
   .live-dot::before {
-    @apply absolute inline-flex h-full w-full rounded-full bg-vireon-success opacity-75 animate-ping;
+    @apply absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75 animate-ping;
     content: '';
   }
   .live-dot::after {
-    @apply relative inline-flex rounded-full h-2.5 w-2.5 bg-vireon-success;
+    @apply relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500;
     content: '';
   }
 }
@@ -255,10 +337,11 @@
   .glass-effect {
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    background: rgba(17, 24, 39, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(16, 185, 129, 0.15);
   }
   .green-glow-bg {
-    background: radial-gradient(ellipse at center, rgba(22, 163, 74, 0.1) 0%, transparent 70%);
+    background: radial-gradient(ellipse at center, rgba(16, 185, 129, 0.12) 0%, transparent 70%);
   }
 }
+

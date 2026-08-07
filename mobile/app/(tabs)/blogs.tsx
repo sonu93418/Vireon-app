@@ -97,7 +97,6 @@ export default function BlogsScreen() {
         <FlashList
           data={filteredBlogs}
           keyExtractor={(item) => item._id}
-          estimatedItemSize={200}
           contentContainerStyle={{ padding: SPACING.base }}
           ItemSeparatorComponent={() => <View style={{ height: 14 }} />}
           renderItem={({ item, index }) => {

@@ -1,0 +1,303 @@
+// ============================================================
+// VIREON — SEED POPULAR COURSES SCRIPT
+// Populate MongoDB with 11 Popular Industrial Safety Courses
+// ============================================================
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+import path from 'path';
+import { CourseModel } from '../models/course.model';
+import { CourseLevel, CourseDurationType, SyllabusDomain } from '../shared/enums';
+
+dotenv.config({ path: path.join(__dirname, '../../.env') });
+
+const MONGODB_URI = process.env.MONGODB_URI;
+
+if (!MONGODB_URI) {
+  console.error('❌ MONGODB_URI is missing in backend/.env');
+  process.exit(1);
+}
+
+const COURSES_DATA = [
+  {
+    title: 'Diploma in Fire & Industrial Safety',
+    code: 'DFIS-101',
+    slug: 'diploma-in-fire-and-industrial-safety',
+    level: CourseLevel.DIPLOMA,
+    domain: SyllabusDomain.INDUSTRIAL_SAFETY,
+    description: 'Comprehensive 1-Year Diploma covering Fire Prevention, Suppression Systems, Industrial Risk Assessment, Hazard Control, Safety Audits, and ISO 45001 EHS Standards with hands-on practical drills.',
+    shortDescription: 'Govt & ISO 45001 Accredited 1-Year Diploma in Fire & Safety.',
+    duration: 12,
+    durationType: CourseDurationType.MONTHS,
+    eligibility: ['10th Pass', '12th Pass', 'Graduate'],
+    highlights: ['100% Job Placement Assistance', 'Live Fire Fighting Lab Practical', 'ISO 45001 & Govt Certification'],
+    feeAmount: 18500,
+    feeCurrency: 'INR',
+    discountedFee: 15500,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?w=800&auto=format&fit=crop&q=80',
+    careerProspects: ['Safety Officer', 'Fire Safety Executive', 'EHS Supervisor'],
+    certifications: ['Govt Accredited Diploma', 'ISO 45001 Practical Certificate'],
+    isPopular: true,
+    isActive: true,
+    isPlacementGuaranteed: true,
+    enrollmentCount: 480,
+  },
+  {
+    title: 'Advanced Diploma in Industrial Safety',
+    code: 'ADIS-201',
+    slug: 'advanced-diploma-in-industrial-safety',
+    level: CourseLevel.ADVANCED_DIPLOMA,
+    domain: SyllabusDomain.INDUSTRIAL_SAFETY,
+    description: 'Advanced 1-Year Professional Diploma designed for engineers and technicians focusing on Construction Safety, Chemical Plant Safety, Offshore Safety, Risk Management, and Hazop Analysis.',
+    shortDescription: 'Advanced 1-Year Specialized Safety Engineering Diploma.',
+    duration: 1,
+    durationType: CourseDurationType.YEARS,
+    eligibility: ['Diploma in Engineering', 'B.Sc / B.Tech / Graduate'],
+    highlights: ['Industrial Plant Site Visits', 'Hazop & Risk Analysis Software Training', '100% Placement Support'],
+    feeAmount: 25000,
+    feeCurrency: 'INR',
+    discountedFee: 21000,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&auto=format&fit=crop&q=80',
+    careerProspects: ['Assistant Safety Manager', 'HSE Engineer', 'Safety Auditor'],
+    certifications: ['Advanced Safety Diploma', 'Industrial Compliance Badge'],
+    isPopular: true,
+    isActive: true,
+    isPlacementGuaranteed: true,
+    enrollmentCount: 390,
+  },
+  {
+    title: 'PG Diploma in Industrial Safety (PGDIS)',
+    code: 'PGDIS-301',
+    slug: 'pg-diploma-in-industrial-safety',
+    level: CourseLevel.PG_DIPLOMA,
+    domain: SyllabusDomain.INDUSTRIAL_SAFETY,
+    description: 'Post Graduate Diploma in Industrial Safety recognized by state factory inspectorates. Covers Factory Act compliance, Environmental Management, ISO 14001/45001 lead auditing, and Safety Leadership.',
+    shortDescription: 'Post Graduate Diploma recognized for Factory Act Compliance Officers.',
+    duration: 1,
+    durationType: CourseDurationType.YEARS,
+    eligibility: ['B.Sc', 'B.Tech / B.E', 'Engineering Diploma + 2 yrs Exp'],
+    highlights: ['Lead Auditor ISO 45001 Certification', 'Legal & Factory Act Specialization', 'High Package Campus Placements'],
+    feeAmount: 32000,
+    feeCurrency: 'INR',
+    discountedFee: 28000,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?w=800&auto=format&fit=crop&q=80',
+    careerProspects: ['EHS Manager', 'Chief Safety Officer', 'Factory Inspector Consultant'],
+    certifications: ['PGDIS State Board Recognized', 'ISO 45001 Lead Auditor'],
+    isPopular: true,
+    isActive: true,
+    isPlacementGuaranteed: true,
+    enrollmentCount: 310,
+  },
+  {
+    title: 'IOSH (Managing Safely & Working Safely)',
+    code: 'IOSH-MSWS',
+    slug: 'iosh-managing-safely-and-working-safely',
+    level: CourseLevel.CERTIFICATION,
+    domain: SyllabusDomain.INDUSTRIAL_SAFETY,
+    description: 'UK Accredited IOSH Managing Safely & Working Safely certification. International safety passport covering hazard identification, risk assessment, incident investigation, and safety management systems.',
+    shortDescription: 'UK Accredited Globally Recognized IOSH Safety Certificate.',
+    duration: 3,
+    durationType: CourseDurationType.WEEKS,
+    eligibility: ['Any Graduate / Working Professional'],
+    highlights: ['UK Approved IOSH Certificate', 'Global Job Eligibility (Gulf & Europe)', 'Interactive Online / Offline Drills'],
+    feeAmount: 15000,
+    feeCurrency: 'INR',
+    discountedFee: 12999,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&auto=format&fit=crop&q=80',
+    careerProspects: ['International Safety Supervisor', 'Gulf EHS Consultant', 'Site Safety Officer'],
+    certifications: ['IOSH UK Official Certificate'],
+    isPopular: true,
+    isActive: true,
+    isPlacementGuaranteed: true,
+    enrollmentCount: 650,
+  },
+  {
+    title: 'OSHA 30-Hour & 40-Hour General Industry',
+    code: 'OSHA-3040',
+    slug: 'osha-30-hour-and-40-hour-general-industry',
+    level: CourseLevel.CERTIFICATION,
+    domain: SyllabusDomain.INDUSTRIAL_SAFETY,
+    description: 'US OSHA Standard 30-Hour and 40-Hour General Industry & Construction Safety certification. Complete coverage of fall protection, lockout/tagout, electrical hazards, chemical handling, and OSHA compliance.',
+    shortDescription: 'US OSHA Standard 30 Hr / 40 Hr Certified Program.',
+    duration: 4,
+    durationType: CourseDurationType.WEEKS,
+    eligibility: ['10th / 12th / Diploma / Graduate'],
+    highlights: ['US OSHA Wallet Card & Certificate', 'Practical Rigging & LOTO Simulation', 'MNC Placement Support'],
+    feeAmount: 14000,
+    feeCurrency: 'INR',
+    discountedFee: 11999,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1517646287270-a5a9ca602e5c?w=800&auto=format&fit=crop&q=80',
+    careerProspects: ['OSHA Compliance Officer', 'Safety Inspector', 'Construction Site Safety Lead'],
+    certifications: ['OSHA US Official Wallet Card'],
+    isPopular: true,
+    isActive: true,
+    isPlacementGuaranteed: true,
+    enrollmentCount: 520,
+  },
+  {
+    title: 'EOSH International Safety Certification',
+    code: 'EOSH-INT',
+    slug: 'eosh-international-safety-certification',
+    level: CourseLevel.CERTIFICATION,
+    domain: SyllabusDomain.INDUSTRIAL_SAFETY,
+    description: 'European Occupational Safety & Health (EOSH) international diploma covering European EHS Directives, Environmental Hazard Mitigation, Industrial Hygiene, and Ergonomics.',
+    shortDescription: 'European International Safety Standard Certification.',
+    duration: 2,
+    durationType: CourseDurationType.WEEKS,
+    eligibility: ['Graduate / Diploma / HSE Aspirant'],
+    highlights: ['European Union Standard Syllabus', 'Online Examination & Instant Verification', 'Corporate Training Accreditation'],
+    feeAmount: 12000,
+    feeCurrency: 'INR',
+    discountedFee: 9999,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1531973576160-7125cd663d86?w=800&auto=format&fit=crop&q=80',
+    careerProspects: ['Industrial Hygiene Specialist', 'Safety Assessor', 'EHS Executive'],
+    certifications: ['EOSH European Standard Certificate'],
+    isPopular: true,
+    isActive: true,
+    isPlacementGuaranteed: true,
+    enrollmentCount: 280,
+  },
+  {
+    title: 'B.Sc in Industrial Safety Management',
+    code: 'BSC-ISM',
+    slug: 'bsc-in-industrial-safety-management',
+    level: CourseLevel.BSC,
+    domain: SyllabusDomain.INDUSTRIAL_SAFETY,
+    description: 'UGC Recognized 3-Year Bachelor Degree in Industrial Safety. In-depth academic curriculum covering Industrial Physics, Chemistry of Explosives, Safety Laws, Environmental Sciences, and Internship in Tier-1 Plants.',
+    shortDescription: '3-Year UGC Recognized Bachelor Degree in Safety.',
+    duration: 3,
+    durationType: CourseDurationType.YEARS,
+    eligibility: ['12th Science / Vocational (45%+ Marks)'],
+    highlights: ['3-Year Full Degree with University Degree', '6-Month Paid Industrial Internship', 'Top Corporate Placements (TATA, L&T, Reliance)'],
+    feeAmount: 45000,
+    feeCurrency: 'INR',
+    discountedFee: 40000,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&auto=format&fit=crop&q=80',
+    careerProspects: ['Corporate Safety Manager', 'Senior EHS Lead', 'Government Safety Inspector'],
+    certifications: ['UGC Recognized B.Sc Degree', 'Industrial Internship Certificate'],
+    isPopular: true,
+    isActive: true,
+    isPlacementGuaranteed: true,
+    enrollmentCount: 220,
+  },
+  {
+    title: 'B.Tech in Fire & Safety Engineering',
+    code: 'BTECH-FSE',
+    slug: 'btech-in-fire-and-safety-engineering',
+    level: CourseLevel.BTECH,
+    domain: SyllabusDomain.INDUSTRIAL_SAFETY,
+    description: 'AICTE Approved 4-Year Engineering Degree specializing in Fire Hydraulics, Structural Fire Safety, Disaster Management, Chemical Process Safety, and Automation in Fire Fighting.',
+    shortDescription: '4-Year AICTE Approved Engineering Degree in Fire & Safety.',
+    duration: 4,
+    durationType: CourseDurationType.YEARS,
+    eligibility: ['12th Science PCM (50%+ Marks)'],
+    highlights: ['AICTE Approved Engineering Degree', 'Cad & Fire Simulation Lab', 'Tier-1 Campus Placement drives'],
+    feeAmount: 65000,
+    feeCurrency: 'INR',
+    discountedFee: 58000,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?w=800&auto=format&fit=crop&q=80',
+    careerProspects: ['Fire Safety Engineer', 'Chief Engineer EHS', 'Safety Systems Architect'],
+    certifications: ['AICTE B.Tech Engineering Degree'],
+    isPopular: true,
+    isActive: true,
+    isPlacementGuaranteed: true,
+    enrollmentCount: 180,
+  },
+  {
+    title: 'M.Sc in Industrial Safety Engineering',
+    code: 'MSC-ISE',
+    slug: 'msc-in-industrial-safety-engineering',
+    level: CourseLevel.MSC,
+    domain: SyllabusDomain.INDUSTRIAL_SAFETY,
+    description: '2-Year Master of Science program covering Advanced Process Safety Management, Quantitative Risk Analysis, Industrial Toxicology, and Environmental Health Engineering.',
+    shortDescription: '2-Year Master Degree in Industrial Safety Engineering.',
+    duration: 2,
+    durationType: CourseDurationType.YEARS,
+    eligibility: ['B.Sc / B.Tech / BE in Science or Engineering'],
+    highlights: ['Advanced Research & Dissertation', 'ISO 14001 / 45001 Auditor Qualification', 'Global Executive Placements'],
+    feeAmount: 55000,
+    feeCurrency: 'INR',
+    discountedFee: 49000,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=800&auto=format&fit=crop&q=80',
+    careerProspects: ['EHS Director', 'Senior Process Safety Engineer', 'Safety Research Specialist'],
+    certifications: ['Master of Science Degree', 'ISO Lead Auditor Certificate'],
+    isPopular: true,
+    isActive: true,
+    isPlacementGuaranteed: true,
+    enrollmentCount: 140,
+  },
+  {
+    title: 'M.Tech in Industrial Safety Engineering',
+    code: 'MTECH-ISE',
+    slug: 'mtech-in-industrial-safety-engineering',
+    level: CourseLevel.MTECH,
+    domain: SyllabusDomain.INDUSTRIAL_SAFETY,
+    description: '2-Year AICTE Post-Graduate Engineering Degree focused on Reliability Engineering, Nuclear & Explosive Safety, Plant Design & Hazard Simulation, and Industrial Hygiene Modeling.',
+    shortDescription: '2-Year AICTE Postgraduate Engineering Degree in Safety.',
+    duration: 2,
+    durationType: CourseDurationType.YEARS,
+    eligibility: ['B.Tech / B.E in Mechanical, Chemical, Civil or Electrical Engineering'],
+    highlights: ['AICTE Master of Technology Degree', 'Research Lab & Simulation Projects', 'High Package MNC Hiring'],
+    feeAmount: 75000,
+    feeCurrency: 'INR',
+    discountedFee: 68000,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&auto=format&fit=crop&q=80',
+    careerProspects: ['Chief Safety Engineer', 'VP EHS & Sustainability', 'Safety Consultant Specialist'],
+    certifications: ['M.Tech Degree Certificate'],
+    isPopular: true,
+    isActive: true,
+    isPlacementGuaranteed: true,
+    enrollmentCount: 110,
+  },
+  {
+    title: 'MBA in Safety & EHS Management',
+    code: 'MBA-SEHS',
+    slug: 'mba-in-safety-and-ehs-management',
+    level: CourseLevel.MBA,
+    domain: SyllabusDomain.INDUSTRIAL_SAFETY,
+    description: '2-Year Executive Management Program combining Business Administration, Corporate Sustainability, EHS Governance, ESG Compliance, and Risk Management Leadership.',
+    shortDescription: '2-Year Executive MBA in Corporate Safety & EHS Leadership.',
+    duration: 2,
+    durationType: CourseDurationType.YEARS,
+    eligibility: ['Graduation in any discipline (45%+ Marks)'],
+    highlights: ['Executive Business Leadership', 'ESG & Corporate Compliance Focus', '100% High Package Management Placements'],
+    feeAmount: 85000,
+    feeCurrency: 'INR',
+    discountedFee: 76000,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&auto=format&fit=crop&q=80',
+    careerProspects: ['Head of EHS & Sustainability', 'Corporate Safety Director', 'ESG Manager'],
+    certifications: ['UGC Approved MBA Degree', 'Corporate EHS Leadership Badge'],
+    isPopular: true,
+    isActive: true,
+    isPlacementGuaranteed: true,
+    enrollmentCount: 260,
+  },
+];
+
+async function seedCourses() {
+  try {
+    console.log('🔄 Connecting to MongoDB Atlas...');
+    await mongoose.connect(MONGODB_URI as string, {
+      serverSelectionTimeoutMS: 30000,
+      socketTimeoutMS: 60000,
+    });
+    console.log('✅ Connected to MongoDB Atlas.');
+
+    console.log('🧹 Clearing old courses...');
+    await CourseModel.deleteMany({});
+    console.log('✨ Old courses cleared.');
+
+    console.log('🌱 Seeding 11 requested popular courses...');
+    const inserted = await CourseModel.insertMany(COURSES_DATA);
+    console.log(`🎉 Successfully seeded ${inserted.length} courses:`);
+    inserted.forEach((c, idx) => console.log(`   ${idx + 1}. [${c.code}] ${c.title} (${c.level}) - ₹${c.feeAmount}`));
+
+    await mongoose.disconnect();
+    console.log('👋 Disconnected from MongoDB.');
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Failed to seed courses:', error);
+    process.exit(1);
+  }
+}
+
+void seedCourses();

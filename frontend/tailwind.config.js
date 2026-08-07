@@ -9,7 +9,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // ─── Vireon Design Tokens ──────────────────────────────────────────────
+        // ─── Claymorphism Design Tokens ──────────────────────────────────────────────
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         card: {
@@ -35,19 +35,21 @@ module.exports = {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
-        // ─── Vireon Brand Colors ───────────────────────────────────────────────
+        // ─── Vireon Brand Clay Colors ───────────────────────────────────────────────
         vireon: {
-          bg: '#030712',
-          primary: '#0F172A',
-          secondary: '#111827',
-          card: '#111827',
-          border: 'rgba(255, 255, 255, 0.08)',
+          bg: '#F4FAF6',
+          primary: '#16A34A',
+          secondary: '#DCFCE7',
+          card: '#FFFFFF',
+          'card-mint': '#E6F4ED',
+          border: 'rgba(22, 163, 74, 0.2)',
           'accent-green': '#16A34A',
-          success: '#22C55E',
+          'accent-dark': '#15803D',
+          success: '#16A34A',
           warning: '#F59E0B',
           danger: '#EF4444',
-          'text-primary': '#F1F5F9',
-          'text-secondary': '#94A3B8',
+          'text-primary': '#0F172A',
+          'text-secondary': '#475569',
           'text-muted': '#64748B',
         },
         // Destructive
@@ -68,6 +70,7 @@ module.exports = {
         '2xl': '1.25rem',
         '3xl': '1.5rem',
         '4xl': '2rem',
+        '5xl': '2.5rem',
       },
       fontFamily: {
         sans: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
@@ -75,7 +78,6 @@ module.exports = {
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
       spacing: {
-        // 8-point grid system
         '4.5': '1.125rem',
         '5.5': '1.375rem',
         '6.5': '1.625rem',
@@ -84,20 +86,24 @@ module.exports = {
         '9.5': '2.375rem',
       },
       boxShadow: {
-        'glass': '0 4px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
-        'glass-lg': '0 8px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06)',
-        'glow-green': '0 0 20px rgba(22, 163, 74, 0.3)',
-        'glow-green-lg': '0 0 40px rgba(22, 163, 74, 0.4)',
-        'card': '0 2px 8px rgba(0, 0, 0, 0.4)',
-        'card-hover': '0 8px 32px rgba(0, 0, 0, 0.5)',
+        'clay': '8px 8px 16px rgba(16, 185, 129, 0.08), -8px -8px 16px #ffffff, inset 2px 2px 4px rgba(255, 255, 255, 0.8), inset -2px -2px 4px rgba(16, 185, 129, 0.1)',
+        'clay-lg': '12px 12px 24px rgba(16, 185, 129, 0.12), -12px -12px 24px #ffffff, inset 3px 3px 6px rgba(255, 255, 255, 0.9), inset -3px -3px 6px rgba(16, 185, 129, 0.15)',
+        'clay-green': '6px 6px 14px rgba(16, 185, 129, 0.35), inset 3px 3px 6px rgba(255, 255, 255, 0.4), inset -3px -3px 6px rgba(4, 120, 87, 0.4)',
+        'clay-inset': 'inset 3px 3px 6px rgba(0, 0, 0, 0.06), inset -3px -3px 6px rgba(255, 255, 255, 0.9)',
+        'glass': '0 4px 24px rgba(16, 185, 129, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
+        'glass-lg': '0 8px 40px rgba(16, 185, 129, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.9)',
+        'glow-green': '0 0 20px rgba(16, 185, 129, 0.25)',
+        'glow-green-lg': '0 0 40px rgba(16, 185, 129, 0.35)',
+        'card': '0 4px 14px rgba(16, 185, 129, 0.08)',
+        'card-hover': '0 10px 28px rgba(16, 185, 129, 0.15)',
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-        'vireon-hero': 'linear-gradient(135deg, #0F172A 0%, #111827 50%, #0F172A 100%)',
-        'vireon-card': 'linear-gradient(145deg, #111827 0%, #0F172A 100%)',
-        'green-glow': 'radial-gradient(ellipse at center, rgba(22, 163, 74, 0.15) 0%, transparent 70%)',
-        'grid-pattern': 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
+        'vireon-hero': 'linear-gradient(135deg, #FFFFFF 0%, #F4FAF6 50%, #E6F4ED 100%)',
+        'vireon-card': 'linear-gradient(145deg, #FFFFFF 0%, #F4FAF6 100%)',
+        'green-glow': 'radial-gradient(ellipse at center, rgba(16, 185, 129, 0.15) 0%, transparent 70%)',
+        'grid-pattern': 'linear-gradient(rgba(16,185,129,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(16,185,129,0.04) 1px, transparent 1px)',
       },
       backgroundSize: {
         'grid': '40px 40px',

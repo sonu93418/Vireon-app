@@ -24,6 +24,8 @@ export enum CourseLevel {
   CERTIFICATION = 'CERTIFICATION',
   BSC = 'BSC',
   BTECH = 'BTECH',
+  MSC = 'MSC',
+  MTECH = 'MTECH',
   MBA = 'MBA',
 }
 

@@ -45,7 +45,32 @@ class NotificationService {
       for (let i = 0; i < tokens.length; i += 500) chunks.push(tokens.slice(i, i + 500));
       await Promise.allSettled(
         chunks.map((chunk) =>
-          messaging.sendEachForMulticast({ tokens: chunk, notification: { title, body }, data, android: { priority: 'high' }, apns: { headers: { 'apns-priority': '10' } } })
+          messaging.sendEachForMulticast({
+            tokens: chunk,
+            notification: { title, body },
+            data,
+            android: {
+              priority: 'high',
+              notification: {
+                channelId: 'default',
+                visibility: 'public',
+                priority: 'high',
+                sound: 'default',
+                defaultSound: true,
+                defaultVibrateTimings: true,
+              },
+            },
+            apns: {
+              headers: { 'apns-priority': '10' },
+              payload: {
+                aps: {
+                  sound: 'default',
+                  badge: 1,
+                  contentAvailable: true,
+                },
+              },
+            },
+          })
         )
       );
     } catch (err) {

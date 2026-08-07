@@ -20,7 +20,7 @@ class CourseRepository extends BaseRepository<ICourseDocument> {
   async findBySlug(slug: string): Promise<ICourseDocument | null> {
     return CourseModel.findOne({ slug, isActive: true }).populate('assignedTeachers', '-__v').lean().exec() as unknown as Promise<ICourseDocument | null>;
   }
-  async findPopular(limit = 6): Promise<ICourseDocument[]> {
+  async findPopular(limit = 20): Promise<ICourseDocument[]> {
     return CourseModel.find({ isPopular: true, isActive: true }).limit(limit).lean().exec() as unknown as Promise<ICourseDocument[]>;
   }
 }

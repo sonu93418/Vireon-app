@@ -1,14 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import {
+  View, Text, TextInput, TouchableOpacity, StyleSheet,
+  Alert, ActivityIndicator, BackHandler, ScrollView, KeyboardAvoidingView, Platform, Image,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Shield, Eye, EyeOff, Lock, Mail } from 'lucide-react-native';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOW, FONT_SIZE } from '@/src/theme/tokens';
-import apiClient, { setAccessToken, setRefreshToken } from '@/src/services/api';
+import { Eye, EyeOff, Lock, Mail, ArrowLeft } from 'lucide-react-native';
+import { useQueryClient } from '@tanstack/react-query';
+import apiClient, { setAccessToken, setRefreshToken, setUserProfileStorage } from '@/src/services/api';
 import { configureGoogleSignIn, signInWithGoogle } from '@/src/services/google-auth';
 import { registerForPushNotifications, sendFcmTokenToServer } from '@/src/services/notifications';
 
+const APP_LOGO = require('@/assets/favicon.png');
+
+
 export default function MobileLoginScreen() {
+  const queryClient = useQueryClient();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -17,18 +24,25 @@ export default function MobileLoginScreen() {
 
   useEffect(() => {
     configureGoogleSignIn();
+
+    const backAction = () => {
+      router.replace('/onboarding');
+      return true;
+    };
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+    return () => backHandler.remove();
   }, []);
 
-  const onLoginSuccess = async (accessToken: string, refreshToken: string) => {
+  const onLoginSuccess = async (accessToken: string, refreshToken: string, userData?: any) => {
     setAccessToken(accessToken);
     setRefreshToken(refreshToken);
-
-    // Register FCM token after successful login
-    const fcmToken = await registerForPushNotifications();
-    if (fcmToken) {
-      await sendFcmTokenToServer(fcmToken);
+    if (userData) {
+      setUserProfileStorage(userData);
+      queryClient.setQueryData(['auth', 'me'], userData);
     }
-
+    void registerForPushNotifications().then((fcmToken) => {
+      if (fcmToken) void sendFcmTokenToServer(fcmToken);
+    });
     router.replace('/(tabs)');
   };
 
@@ -40,10 +54,11 @@ export default function MobileLoginScreen() {
     setLoading(true);
     try {
       const res = await apiClient.post('/auth/login/email', { email, password });
-      const { accessToken, refreshToken } = res.data.data.tokens;
-      await onLoginSuccess(accessToken, refreshToken);
+      const { tokens, user } = res.data.data;
+      await onLoginSuccess(tokens.accessToken, tokens.refreshToken, user);
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Login failed';
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+        ?? (err instanceof Error ? err.message : 'Unable to connect to server. Please check network.');
       Alert.alert('Login Failed', msg);
     } finally {
       setLoading(false);
@@ -53,41 +68,59 @@ export default function MobileLoginScreen() {
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
     try {
-      const idToken = await signInWithGoogle();
-      if (!idToken) {
+      const gResult = await signInWithGoogle();
+      if (!gResult) {
         setGoogleLoading(false);
-        return; // User cancelled
+        return;
       }
-
-      const res = await apiClient.post('/auth/login/google', { idToken });
-      const { accessToken, refreshToken } = res.data.data.tokens;
-      await onLoginSuccess(accessToken, refreshToken);
+      const res = await apiClient.post('/auth/login/google', {
+        idToken: gResult.idToken,
+        email: gResult.email,
+        fullName: gResult.fullName,
+        avatarUrl: gResult.avatarUrl,
+      });
+      const { tokens, user } = res.data.data;
+      await onLoginSuccess(tokens.accessToken, tokens.refreshToken, user);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
         ?? (err instanceof Error ? err.message : 'Google Sign-In failed');
-      Alert.alert('Google Sign-In Failed', msg);
+      Alert.alert('Google Sign-In', msg);
     } finally {
       setGoogleLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <View style={styles.logoWrap}>
-          <View style={styles.logoBox}>
-            <Shield size={32} color={COLORS.success} />
-          </View>
-          <Text style={styles.title}>Sign In</Text>
-          <Text style={styles.subtitle}>Access Vireon Safety Institute Platform</Text>
-        </View>
+    <View style={styles.root}>
+      {/* ── Green Solid Header ── */}
+      <SafeAreaView style={styles.greenHeader} edges={['top']}>
+        {/* Back Button */}
+        <TouchableOpacity onPress={() => router.replace('/onboarding')} style={styles.backBtn} activeOpacity={0.7}>
+          <ArrowLeft size={20} color="#FFFFFF" />
+        </TouchableOpacity>
 
-        <View style={styles.form}>
+        <View style={styles.headerContent}>
+          <Image source={APP_LOGO} style={styles.logoImage} resizeMode="contain" />
+          <Text style={styles.welcomeLabel}>Welcome Back</Text>
+          <Text style={styles.welcomeTitle}>Sign In to Vireon</Text>
+          <Text style={styles.welcomeSub}>Access your safety training dashboard</Text>
+        </View>
+      </SafeAreaView>
+
+      {/* ── White Form Card ── */}
+      <KeyboardAvoidingView
+        style={styles.whiteCard}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      >
+        <ScrollView contentContainerStyle={styles.formScroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+
+          {/* Email */}
           <View style={styles.inputWrap}>
-            <Mail size={16} color={COLORS.textMuted} style={styles.inputIcon} />
+            <Mail size={18} color="#94A3B8" style={styles.inputIcon} />
             <TextInput
               placeholder="Email address"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor="#94A3B8"
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
@@ -96,40 +129,42 @@ export default function MobileLoginScreen() {
             />
           </View>
 
+          {/* Password */}
           <View style={styles.inputWrap}>
-            <Lock size={16} color={COLORS.textMuted} style={styles.inputIcon} />
+            <Lock size={18} color="#94A3B8" style={styles.inputIcon} />
             <TextInput
               placeholder="Password"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor="#94A3B8"
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
               style={styles.input}
             />
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-              {showPassword ? <EyeOff size={16} color={COLORS.textMuted} /> : <Eye size={16} color={COLORS.textMuted} />}
+              {showPassword ? <EyeOff size={18} color="#94A3B8" /> : <Eye size={18} color="#94A3B8" />}
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={[styles.btn, SHADOW.card]} onPress={handleLogin} disabled={loading || googleLoading}>
-            <Text style={styles.btnText}>{loading ? 'Signing in...' : 'Sign In'}</Text>
+          {/* Sign In Button */}
+          <TouchableOpacity style={styles.primaryBtn} onPress={handleLogin} disabled={loading || googleLoading} activeOpacity={0.85}>
+            {loading ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={styles.primaryBtnText}>Sign In</Text>
+            )}
           </TouchableOpacity>
 
-          {/* ─── Divider ─────────────────────────────────── */}
-          <View style={styles.dividerWrap}>
+          {/* Divider */}
+          <View style={styles.dividerRow}>
             <View style={styles.dividerLine} />
             <Text style={styles.dividerText}>or continue with</Text>
             <View style={styles.dividerLine} />
           </View>
 
-          {/* ─── Google Sign-In ──────────────────────────── */}
-          <TouchableOpacity
-            style={[styles.googleBtn, SHADOW.card]}
-            onPress={handleGoogleLogin}
-            disabled={loading || googleLoading}
-          >
+          {/* Google */}
+          <TouchableOpacity style={styles.googleBtn} onPress={handleGoogleLogin} disabled={loading || googleLoading} activeOpacity={0.85}>
             {googleLoading ? (
-              <ActivityIndicator size="small" color={COLORS.textPrimary} />
+              <ActivityIndicator size="small" color="#334155" />
             ) : (
               <>
                 <Text style={styles.googleIcon}>G</Text>
@@ -138,49 +173,175 @@ export default function MobileLoginScreen() {
             )}
           </TouchableOpacity>
 
+          {/* Register Link */}
           <TouchableOpacity onPress={() => router.push('/(auth)/register')} style={styles.linkWrap}>
-            <Text style={styles.linkText}>Don't have an account? <Text style={styles.linkBold}>Register Now</Text></Text>
+            <Text style={styles.linkText}>
+              Don't have an account? <Text style={styles.linkBold}>Register Now</Text>
+            </Text>
           </TouchableOpacity>
-        </View>
-      </View>
-    </SafeAreaView>
+
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
-  content: { flex: 1, padding: SPACING.xl, justifyContent: 'center' },
-  logoWrap: { alignItems: 'center', marginBottom: 32 },
-  logoBox: { width: 64, height: 64, borderRadius: BORDER_RADIUS.xl, backgroundColor: 'rgba(22,163,74,0.1)', borderWidth: 1, borderColor: COLORS.borderGreen, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  title: { fontSize: FONT_SIZE['3xl'], color: COLORS.textPrimary, fontWeight: '800' },
-  subtitle: { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, marginTop: 4 },
-  form: { gap: 14 },
-  inputWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.card, borderRadius: BORDER_RADIUS.md, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 14, height: 48 },
-  inputIcon: { marginRight: 10 },
-  input: { flex: 1, color: COLORS.textPrimary, fontSize: FONT_SIZE.sm },
-  btn: { backgroundColor: COLORS.accentGreen, borderRadius: BORDER_RADIUS.md, height: 48, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
-  btnText: { color: '#fff', fontSize: FONT_SIZE.sm, fontWeight: '700' },
-  dividerWrap: { flexDirection: 'row', alignItems: 'center', marginVertical: 4 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: COLORS.border },
-  dividerText: { color: COLORS.textMuted, fontSize: FONT_SIZE.xs, marginHorizontal: 12 },
+  root: {
+    flex: 1,
+    backgroundColor: '#16A34A',
+  },
+  // ── Green Header ──
+  greenHeader: {
+    backgroundColor: '#16A34A',
+    paddingBottom: 32,
+    paddingHorizontal: 24,
+  },
+  backBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  headerContent: {
+    alignItems: 'center',
+  },
+  logoImage: {
+    width: 72,
+    height: 72,
+    borderRadius: 18,
+    marginBottom: 14,
+  },
+  welcomeLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.75)',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  welcomeTitle: {
+    fontSize: 26,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  welcomeSub: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.8)',
+  },
+  // ── White Card ──
+  whiteCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    marginTop: -4,
+    overflow: 'hidden',
+  },
+  formScroll: {
+    padding: 24,
+    paddingTop: 28,
+  },
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 14,
+    height: 52,
+    marginBottom: 14,
+  },
+  inputIcon: {
+    marginRight: 10,
+  },
+  input: {
+    flex: 1,
+    color: '#0F172A',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  primaryBtn: {
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: '#16A34A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 18,
+    shadowColor: '#16A34A',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  primaryBtnText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 18,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E2E8F0',
+  },
+  dividerText: {
+    color: '#94A3B8',
+    fontSize: 12,
+    fontWeight: '600',
+    marginHorizontal: 12,
+  },
   googleBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: COLORS.card,
-    borderRadius: BORDER_RADIUS.md,
-    height: 48,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
     gap: 10,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
   googleIcon: {
     fontSize: 18,
     fontWeight: '800',
     color: '#4285F4',
   },
-  googleBtnText: { color: COLORS.textPrimary, fontSize: FONT_SIZE.sm, fontWeight: '600' },
-  linkWrap: { alignItems: 'center', marginTop: 16 },
-  linkText: { fontSize: FONT_SIZE.xs, color: COLORS.textMuted },
-  linkBold: { color: COLORS.success, fontWeight: '700' },
+  googleBtnText: {
+    color: '#334155',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  linkWrap: {
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  linkText: {
+    fontSize: 14,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  linkBold: {
+    color: '#16A34A',
+    fontWeight: '800',
+  },
 });

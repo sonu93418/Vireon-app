@@ -65,10 +65,16 @@ const UserSchema = new Schema<IUserDocument>(
     },
     phone: {
       type: String,
-      required: [true, 'Phone number is required'],
-      unique: true,
+      required: false,
+      sparse: true,
       trim: true,
-      match: [/^[6-9]\d{9}$/, 'Invalid Indian phone number'],
+      validate: {
+        validator: function (v: string) {
+          if (!v) return true;
+          return /^[6-9]\d{9}$/.test(v);
+        },
+        message: 'Invalid Indian phone number',
+      },
     },
     passwordHash: {
       type: String,

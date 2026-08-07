@@ -7,6 +7,7 @@ import {
   Dimensions,
   FlatList,
   ViewToken,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -17,57 +18,37 @@ const { width, height } = Dimensions.get('window');
 
 interface Slide {
   id: string;
-  badge: string;
-  title: string;
-  subtitle: string;
-  description: string;
-  icon: React.ElementType;
-  accentColor: string;
-  features: string[];
+  topTitle: string;
+  topSubtitle: string;
+  sheetTitle: string;
+  sheetDescription: string;
+  image: any;
 }
 
 const SLIDES: Slide[] = [
   {
     id: '1',
-    badge: 'SLIDE 1 OF 3 • COURSES',
-    title: 'Certified Safety Engineering',
-    subtitle: 'Government & Internationally Accredited Diplomas',
-    description: 'Master Industrial Safety, Fire Engineering, EHS Management & Environmental Safety with industry-aligned curriculum.',
-    icon: BookOpen,
-    accentColor: '#16A34A',
-    features: [
-      'Industrial Safety Management (PG Diploma)',
-      'Fire & Safety Engineering Certification',
-      'Construction & Environmental Health Programs',
-    ],
+    topTitle: 'SAFETY FIRST',
+    topSubtitle: 'Govt & ISO 45001 Accredited',
+    sheetTitle: 'Certified Industrial Safety',
+    sheetDescription: 'Master EHS Management, Industrial Hazard Mitigation, and Environmental Health Engineering with India\'s premier safety institute.',
+    image: require('@/assets/splash_engineer.png'),
   },
   {
     id: '2',
-    badge: 'SLIDE 2 OF 3 • PRACTICALS',
-    title: 'Live Practical Training & Drills',
-    subtitle: 'Hands-on Safety Demonstrations & Labs',
-    description: 'Experience real-world emergency response drills, fire hydrants, smoke simulators, and hazard control practicals.',
-    icon: Flame,
-    accentColor: '#22C55E',
-    features: [
-      'Live Fire Extinguisher & Hydrant Training',
-      'Hazmat & Confined Space Entry Drills',
-      'First-Aid & Emergency Rescue Workshops',
-    ],
+    topTitle: 'PRACTICAL LABS',
+    topSubtitle: 'Hands-on Emergency Drills',
+    sheetTitle: 'Live Equipment Training',
+    sheetDescription: 'Experience real-world emergency response drills, fire hydrants, gas detectors, CPR, and hazard control practical workshops.',
+    image: require('@/assets/splash_fire.png'),
   },
   {
     id: '3',
-    badge: 'SLIDE 3 OF 3 • CAREER',
-    title: '100% Placement & Career Support',
-    subtitle: 'Top Industrial Recruiters & Campus Drives',
-    description: 'Join thousands of successful graduates placed in oil & gas, construction, manufacturing, and safety consultancies worldwide.',
-    icon: Award,
-    accentColor: '#4ADE80',
-    features: [
-      'Dedicated Campus Recruitment Drives',
-      'ISO & OSHA Compliant Certification',
-      'Lifetime Alumni & Job Placement Assistance',
-    ],
+    topTitle: 'CAREER DIRECT',
+    topSubtitle: '100% Guaranteed Placement',
+    sheetTitle: 'Campus Recruitment Drives',
+    sheetDescription: 'Vireon guarantees 100% placement support in oil & gas, construction, manufacturing, and MNC EHS consultancies nationwide.',
+    image: require('@/assets/splash_placement.png'),
   },
 ];
 
@@ -101,21 +82,16 @@ export default function OnboardingScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Top Header / Skip */}
-      <View style={styles.header}>
-        <View style={styles.brandRow}>
-          <View style={styles.logoBadge}>
-            <Shield size={20} color="#22C55E" />
-          </View>
-          <Text style={styles.brandName}>VIREON</Text>
-        </View>
-        <TouchableOpacity onPress={finishOnboarding} style={styles.skipBtn}>
+    <View style={styles.container}>
+      {/* Top Floating Logo + Skip Row */}
+      <View style={styles.topRow}>
+        <Image source={require('@/assets/favicon.png')} style={styles.floatingLogo} resizeMode="contain" />
+        <TouchableOpacity onPress={finishOnboarding} style={styles.skipBtn} activeOpacity={0.8}>
           <Text style={styles.skipText}>Skip</Text>
         </TouchableOpacity>
       </View>
 
-      {/* 3-Slide Carousel */}
+      {/* 3-Slide Full Background Hero Carousel */}
       <FlatList
         ref={flatListRef}
         data={SLIDES}
@@ -126,217 +102,136 @@ export default function OnboardingScreen() {
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewConfig}
         renderItem={({ item }) => {
-          const IconComp = item.icon;
           return (
             <View style={styles.slideCard}>
-              {/* Character / Badge Container on Solid Dark Green Background */}
-              <View style={styles.heroBadgeBox}>
-                <View style={[styles.glowCircle, { borderColor: `${item.accentColor}40` }]}>
-                  <View style={[styles.innerIconCircle, { backgroundColor: `${item.accentColor}20` }]}>
-                    <IconComp size={48} color={item.accentColor} />
-                  </View>
-                </View>
-                <View style={styles.characterTag}>
-                  <Text style={styles.characterTagText}>{item.badge}</Text>
-                </View>
+              {/* Top Hero Full-Bleed Poster — No Text Overlay */}
+              <View style={styles.heroSection}>
+                <Image source={item.image} style={styles.characterImage} resizeMode="cover" />
               </View>
 
-              {/* Text & Content */}
-              <View style={styles.contentBox}>
-                <Text style={styles.title}>{item.title}</Text>
-                <Text style={[styles.subtitle, { color: item.accentColor }]}>{item.subtitle}</Text>
-                <Text style={styles.description}>{item.description}</Text>
-
-                {/* Feature Bullet List */}
-                <View style={styles.featureList}>
-                  {item.features.map((feat: string, idx: number) => (
-                    <View key={idx} style={styles.featureItem}>
-                      <CheckCircle2 size={16} color="#22C55E" />
-                      <Text style={styles.featureText}>{feat}</Text>
-                    </View>
+              {/* Bottom White Rounded Sheet with Multi-Color Text */}
+              <View style={styles.bottomSheet}>
+                {/* Pagination Dots */}
+                <View style={styles.paginationRow}>
+                  {SLIDES.map((_, idx) => (
+                    <View
+                      key={idx}
+                      style={[
+                        styles.dot,
+                        currentIndex === idx ? styles.activeDot : styles.inactiveDot,
+                      ]}
+                    />
                   ))}
                 </View>
+
+                {/* Category Badge */}
+                <View style={styles.categoryBadge}>
+                  <Text style={styles.categoryBadgeText}>{item.topSubtitle}</Text>
+                </View>
+
+                {/* Multi-Color Title */}
+                <View style={styles.contentGroup}>
+                  <Text style={styles.sheetTitle}>
+                    <Text style={styles.titleHighlight}>{item.topTitle.split(' ')[0]} </Text>
+                    <Text style={styles.titleDark}>{item.topTitle.split(' ').slice(1).join(' ')}</Text>
+                  </Text>
+                  <Text style={styles.sheetSubtitle}>{item.sheetTitle}</Text>
+                  <Text style={styles.sheetDescription}>{item.sheetDescription}</Text>
+                </View>
+
+                {/* Full-Width Action Button */}
+                <TouchableOpacity onPress={handleNext} style={styles.fullWidthBtn} activeOpacity={0.85}>
+                  <ArrowRight size={20} color="#FFFFFF" />
+                  <Text style={styles.fullWidthBtnText}>
+                    {currentIndex === SLIDES.length - 1 ? 'Get Started' : 'Next'}
+                  </Text>
+                </TouchableOpacity>
               </View>
             </View>
           );
         }}
       />
-
-      {/* Bottom Footer Controls */}
-      <View style={styles.footer}>
-        {/* Pagination Dots */}
-        <View style={styles.paginationRow}>
-          {SLIDES.map((_, idx) => (
-            <View
-              key={idx}
-              style={[
-                styles.dot,
-                currentIndex === idx ? styles.activeDot : styles.inactiveDot,
-              ]}
-            />
-          ))}
-        </View>
-
-        {/* Action Button */}
-        <TouchableOpacity onPress={handleNext} style={styles.nextBtn} activeOpacity={0.85}>
-          <Text style={styles.nextBtnText}>
-            {currentIndex === SLIDES.length - 1 ? 'Get Started' : 'Continue'}
-          </Text>
-          <ArrowRight size={18} color="#030712" />
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#051F11', // Solid dark emerald green background
+    backgroundColor: '#0EA349',
   },
-  header: {
+  topRow: {
+    position: 'absolute',
+    top: 48,
+    left: 20,
+    right: 20,
+    zIndex: 25,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 12,
   },
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  logoBadge: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: 'rgba(34, 197, 94, 0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  brandName: {
-    color: '#F1F5F9',
-    fontSize: 16,
-    fontWeight: '800',
-    letterSpacing: 1,
+  floatingLogo: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
   },
   skipBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+    backgroundColor: 'rgba(0, 0, 0, 0.28)',
+    paddingHorizontal: 16,
+    paddingVertical: 7,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.35)',
   },
   skipText: {
-    color: '#94A3B8',
+    color: '#FFFFFF',
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '800',
   },
   slideCard: {
     width,
+    height,
+    backgroundColor: '#0EA349',
+    justifyContent: 'space-between',
+  },
+  heroSection: {
+    width: width,
+    height: height * 0.66,
+    position: 'relative',
+    overflow: 'hidden',
+    backgroundColor: '#0EA349',
+  },
+  characterImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: width,
+    height: height * 0.66,
+  },
+  bottomSheet: {
+    width,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 36,
+    borderTopRightRadius: 36,
+    marginTop: -32,
     paddingHorizontal: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  heroBadgeBox: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: 20,
-  },
-  glowCircle: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(11, 40, 24, 0.8)',
-    shadowColor: '#22C55E',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  innerIconCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  characterTag: {
-    marginTop: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    backgroundColor: 'rgba(34, 197, 94, 0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(34, 197, 94, 0.3)',
-  },
-  characterTagText: {
-    color: '#4ADE80',
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-  },
-  contentBox: {
-    width: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 24,
-    padding: 20,
-  },
-  title: {
-    color: '#F1F5F9',
-    fontSize: 22,
-    fontWeight: '800',
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginTop: 4,
-    marginBottom: 12,
-  },
-  description: {
-    color: '#94A3B8',
-    fontSize: 13,
-    lineHeight: 19,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  featureList: {
-    gap: 8,
-  },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-  },
-  featureText: {
-    color: '#E2E8F0',
-    fontSize: 12,
-    fontWeight: '500',
-    flex: 1,
-  },
-  footer: {
-    paddingHorizontal: 24,
-    paddingBottom: 24,
-    flexDirection: 'row',
+    paddingTop: 22,
+    paddingBottom: 36,
     alignItems: 'center',
     justifyContent: 'space-between',
+    minHeight: height * 0.38,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: -12 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 12,
+    zIndex: 20,
   },
   paginationRow: {
     flexDirection: 'row',
     gap: 8,
     alignItems: 'center',
+    marginBottom: 10,
   },
   dot: {
     height: 8,
@@ -344,29 +239,82 @@ const styles = StyleSheet.create({
   },
   activeDot: {
     width: 28,
-    backgroundColor: '#22C55E',
+    backgroundColor: '#16A34A',
   },
   inactiveDot: {
     width: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: '#E2E8F0',
   },
-  nextBtn: {
+  categoryBadge: {
+    backgroundColor: '#ECFDF5',
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#D1FAE5',
+  },
+  categoryBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#16A34A',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  contentGroup: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sheetTitle: {
+    fontSize: 26,
+    fontWeight: '900',
+    textAlign: 'center',
+    marginBottom: 6,
+    lineHeight: 32,
+  },
+  titleHighlight: {
+    color: '#16A34A',
+    fontWeight: '900',
+    fontStyle: 'italic',
+  },
+  titleDark: {
+    color: '#0F172A',
+    fontWeight: '800',
+  },
+  sheetSubtitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#334155',
+    textAlign: 'center',
+    marginBottom: 6,
+    fontStyle: 'italic',
+  },
+  sheetDescription: {
+    fontSize: 13,
+    lineHeight: 20,
+    fontWeight: '500',
+    color: '#64748B',
+    textAlign: 'center',
+    paddingHorizontal: 8,
+  },
+  fullWidthBtn: {
+    width: '100%',
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#16A34A',
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#22C55E',
-    paddingHorizontal: 22,
-    paddingVertical: 14,
-    borderRadius: 16,
-    shadowColor: '#22C55E',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
+    shadowColor: '#16A34A',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
     elevation: 6,
   },
-  nextBtnText: {
-    color: '#030712',
-    fontSize: 14,
-    fontWeight: '800',
+  fullWidthBtnText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '900',
   },
 });

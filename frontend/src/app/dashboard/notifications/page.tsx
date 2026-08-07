@@ -25,7 +25,7 @@ const notifSchema = z.object({
 
 type NotifForm = z.infer<typeof notifSchema>;
 
-const NOTIF_TYPES = ['GENERAL', 'CLASS_REMINDER', 'COURSE_UPDATE', 'BLOG_PUBLISHED', 'SYSTEM'];
+const NOTIF_TYPES = ['ANNOUNCEMENT', 'CLASS_REMINDER', 'CLASS_STARTED', 'COURSE_UPDATE', 'NEW_BLOG', 'PLACEMENT', 'SYSTEM'];
 
 export default function NotificationsPage() {
   const [showForm, setShowForm] = useState(false);
@@ -41,7 +41,7 @@ export default function NotificationsPage() {
 
   const { register, handleSubmit, formState: { errors }, reset } = useForm<NotifForm>({
     resolver: zodResolver(notifSchema),
-    defaultValues: { type: 'GENERAL', targetRoles: [] },
+    defaultValues: { type: 'ANNOUNCEMENT', targetRoles: [] },
   });
 
   const sendMutation = useMutation({
@@ -112,25 +112,25 @@ export default function NotificationsPage() {
       )}
 
       {/* Notification List */}
-      <div className="vireon-card p-6 space-y-3">
-        <h2 className="section-title mb-4">Notification History</h2>
+      <div className="clay-card p-6 bg-white border border-green-600/20 space-y-3">
+        <h2 className="section-title mb-4">Broadcast & Push Notification History</h2>
         {isLoading
-          ? Array.from({ length: 5 }).map((_, i) => <div key={i} className="vireon-skeleton h-16 rounded-xl" />)
+          ? Array.from({ length: 5 }).map((_, i) => <div key={i} className="vireon-skeleton h-16 rounded-2xl" />)
           : (data?.data ?? []).map((notif) => (
-              <div key={notif._id} className="flex items-start gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.1] transition-colors">
-                <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0',
-                  notif.type === 'CLASS_REMINDER' ? 'bg-blue-500/10 border border-blue-500/20' : 'bg-vireon-accent-green/10 border border-vireon-accent-green/20')}>
-                  <Bell className={cn('w-4 h-4', notif.type === 'CLASS_REMINDER' ? 'text-blue-400' : 'text-vireon-success')} />
+              <div key={notif._id} className="flex items-start gap-4 p-4 rounded-2xl bg-white border border-green-600/15 hover:border-green-600/30 transition-all shadow-sm">
+                <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0',
+                  notif.type === 'CLASS_REMINDER' ? 'bg-blue-50 border border-blue-200' : 'bg-green-50 border border-green-200')}>
+                  <Bell className={cn('w-4.5 h-4.5', notif.type === 'CLASS_REMINDER' ? 'text-blue-600' : 'text-green-600')} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-vireon-text-primary">{notif.title}</p>
-                    {notif.isSent && <span className="vireon-badge-green text-[10px]">Sent</span>}
-                    <span className="vireon-badge text-[10px] bg-white/[0.04] text-vireon-text-muted border border-white/[0.08]">{notif.type.replace('_', ' ')}</span>
+                    <p className="text-sm font-bold text-slate-900">{notif.title}</p>
+                    {notif.isSent && <span className="vireon-badge-green text-[10px]">Pushed</span>}
+                    <span className="vireon-badge text-[10px] bg-slate-100 text-slate-600 border border-slate-200">{notif.type.replace('_', ' ')}</span>
                   </div>
-                  <p className="text-xs text-vireon-text-muted mt-0.5 line-clamp-2">{notif.body}</p>
+                  <p className="text-xs text-slate-600 font-medium mt-1 line-clamp-2">{notif.body}</p>
                 </div>
-                <span className="text-[10px] text-vireon-text-muted flex-shrink-0">{formatDateTime(notif.createdAt)}</span>
+                <span className="text-[10px] text-slate-400 font-bold flex-shrink-0">{formatDateTime(notif.createdAt)}</span>
               </div>
             ))
         }

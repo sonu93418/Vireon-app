@@ -7,12 +7,15 @@ import { HttpStatusCode } from '../core/errors';
 
 const windowMs = Number(process.env.RATE_LIMIT_WINDOW_MS ?? 900000); // 15 minutes
 
+const isDev = process.env.NODE_ENV !== 'production';
+
 // ─── Global API Rate Limiter ──────────────────────────────────────────────────
 export const globalRateLimiter = rateLimit({
   windowMs,
-  max: Number(process.env.RATE_LIMIT_MAX_REQUESTS ?? 100),
+  max: Number(process.env.RATE_LIMIT_MAX_REQUESTS ?? 1000),
   standardHeaders: true,
   legacyHeaders: false,
+  skip: () => isDev,
   handler: (_req, res) => {
     ResponseHandler.error(
       res,
@@ -27,10 +30,11 @@ export const globalRateLimiter = rateLimit({
 // ─── Strict Auth Rate Limiter (login/register/otp) ────────────────────────────
 export const authRateLimiter = rateLimit({
   windowMs,
-  max: Number(process.env.AUTH_RATE_LIMIT_MAX ?? 5),
+  max: Number(process.env.AUTH_RATE_LIMIT_MAX ?? 500),
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: false,
+  skip: () => isDev,
   handler: (_req, res) => {
     ResponseHandler.error(
       res,

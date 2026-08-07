@@ -4,21 +4,27 @@
 // ============================================================
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
-import Constants from 'expo-constants';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform } from 'react-native';
 import apiClient, { getAccessToken } from './api';
 
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
 // ─── Configure notification behavior safely for native platforms ─────────────
 if (Platform.OS !== 'web') {
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: true,
-      shouldShowBanner: true,
-      shouldShowList: true,
-    }),
-  });
+  try {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
+      }),
+    });
+  } catch {
+    // Ignore notification handler setup errors in unsupported environments
+  }
 }
 
 /**
@@ -26,8 +32,9 @@ if (Platform.OS !== 'web') {
  * Returns null if permissions are denied or the device is not physical.
  */
 export const registerForPushNotifications = async (): Promise<string | null> => {
-  if (Platform.OS === 'web' || !Device.isDevice) {
-    console.log('⚠️ Push notifications require a physical mobile device');
+  if (Platform.OS === 'web' || !Device.isDevice || isExpoGo) {
+    if (isExpoGo) console.log('ℹ️ Push notifications are not available in Expo Go (SDK 53+). Use a Development Build.');
+    else console.log('⚠️ Push notifications require a physical mobile device');
     return null;
   }
 
@@ -36,9 +43,15 @@ export const registerForPushNotifications = async (): Promise<string | null> => 
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
 
-    // Request permission if not already granted
+    // Request permission if not already granted with full lockscreen & sound options
     if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
+      const { status } = await Notifications.requestPermissionsAsync({
+        ios: {
+          allowAlert: true,
+          allowBadge: true,
+          allowSound: true,
+        },
+      });
       finalStatus = status;
     }
 
@@ -47,26 +60,40 @@ export const registerForPushNotifications = async (): Promise<string | null> => 
       return null;
     }
 
-    // Android requires a notification channel
+    // Android requires a high-priority notification channel for lockscreen display
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('default', {
         name: 'Vireon Notifications',
         importance: Notifications.AndroidImportance.MAX,
+        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: '#16A34A',
-        sound: 'default',
         enableLights: true,
         enableVibrate: true,
+        sound: 'default',
+      });
+
+      await Notifications.setNotificationChannelAsync('vireon_alerts', {
+        name: 'Vireon Class & Exam Alerts',
+        importance: Notifications.AndroidImportance.MAX,
+        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+        vibrationPattern: [0, 500, 250, 500],
+        lightColor: '#16A34A',
+        enableLights: true,
+        enableVibrate: true,
+        sound: 'default',
       });
     }
 
-    const tokenData = await Notifications.getDevicePushTokenAsync();
-    const fcmToken = tokenData.data;
-
-    console.log('✅ FCM Device Token:', fcmToken);
-    return fcmToken;
-  } catch (error) {
-    console.error('❌ Failed to get push token:', error);
+    try {
+      const tokenData = await Notifications.getDevicePushTokenAsync();
+      const fcmToken = tokenData?.data ?? null;
+      return fcmToken;
+    } catch {
+      // FirebaseApp not initialized natively in this build environment
+      return null;
+    }
+  } catch {
     return null;
   }
 };
@@ -103,7 +130,7 @@ export const removeFcmTokenFromServer = async (fcmToken: string): Promise<void> 
  * Returns a cleanup function to remove the subscription.
  */
 export const setupNotificationListeners = (): (() => void) => {
-  if (Platform.OS === 'web') return () => {};
+  if (Platform.OS === 'web' || isExpoGo) return () => {};
 
   try {
     const receivedSubscription = Notifications.addNotificationReceivedListener((notification) => {
@@ -129,14 +156,22 @@ export const setupNotificationListeners = (): (() => void) => {
  * Get the current notification badge count.
  */
 export const getBadgeCount = async (): Promise<number> => {
-  if (Platform.OS === 'web') return 0;
-  return Notifications.getBadgeCountAsync();
+  if (Platform.OS === 'web' || isExpoGo) return 0;
+  try {
+    return await Notifications.getBadgeCountAsync();
+  } catch {
+    return 0;
+  }
 };
 
 /**
  * Set the notification badge count.
  */
 export const setBadgeCount = async (count: number): Promise<void> => {
-  if (Platform.OS === 'web') return;
-  await Notifications.setBadgeCountAsync(count);
+  if (Platform.OS === 'web' || isExpoGo) return;
+  try {
+    await Notifications.setBadgeCountAsync(count);
+  } catch {
+    // Ignore error
+  }
 };

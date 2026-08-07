@@ -3,7 +3,7 @@
 // ============================================================
 import mongoose, { Schema, Document, Model } from 'mongoose';
 import slugify from 'slugify';
-import { CourseLevel, CourseDurationType, SyllabusDomain } from '@vireon/shared';
+import { CourseLevel, CourseDurationType, SyllabusDomain } from '../shared/enums';
 
 export interface ICourseDocument extends Document {
   title: string;
@@ -39,13 +39,13 @@ export interface ICourseDocument extends Document {
 
 const CourseSchema = new Schema<ICourseDocument>(
   {
-    title: { type: String, required: true, trim: true, minlength: 5, maxlength: 200 },
+    title: { type: String, required: true, trim: true, minlength: 3, maxlength: 200 },
     code: { type: String, required: true, unique: true, uppercase: true, trim: true },
     slug: { type: String, unique: true, lowercase: true },
     level: { type: String, required: true, enum: Object.values(CourseLevel) },
     domain: { type: String, required: true, enum: Object.values(SyllabusDomain) },
-    description: { type: String, required: true, minlength: 100 },
-    shortDescription: { type: String, required: true, minlength: 20, maxlength: 300 },
+    description: { type: String, required: true, minlength: 10 },
+    shortDescription: { type: String, required: true, minlength: 5, maxlength: 300 },
     duration: { type: Number, required: true, min: 1 },
     durationType: { type: String, required: true, enum: Object.values(CourseDurationType) },
     eligibility: [{ type: String, trim: true }],

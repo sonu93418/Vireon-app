@@ -9,7 +9,7 @@ import { BookOpen, Download, Award, Clock } from 'lucide-react-native';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOW, FONT_SIZE } from '@/src/theme/tokens';
 import apiClient from '@/src/services/api';
 
-const LEVELS = ['All', 'DIPLOMA', 'ADVANCED_DIPLOMA', 'PG_DIPLOMA', 'CERTIFICATION', 'BSC', 'BTECH', 'MBA'];
+const LEVELS = ['All', 'DIPLOMA', 'ADVANCED_DIPLOMA', 'PG_DIPLOMA', 'CERTIFICATION', 'BSC', 'BTECH', 'MSC', 'MTECH', 'MBA'];
 
 interface Course {
   _id: string; title: string; level: string; duration: number; durationType: string;
@@ -61,7 +61,6 @@ export default function CoursesScreen() {
         <FlashList
           data={data?.data ?? []}
           keyExtractor={(item) => item._id}
-          estimatedItemSize={180}
           contentContainerStyle={{ padding: SPACING.base }}
           ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
           renderItem={({ item, index }) => (

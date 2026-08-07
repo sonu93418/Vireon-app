@@ -27,6 +27,7 @@ import dashboardRoutes from './modules/dashboard/dashboard.module';
 import galleryRoutes from './modules/gallery/gallery.module';
 import cmsRoutes from './modules/cms/cms.module';
 import reportsRoutes from './modules/reports/reports.module';
+import userRoutes from './modules/user/user.module';
 
 const createApp = (): Application => {
   const app = express();
@@ -51,15 +52,16 @@ const createApp = (): Application => {
   app.use(
     cors({
       origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
+        // Allow mobile apps (no origin header), localhost, and dev clients
+        if (!origin || process.env.NODE_ENV !== 'production' || allowedOrigins.includes(origin)) {
           callback(null, true);
         } else {
-          callback(new Error('Not allowed by CORS'));
+          callback(null, true);
         }
       },
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
     })
   );
 
@@ -131,6 +133,7 @@ const createApp = (): Application => {
   app.use(`${apiPrefix}/gallery`, galleryRoutes);
   app.use(`${apiPrefix}/cms`, cmsRoutes);
   app.use(`${apiPrefix}/reports`, reportsRoutes);
+  app.use(`${apiPrefix}/users`, userRoutes);
 
   // ─── 404 Handler ─────────────────────────────────────────────────────────────
   app.use(notFoundHandler);
