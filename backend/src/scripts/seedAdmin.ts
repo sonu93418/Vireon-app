@@ -14,16 +14,15 @@ async function seedAdmin() {
     process.exit(1);
   }
 
-  const adminEmail = process.env.SEED_ADMIN_EMAIL;
-  const rawPassword = process.env.SEED_ADMIN_PASSWORD;
-
-  if (!adminEmail || !rawPassword) {
-    console.error('❌ SEED_ADMIN_EMAIL or SEED_ADMIN_PASSWORD environment variables are missing.');
-    process.exit(1);
-  }
+  const adminEmail = process.env.SEED_ADMIN_EMAIL || 'admin@vireonsafety.in';
+  const rawPassword = process.env.SEED_ADMIN_PASSWORD || 'VireonAdmin@2026';
 
   console.log(`Connecting to MongoDB...`);
-  await mongoose.connect(mongoUri);
+  await mongoose.connect(mongoUri, {
+    serverSelectionTimeoutMS: 15000,
+    connectTimeoutMS: 15000,
+    socketTimeoutMS: 45000,
+  });
   console.log(`Connected successfully.`);
 
   const passwordHash = await bcrypt.hash(rawPassword, 12);

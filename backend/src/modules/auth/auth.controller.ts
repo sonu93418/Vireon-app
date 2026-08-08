@@ -137,4 +137,22 @@ export class AuthController {
       next(error);
     }
   };
+
+  updateProfile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { UserModel } = await import('../../models/user.model');
+      const { fullName, avatarUrl, coverImageUrl } = req.body as { fullName?: string; avatarUrl?: string; coverImageUrl?: string };
+      const updateData: Record<string, string> = {};
+      if (fullName) updateData.fullName = fullName;
+      if (avatarUrl) updateData.avatarUrl = avatarUrl;
+      if (coverImageUrl) updateData.coverImageUrl = coverImageUrl;
+
+      const updated = await UserModel.findByIdAndUpdate(req.user!.userId, updateData, { new: true })
+        .select('fullName email phone role avatarUrl coverImageUrl isEmailVerified status')
+        .lean();
+      ResponseHandler.success(res, updated, 'Profile updated successfully');
+    } catch (error) {
+      next(error);
+    }
+  };
 }

@@ -14,6 +14,7 @@ export interface IUserDocument extends Document {
   status: UserStatus;
   avatarUrl?: string;
   avatarPublicId?: string;
+  coverImageUrl?: string;
   isEmailVerified: boolean;
   isPhoneVerified: boolean;
   fcmTokens: string[];
@@ -93,6 +94,7 @@ const UserSchema = new Schema<IUserDocument>(
     },
     avatarUrl: { type: String },
     avatarPublicId: { type: String },
+    coverImageUrl: { type: String },
     isEmailVerified: { type: Boolean, default: false },
     isPhoneVerified: { type: Boolean, default: false },
     fcmTokens: [{ type: String }],
@@ -128,6 +130,7 @@ const UserSchema = new Schema<IUserDocument>(
 UserSchema.index({ email: 1 });
 UserSchema.index({ phone: 1 });
 UserSchema.index({ role: 1, status: 1 });
+UserSchema.index({ status: 1, fcmTokens: 1 });
 UserSchema.index({ createdAt: -1 });
 UserSchema.index({ googleId: 1 }, { sparse: true });
 UserSchema.index({ '$**': 'text' }); // full-text search

@@ -6,24 +6,37 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "vireon",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#16A34A",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#030712"
+      "backgroundColor": "#16A34A"
     },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.vireon.safety",
-      "icon": "./assets/icon.png"
+      "icon": "./assets/icon.png",
+      "backgroundColor": "#16A34A",
+      "splash": {
+        "image": "./assets/splash-icon.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#16A34A"
+      }
     },
     "android": {
       "package": "com.vireon.safety",
       "googleServicesFile": "./google-services.json",
       "usesCleartextTraffic": true,
+      "backgroundColor": "#16A34A",
+      "splash": {
+        "image": "./assets/splash-icon.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#16A34A"
+      },
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#030712"
+        "backgroundColor": "#16A34A"
       }
     },
     "web": {

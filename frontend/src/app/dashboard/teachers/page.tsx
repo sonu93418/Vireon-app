@@ -41,6 +41,45 @@ const teacherSchema = z.object({
 
 type TeacherForm = z.infer<typeof teacherSchema>;
 
+const DEFAULT_TEACHERS: Teacher[] = [
+  {
+    _id: 't-gagan',
+    designation: 'Director & Chief Safety Officer',
+    qualifications: [{ degree: 'Ph.D Safety', institution: 'Vireon Institute', year: 2012 }],
+    specializations: ['Industrial Safety Management', 'Process Safety', 'EHS Policy'],
+    certifications: ['NEBOSH_CERTIFIED', 'OSHA_CERTIFIED'],
+    experienceYears: 18,
+    rating: 4.9,
+    isVerified: true,
+    profileImageUrl: '/teacher_gagan.png',
+    userId: { fullName: 'Dr. Gagan Verma (Gagan Sir)', email: 'gagan@vireonsafety.in' },
+  },
+  {
+    _id: 't-prince',
+    designation: 'Head of Industrial Safety & EHS',
+    qualifications: [{ degree: 'ADIS', institution: 'State Technical Board', year: 2016 }],
+    specializations: ['Fire Engineering', 'Risk Assessment', 'Hazard Control'],
+    certifications: ['OSHA_CERTIFIED', 'ADIS'],
+    experienceYears: 12,
+    rating: 4.8,
+    isVerified: true,
+    profileImageUrl: '/teacher_prince.png',
+    userId: { fullName: 'Prince Sir', email: 'prince@vireonsafety.in' },
+  },
+  {
+    _id: 't-raj',
+    designation: 'Senior Faculty & Fire Engineering Lead',
+    qualifications: [{ degree: 'B.Tech Fire & Safety', institution: 'AICTE Approved', year: 2018 }],
+    specializations: ['ISO 45001 Audit', 'Fire Protection Systems'],
+    certifications: ['ISO_45001_AUDITOR', 'BTECH_FSE'],
+    experienceYears: 10,
+    rating: 4.9,
+    isVerified: true,
+    profileImageUrl: '/teacher_raj.png',
+    userId: { fullName: 'Raj Sir', email: 'raj@vireonsafety.in' },
+  },
+];
+
 export default function TeachersPage() {
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState('');
@@ -52,7 +91,7 @@ export default function TeachersPage() {
       const res = await apiClient.get<{ data: Teacher[] }>('/teachers');
       return res.data;
     },
-    refetchInterval: 5000,
+    refetchInterval: 10000,
     refetchOnWindowFocus: true,
   });
 
@@ -81,8 +120,8 @@ export default function TeachersPage() {
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['teachers'] }),
   });
 
-  const teacherList = data?.data ?? [];
-  const filtered = teacherList.filter((t) => {
+  const rawList = (data?.data && data.data.length > 0) ? data.data : DEFAULT_TEACHERS;
+  const filtered = rawList.filter((t) => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
     const name = (t.userId?.fullName ?? '').toLowerCase();
@@ -98,7 +137,7 @@ export default function TeachersPage() {
         <div>
           <h1 className="font-heading text-2xl font-black text-slate-900">Teachers & Safety Experts</h1>
           <p className="text-xs font-semibold text-slate-500 mt-0.5">
-            Real-time industrial safety trainers, MD/CEO & certified lead auditors ({teacherList.length} Total)
+            Real-time industrial safety trainers, MD/CEO & certified lead auditors ({rawList.length} Total)
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -185,8 +224,21 @@ export default function TeachersPage() {
                   <div>
                     {/* Header: Avatar + Info */}
                     <div className="flex items-start gap-3">
-                      <div className="w-13 h-13 rounded-2xl bg-emerald-600/10 border border-emerald-500/30 flex items-center justify-center font-black text-emerald-700 flex-shrink-0 text-lg shadow-xs">
-                        {t.userId?.fullName ? t.userId.fullName.charAt(0).toUpperCase() : 'T'}
+                      <div className="w-14 h-14 rounded-2xl bg-emerald-600/10 border-2 border-emerald-500/30 flex items-center justify-center font-black text-emerald-700 flex-shrink-0 text-lg shadow-xs overflow-hidden">
+                        {(() => {
+                          const name = (t.userId?.fullName ?? '').toLowerCase();
+                          const imgUrl = (t.profileImageUrl ?? t.userId?.email ?? '').toLowerCase();
+                          let src = t.profileImageUrl;
+
+                          if (name.includes('gagan') || imgUrl.includes('gagan')) src = '/teacher_gagan.png';
+                          else if (name.includes('prince') || imgUrl.includes('prince')) src = '/teacher_prince.png';
+                          else if (name.includes('raj') || imgUrl.includes('raj')) src = '/teacher_raj.png';
+
+                          if (src) {
+                            return <img src={src} alt={t.userId?.fullName ?? 'Faculty'} className="w-full h-full object-cover rounded-xl" />;
+                          }
+                          return t.userId?.fullName ? t.userId.fullName.charAt(0).toUpperCase() : 'T';
+                        })()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">

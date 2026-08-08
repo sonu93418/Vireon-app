@@ -11,10 +11,12 @@ import {
   FlatList,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import Animated, {
   FadeInDown,
@@ -24,9 +26,11 @@ import Animated, {
   useSharedValue,
   interpolate,
 } from 'react-native-reanimated';
-import { Shield, Award, ChevronRight, Video, BookOpen, Bell } from 'lucide-react-native';
+import { Shield, Award, ChevronRight, Video, BookOpen, Bell, Sparkles, FileText, GraduationCap, ShieldCheck, CheckCircle2, X } from 'lucide-react-native';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOW, FONT_SIZE } from '@/src/theme/tokens';
-import apiClient from '@/src/services/api';
+import apiClient, { getAccessToken, getUserProfileStorage, setUserProfileStorage } from '@/src/services/api';
+import { getCacheData, setCacheData } from '@/src/services/queryCache';
+import { RealConfettiCannon } from '@/src/components/RealConfettiCannon';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH * 0.72;
@@ -42,8 +46,8 @@ const POSTERS = [
 ];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-interface Course { _id: string; title: string; level: string; duration: number; durationType: string; feeAmount: number; thumbnailUrl?: string; isPlacementGuaranteed: boolean }
-interface Teacher { _id: string; designation: string; certifications: string[]; profileImageUrl?: string; userId: { fullName: string; avatarUrl?: string } }
+interface Course { _id: string; title: string; code?: string; level: string; duration: number; durationType: string; feeAmount: number; thumbnailUrl?: string; isPlacementGuaranteed: boolean }
+interface Teacher { _id: string; designation: string; certifications: string[]; profileImageUrl?: string; localImage?: any; userId: { fullName: string; avatarUrl?: string } }
 interface ClassItem { _id: string; title: string; subject: string; scheduledAt: string; zoomJoinUrl: string; teacherId: { userId: { fullName: string } } }
 
 // ─── Auto-Scrolling Poster Carousel ───────────────────────────────────────────
@@ -112,10 +116,10 @@ function PosterCarousel() {
 }
 
 // ─── Registration Badge Component ─────────────────────────────────────────────
-function RegBadge({ label }: { label: string }) {
+function RegBadge({ label, icon: IconComponent = Shield }: { label: string; icon?: any }) {
   return (
     <View style={[styles.regBadge, { borderColor: COLORS.borderGreen }]}>
-      <Shield size={10} color={COLORS.success} />
+      <IconComponent size={10} color={COLORS.success} />
       <Text style={styles.regBadgeText}>{label}</Text>
     </View>
   );
@@ -139,8 +143,35 @@ function SectionHeader({ title, subtitle, onSeeAll }: { title: string; subtitle?
   );
 }
 
+const COURSE_POSTERS: Record<string, any> = {
+  'DFIS-101': require('../../assets/course_dfis.png'),
+  'ADIS-201': require('../../assets/course_adis.png'),
+  'PGDIS-301': require('../../assets/course_pgdis.png'),
+  'IOSH-MSWS': require('../../assets/course_iosh.png'),
+  'OSHA-3040': require('../../assets/course_osha.png'),
+  'BTECH-FSE': require('../../assets/course_btech.png'),
+  'MBA-SEHS': require('../../assets/course_mba.png'),
+};
+
+const getCoursePoster = (item: { code?: string; title?: string; thumbnailUrl?: string }) => {
+  if (item.code && COURSE_POSTERS[item.code]) {
+    return COURSE_POSTERS[item.code];
+  }
+  const titleLower = item.title?.toLowerCase() ?? '';
+  if (titleLower.includes('fire') || titleLower.includes('diploma in fire')) return require('../../assets/course_dfis.png');
+  if (titleLower.includes('advanced diploma')) return require('../../assets/course_adis.png');
+  if (titleLower.includes('pg diploma')) return require('../../assets/course_pgdis.png');
+  if (titleLower.includes('iosh')) return require('../../assets/course_iosh.png');
+  if (titleLower.includes('osha')) return require('../../assets/course_osha.png');
+  if (titleLower.includes('b.tech') || titleLower.includes('btech')) return require('../../assets/course_btech.png');
+  if (titleLower.includes('mba')) return require('../../assets/course_mba.png');
+  if (item.thumbnailUrl) return { uri: item.thumbnailUrl };
+  return require('../../assets/course_dfis.png');
+};
+
 // ─── Course Card ──────────────────────────────────────────────────────────────
 function CourseCard({ item, index }: { item: Course; index: number }) {
+  const posterSource = getCoursePoster(item);
   return (
     <Animated.View entering={FadeInRight.delay(index * 80).duration(400)}>
       <TouchableOpacity
@@ -153,13 +184,7 @@ function CourseCard({ item, index }: { item: Course; index: number }) {
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
           style={styles.courseCardGradient}
         >
-          {item.thumbnailUrl ? (
-            <Image source={{ uri: item.thumbnailUrl }} style={styles.courseThumbnail} resizeMode="cover" />
-          ) : (
-            <View style={styles.courseIconBg}>
-              <BookOpen size={28} color={COLORS.success} />
-            </View>
-          )}
+          <Image source={posterSource} style={styles.courseThumbnail} resizeMode="cover" />
           <View style={styles.courseCardContent}>
             <View style={[styles.levelBadge, { borderColor: COLORS.borderGreen, backgroundColor: COLORS.greenGlow }]}>
               <Text style={styles.levelBadgeText}>{item.level.replace(/_/g, ' ')}</Text>
@@ -167,7 +192,7 @@ function CourseCard({ item, index }: { item: Course; index: number }) {
             <Text style={styles.courseTitle} numberOfLines={2}>{item.title}</Text>
             <View style={styles.courseMeta}>
               <Text style={styles.courseMetaText}>{item.duration} {item.durationType.toLowerCase()}</Text>
-              <Text style={styles.courseFee}>₹{item.feeAmount.toLocaleString('en-IN')}</Text>
+              <Text style={styles.courseFee}>Govt Certified</Text>
             </View>
             {item.isPlacementGuaranteed && (
               <View style={styles.placementBadge}>
@@ -182,8 +207,57 @@ function CourseCard({ item, index }: { item: Course; index: number }) {
   );
 }
 
+const DEFAULT_TEACHERS: Teacher[] = [
+  {
+    _id: 't-gagan',
+    designation: 'Director & Chief Safety Officer',
+    certifications: ['Ph.D Safety', 'NEBOSH IGC'],
+    localImage: require('../../assets/teacher_gagan.png'),
+    userId: { fullName: 'Dr. Gagan Verma (Gagan Sir)' },
+  },
+  {
+    _id: 't-prince',
+    designation: 'Head of Industrial Safety & EHS',
+    certifications: ['OSHA Authorized', 'ADIS'],
+    localImage: require('../../assets/teacher_prince.png'),
+    userId: { fullName: 'Prince Sir' },
+  },
+  {
+    _id: 't-raj',
+    designation: 'Senior Faculty & Fire Lead',
+    certifications: ['ISO 45001 Auditor', 'B.Tech FSE'],
+    localImage: require('../../assets/teacher_raj.png'),
+    userId: { fullName: 'Raj Sir' },
+  },
+];
+
+const getTeacherAvatarSource = (item: { localImage?: any; profileImageUrl?: string; userId?: { fullName?: string; avatarUrl?: string } }) => {
+  if (item.localImage) return item.localImage;
+  const name = (item.userId?.fullName ?? '').toLowerCase();
+  const url = (item.profileImageUrl ?? item.userId?.avatarUrl ?? '').toLowerCase();
+
+  if (name.includes('gagan') || url.includes('gagan')) {
+    return require('../../assets/teacher_gagan.png');
+  }
+  if (name.includes('prince') || url.includes('prince')) {
+    return require('../../assets/teacher_prince.png');
+  }
+  if (name.includes('raj') || url.includes('raj')) {
+    return require('../../assets/teacher_raj.png');
+  }
+
+  const validUrl = item.profileImageUrl || item.userId?.avatarUrl;
+  if (validUrl && (validUrl.startsWith('http://') || validUrl.startsWith('https://') || validUrl.startsWith('data:'))) {
+    return { uri: validUrl };
+  }
+
+  return null;
+};
+
 // ─── Teacher Card ─────────────────────────────────────────────────────────────
 function TeacherCard({ item, index }: { item: Teacher; index: number }) {
+  const imageSource = getTeacherAvatarSource(item);
+
   return (
     <Animated.View entering={FadeInDown.delay(index * 100).duration(400)}>
       <TouchableOpacity
@@ -191,16 +265,16 @@ function TeacherCard({ item, index }: { item: Teacher; index: number }) {
         style={[styles.teacherCard, SHADOW.card]}
         activeOpacity={0.85}
       >
-        <View style={styles.teacherAvatar}>
-          {item.profileImageUrl || item.userId?.avatarUrl ? (
-            <Image source={{ uri: item.profileImageUrl ?? item.userId.avatarUrl }} style={styles.teacherAvatarImg} />
+        <View style={styles.teacherAvatarSquare}>
+          {imageSource ? (
+            <Image source={imageSource} style={styles.teacherAvatarImgSquare} resizeMode="cover" />
           ) : (
             <Text style={styles.teacherAvatarText}>{item.userId?.fullName?.charAt(0) ?? 'T'}</Text>
           )}
         </View>
-        <Text style={styles.teacherName} numberOfLines={1}>{item.userId?.fullName ?? 'Trainer'}</Text>
+        <Text style={styles.teacherName} numberOfLines={1}>{item.userId?.fullName ?? 'Faculty'}</Text>
         <Text style={styles.teacherDesignation} numberOfLines={1}>{item.designation}</Text>
-        {item.certifications.slice(0, 1).map((cert) => (
+        {item.certifications?.slice(0, 1).map((cert) => (
           <View key={cert} style={styles.certBadge}>
             <Text style={styles.certText}>{cert.replace(/_/g, ' ')}</Text>
           </View>
@@ -213,25 +287,63 @@ function TeacherCard({ item, index }: { item: Teacher; index: number }) {
 // ─── Class Card ───────────────────────────────────────────────────────────────
 function ClassCard({ item }: { item: ClassItem }) {
   const date = new Date(item.scheduledAt);
+  const teacherName = item.teacherId?.userId?.fullName ?? 'Faculty Trainer';
+  const teacherImg = getTeacherAvatarSource({ localImage: null, profileImageUrl: (item.teacherId as any)?.profileImageUrl, userId: { fullName: teacherName } });
+
   return (
-    <TouchableOpacity style={[styles.classCard, SHADOW.card]} activeOpacity={0.85}>
-      <LinearGradient colors={['rgba(22,163,74,0.08)', 'transparent']} style={styles.classCardGradient}>
-        <View style={styles.classTime}>
-          <Text style={styles.classDay}>{date.toLocaleDateString('en-IN', { weekday: 'short' })}</Text>
-          <Text style={styles.classHour}>{date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}</Text>
+    <TouchableOpacity
+      style={[styles.classCard, SHADOW.card]}
+      onPress={() => router.push('/classes')}
+      activeOpacity={0.85}
+    >
+      <LinearGradient colors={['rgba(34,197,94,0.09)', 'rgba(255,255,255,0.02)']} style={styles.classCardGradient}>
+        {/* Left Accent Bar */}
+        <View style={styles.classAccentBar} />
+
+        {/* Date Time Badge */}
+        <View style={styles.classTimeBox}>
+          <Text style={styles.classDayText}>{date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</Text>
+          <Text style={styles.classHourText}>{date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}</Text>
         </View>
-        <View style={styles.classInfo}>
-          <Text style={styles.classTitle} numberOfLines={2}>{item.title}</Text>
-          <Text style={styles.classByTeacher}>by {item.teacherId?.userId?.fullName ?? 'Faculty'}</Text>
+
+        {/* Info */}
+        <View style={styles.classMainContent}>
+          <View style={styles.classLivePill}>
+            <View style={styles.livePulseDot} />
+            <Text style={styles.classLivePillText}>LIVE SESSION</Text>
+          </View>
+          <Text style={styles.classTitle} numberOfLines={1}>{item.title}</Text>
+          <View style={styles.classFacultyRow}>
+            <View style={styles.classFacultyAvatar}>
+              {teacherImg ? (
+                <Image source={teacherImg} style={styles.classFacultyImg} resizeMode="cover" />
+              ) : (
+                <Text style={styles.classFacultyInitial}>{teacherName.charAt(0)}</Text>
+              )}
+            </View>
+            <Text style={styles.classByTeacher} numberOfLines={1}>{teacherName}</Text>
+          </View>
         </View>
-        <TouchableOpacity style={styles.joinBtn}>
+
+        {/* Join Button */}
+        <TouchableOpacity style={styles.joinBtnSmall} onPress={() => router.push('/classes')}>
           <Video size={12} color="#fff" />
-          <Text style={styles.joinBtnText}>Join</Text>
+          <Text style={styles.joinBtnSmallText}>Join</Text>
         </TouchableOpacity>
       </LinearGradient>
     </TouchableOpacity>
   );
 }
+
+const DEFAULT_COURSES: Course[] = [
+  { _id: '1', code: 'DFIS-101', title: 'Diploma in Fire & Industrial Safety', level: 'DIPLOMA', duration: 12, durationType: 'MONTHS', feeAmount: 18500, isPlacementGuaranteed: true },
+  { _id: '2', code: 'ADIS-201', title: 'Advanced Diploma in Industrial Safety', level: 'ADVANCED_DIPLOMA', duration: 1, durationType: 'YEARS', feeAmount: 25000, isPlacementGuaranteed: true },
+  { _id: '3', code: 'PGDIS-301', title: 'PG Diploma in Industrial Safety (PGDIS)', level: 'PG_DIPLOMA', duration: 1, durationType: 'YEARS', feeAmount: 32000, isPlacementGuaranteed: true },
+  { _id: '4', code: 'IOSH-MSWS', title: 'IOSH (Managing Safely & Working Safely)', level: 'CERTIFICATION', duration: 3, durationType: 'WEEKS', feeAmount: 15000, isPlacementGuaranteed: true },
+  { _id: '5', code: 'OSHA-3040', title: 'OSHA 30-Hour & 40-Hour General Industry', level: 'CERTIFICATION', duration: 4, durationType: 'WEEKS', feeAmount: 14000, isPlacementGuaranteed: true },
+  { _id: '6', code: 'BTECH-FSE', title: 'B.Tech in Fire & Safety Engineering', level: 'BTECH', duration: 4, durationType: 'YEARS', feeAmount: 65000, isPlacementGuaranteed: true },
+  { _id: '7', code: 'MBA-SEHS', title: 'MBA in Safety & EHS Management', level: 'MBA', duration: 2, durationType: 'YEARS', feeAmount: 85000, isPlacementGuaranteed: true },
+];
 
 // ─── Main Home Screen ─────────────────────────────────────────────────────────
 export default function HomeScreen() {
@@ -243,30 +355,98 @@ export default function HomeScreen() {
     transform: [{ translateY: interpolate(scrollY.value, [0, 100], [0, -8]) }],
   }));
 
-  const { data: popularCourses, isLoading: coursesLoading, refetch: refetchCourses } = useQuery({
+  const isLoggedIn = !!getAccessToken();
+
+  const { data: userProfile, refetch: refetchUser } = useQuery({
+    queryKey: ['auth', 'me'],
+    queryFn: async () => {
+      const token = getAccessToken();
+      if (!token) return getUserProfileStorage();
+      try {
+        const res = await apiClient.get<{ data: any }>('/auth/me');
+        if (res.data?.data) setUserProfileStorage(res.data.data);
+        return res.data.data;
+      } catch {
+        return getUserProfileStorage();
+      }
+    },
+    initialData: () => getUserProfileStorage(),
+  });
+
+  useFocusEffect(
+    useCallback(() => {
+      void refetchUser();
+    }, [refetchUser])
+  );
+
+  const activeUser = userProfile ?? getUserProfileStorage();
+
+  const { data: popularCourses, isLoading: coursesLoading, refetch: refetchCourses } = useQuery<Course[]>({
     queryKey: ['courses', 'popular'],
-    queryFn: async () => { const res = await apiClient.get<{ data: Course[] }>('/courses/popular'); return res.data.data; },
+    queryFn: async () => {
+      const res = await apiClient.get<{ data: Course[] }>('/courses/popular');
+      setCacheData('courses_popular', res.data.data);
+      return res.data.data;
+    },
+    initialData: () => getCacheData<Course[]>('courses_popular') ?? undefined,
+    staleTime: 5 * 60 * 1000,       // 5 min cache
+    refetchInterval: 3 * 60 * 1000, // auto-refresh every 3 min
+    retry: 1,
   });
 
-  const { data: teachers, isLoading: teachersLoading } = useQuery({
+  const { data: teachers, isLoading: teachersLoading, refetch: refetchTeachers } = useQuery({
     queryKey: ['teachers', 'active'],
-    queryFn: async () => { const res = await apiClient.get<{ data: Teacher[] }>('/teachers/active'); return res.data.data; },
+    queryFn: async () => {
+      const res = await apiClient.get<{ data: Teacher[] }>('/teachers/active');
+      setCacheData('teachers_active', res.data.data);
+      return res.data.data;
+    },
+    initialData: () => getCacheData<Teacher[]>('teachers_active') ?? undefined,
+    staleTime: 10 * 60 * 1000,
+    retry: 1,
   });
 
-  const { data: upcomingClasses } = useQuery({
+  const { data: upcomingClasses, refetch: refetchClasses } = useQuery({
     queryKey: ['classes', 'upcoming'],
-    queryFn: async () => { const res = await apiClient.get<{ data: ClassItem[] }>('/classes/upcoming?limit=5'); return res.data.data; },
+    queryFn: async () => {
+      const res = await apiClient.get<{ data: ClassItem[] }>('/classes/upcoming?limit=5');
+      setCacheData('classes_upcoming', res.data.data);
+      return res.data.data;
+    },
+    initialData: () => getCacheData<ClassItem[]>('classes_upcoming') ?? undefined,
+    staleTime: 2 * 60 * 1000,       // 2 min cache for classes
+    refetchInterval: 60 * 1000,     // refresh every 60s for real-time feel
+    retry: 1,
   });
+
+  const params = useLocalSearchParams<{ celebrate?: string }>();
+  const [showConfetti, setShowConfetti] = useState(false);
+
+  useEffect(() => {
+    const user = getUserProfileStorage();
+    if (params.celebrate === 'true' || user?.justLoggedIn) {
+      setShowConfetti(true);
+
+      if (user?.justLoggedIn) {
+        setUserProfileStorage({ ...user, justLoggedIn: false });
+      }
+    }
+  }, [params.celebrate]);
 
   const [refreshing, setRefreshing] = React.useState(false);
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await refetchCourses();
+    await Promise.allSettled([refetchUser(), refetchCourses(), refetchTeachers(), refetchClasses()]);
     setRefreshing(false);
-  }, [refetchCourses]);
+  }, [refetchUser, refetchCourses, refetchTeachers, refetchClasses]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar style="dark" translucent animated />
+
+      {/* Real GPU-Accelerated Bottom-to-Top Confetti Burst (Non-blocking, 6s Duration) */}
+      <RealConfettiCannon visible={showConfetti} onComplete={() => setShowConfetti(false)} />
+
       {/* Ambient Glow Background */}
       <View style={styles.glowBg} pointerEvents="none">
         <LinearGradient
@@ -285,25 +465,138 @@ export default function HomeScreen() {
       >
         {/* Hero Header */}
         <Animated.View style={[styles.heroHeader, headerAnimStyle]}>
-          <View style={styles.heroTop}>
-            <View>
-              <Text style={styles.welcomeText}>Welcome to</Text>
-              <Text style={styles.instituteName}>Vireon Safety{'\n'}Institute</Text>
-            </View>
-            <TouchableOpacity onPress={() => router.push('/notifications')} style={[styles.notifBtn, SHADOW.card]} accessibilityLabel="Notifications">
-              <Bell size={20} color={COLORS.textSecondary} />
-              <View style={styles.notifDot} />
+          {/* Top Profile & Greeting Row */}
+          <View style={styles.topProfileBar}>
+            <TouchableOpacity
+              style={styles.profileBadgeWrap}
+              onPress={() => router.push('/(tabs)/profile')}
+              activeOpacity={0.85}
+            >
+              <View style={styles.avatarCircle}>
+                {activeUser?.avatarUrl ? (
+                  <Image source={{ uri: activeUser.avatarUrl }} style={styles.avatarImgHeader} />
+                ) : (
+                  <Text style={styles.avatarText}>
+                    {(activeUser?.fullName ?? 'V').charAt(0).toUpperCase()}
+                  </Text>
+                )}
+                <View style={styles.onlinePulseDot} />
+              </View>
+              <View style={styles.userTextWrap}>
+                <View style={styles.welcomeRow}>
+                  <Text style={styles.welcomeText}>Hello, {activeUser?.fullName?.split(' ')[0] ?? 'Safety Officer'}</Text>
+                  <Sparkles size={12} color="#F59E0B" />
+                </View>
+                <Text style={styles.instituteSubtitle}>Vireon Safety Institute • ISO Certified</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push('/notifications')}
+              style={[styles.notifBtn, SHADOW.card]}
+              accessibilityLabel="Notifications"
+              activeOpacity={0.85}
+            >
+              <Bell size={20} color={COLORS.textPrimary} />
+              <View style={styles.notifBadgeCount}>
+                <Text style={styles.notifBadgeCountText}>3</Text>
+              </View>
             </TouchableOpacity>
           </View>
 
-          {/* Govt Registration Badges */}
+          {/* Quick Interactive Actions Grid — Rich Green Filled Buttons */}
+          <View style={styles.quickShortcutsGrid}>
+            <TouchableOpacity
+              style={[styles.shortcutItemGreen, SHADOW.card]}
+              onPress={() => router.push('/(tabs)/classes')}
+              activeOpacity={0.85}
+            >
+              <LinearGradient
+                colors={['#16A34A', '#059669']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.shortcutGradient}
+              >
+                <View style={styles.shortcutIconBgWhite}>
+                  <Video size={13} color="#16A34A" />
+                  <View style={styles.livePulseDotSmall} />
+                </View>
+                <Text style={styles.shortcutLabelWhite} numberOfLines={1}>Live Classes</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.shortcutItemGreen, SHADOW.card]}
+              onPress={() => router.push('/(tabs)/resources')}
+              activeOpacity={0.85}
+            >
+              <LinearGradient
+                colors={['#059669', '#047857']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.shortcutGradient}
+              >
+                <View style={styles.shortcutIconBgWhite}>
+                  <FileText size={13} color="#059669" />
+                </View>
+                <Text style={styles.shortcutLabelWhite} numberOfLines={1}>PDF Notes</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.shortcutItemGreen, SHADOW.card]}
+              onPress={() => router.push('/(tabs)/courses')}
+              activeOpacity={0.85}
+            >
+              <LinearGradient
+                colors={['#047857', '#065F46']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.shortcutGradient}
+              >
+                <View style={styles.shortcutIconBgWhite}>
+                  <GraduationCap size={13} color="#047857" />
+                </View>
+                <Text style={styles.shortcutLabelWhite} numberOfLines={1}>Courses</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.shortcutItemGreen, SHADOW.card]}
+              onPress={() => router.push('/(tabs)/courses')}
+              activeOpacity={0.85}
+            >
+              <LinearGradient
+                colors={['#065F46', '#064E3B']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.shortcutGradient}
+              >
+                <View style={styles.shortcutIconBgWhite}>
+                  <Award size={13} color="#065F46" />
+                </View>
+                <Text style={styles.shortcutLabelWhite} numberOfLines={1}>Placement</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+
+          {/* Govt Registration Badges Ticker */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.badgesRow} contentContainerStyle={styles.badgesContent}>
-            <RegBadge label="MCA Reg." />
-            <RegBadge label="MSME Reg." />
-            <RegBadge label="NSDM Reg." />
-            <RegBadge label="ISO 45001" />
-            <RegBadge label="ISO 9001" />
-            <RegBadge label="ISO 14001" />
+            <TouchableOpacity onPress={() => Alert.alert('Govt Verification', 'MCA Registered Institute (Govt of India)')} activeOpacity={0.7}>
+              <RegBadge label="MCA Reg." icon={ShieldCheck} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => Alert.alert('Govt Verification', 'MSME Certified Educational Organisation')} activeOpacity={0.7}>
+              <RegBadge label="MSME Certified" icon={CheckCircle2} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => Alert.alert('Govt Verification', 'NSDM Skill Development Partner')} activeOpacity={0.7}>
+              <RegBadge label="NSDM Approved" icon={Award} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => Alert.alert('ISO Certification', 'ISO 45001:2018 Occupational Health & Safety Certified')} activeOpacity={0.7}>
+              <RegBadge label="ISO 45001:2018" icon={Shield} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => Alert.alert('ISO Certification', 'ISO 9001:2015 Quality Management Certified')} activeOpacity={0.7}>
+              <RegBadge label="ISO 9001:2015" icon={Shield} />
+            </TouchableOpacity>
           </ScrollView>
         </Animated.View>
 
@@ -313,26 +606,40 @@ export default function HomeScreen() {
         </Animated.View>
 
         {/* Popular Courses */}
-        <View style={styles.section}>
-          <SectionHeader title="Popular Courses" subtitle="Govt. certified industrial safety programs" onSeeAll={() => router.push('/(tabs)/courses')} />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalList}>
-            {coursesLoading
-              ? Array.from({ length: 3 }).map((_, i) => <View key={i} style={[styles.courseCard, styles.skeleton]} />)
-              : (popularCourses ?? []).map((course, i) => <CourseCard key={course._id} item={course} index={i} />)
-            }
-          </ScrollView>
-        </View>
+        {(() => {
+          const hasPopular = Boolean(popularCourses && popularCourses.length > 0);
+          const listToRender = hasPopular ? (popularCourses as Course[]) : DEFAULT_COURSES;
+          return (
+            <View style={styles.section}>
+              <SectionHeader title="Popular Courses" subtitle="Govt. certified industrial safety programs" onSeeAll={() => router.push('/(tabs)/courses')} />
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalList}>
+                {coursesLoading && !hasPopular
+                  ? Array.from({ length: 3 }).map((_, i) => <View key={i} style={[styles.courseCard, styles.skeleton]} />)
+                  : listToRender.map((course, i) => (
+                      <CourseCard key={course._id} item={course} index={i} />
+                    ))
+                }
+              </ScrollView>
+            </View>
+          );
+        })()}
 
         {/* Industrial Trainers */}
-        <View style={styles.section}>
-          <SectionHeader title="Get Trained By" subtitle="Industrial Experts & Certified Trainers" onSeeAll={() => router.push('/(tabs)/courses')} />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalList}>
-            {teachersLoading
-              ? Array.from({ length: 3 }).map((_, i) => <View key={i} style={[styles.teacherCard, styles.skeleton]} />)
-              : (teachers ?? []).map((teacher, i) => <TeacherCard key={teacher._id} item={teacher} index={i} />)
-            }
-          </ScrollView>
-        </View>
+        {(() => {
+          const hasTeachers = Boolean(teachers && teachers.length > 0);
+          const teachersList = hasTeachers ? (teachers as Teacher[]) : DEFAULT_TEACHERS;
+          return (
+            <View style={styles.section}>
+              <SectionHeader title="Get Trained By" subtitle="Industrial Experts & Certified Trainers" onSeeAll={() => router.push('/(tabs)/courses')} />
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalList}>
+                {teachersLoading && !hasTeachers
+                  ? Array.from({ length: 3 }).map((_, i) => <View key={i} style={[styles.teacherCard, styles.skeleton]} />)
+                  : teachersList.map((teacher, i) => <TeacherCard key={teacher._id} item={teacher} index={i} />)
+                }
+              </ScrollView>
+            </View>
+          );
+        })()}
 
         {/* Upcoming Online Classes */}
         {upcomingClasses && upcomingClasses.length > 0 && (
@@ -353,22 +660,44 @@ export default function HomeScreen() {
 
 // ─── StyleSheet ───────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
+  container: { flex: 1, backgroundColor: COLORS.bg, position: 'relative' },
+  topWelcomeBannerWrap: { position: 'absolute', top: 10, left: SPACING.base, right: SPACING.base, zIndex: 9999, elevation: 9999, borderRadius: BORDER_RADIUS.xl, overflow: 'hidden' },
+  topWelcomeBannerGradient: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12, gap: 10 },
+  topWelcomeBannerIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  topWelcomeBannerTextWrap: { flex: 1 },
+  topWelcomeBannerTitle: { fontSize: 13, color: '#FFF', fontWeight: '900' },
+  topWelcomeBannerSub: { fontSize: 10, color: 'rgba(255,255,255,0.9)', marginTop: 1, fontWeight: '600' },
+  closeBannerBtn: { padding: 4, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 12 },
   glowBg: { ...StyleSheet.absoluteFillObject },
   topGlow: { position: 'absolute', top: 0, left: 0, right: 0, height: 300 },
   scrollContent: { paddingBottom: SPACING['4xl'] },
 
-  // Hero
-  heroHeader: { paddingHorizontal: SPACING.base, paddingTop: SPACING.base, paddingBottom: SPACING.md },
-  heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: SPACING.lg },
-  welcomeText: { fontSize: FONT_SIZE.sm, color: COLORS.textMuted, fontWeight: '600', letterSpacing: 0.5 },
-  instituteName: { fontSize: FONT_SIZE['3xl'], color: COLORS.textPrimary, fontWeight: '800', lineHeight: 40, letterSpacing: -0.5, marginTop: 2 },
+  // Hero Header
+  heroHeader: { paddingHorizontal: SPACING.base, paddingTop: SPACING.sm, paddingBottom: SPACING.sm },
+  topProfileBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  profileBadgeWrap: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
+  avatarCircle: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#10B981', alignItems: 'center', justifyContent: 'center', position: 'relative', borderWidth: 2, borderColor: '#A7F3D0', overflow: 'hidden' },
+  avatarImgHeader: { width: 38, height: 38, borderRadius: 19 },
+  avatarText: { fontSize: 18, color: '#FFF', fontWeight: '800' },
+  onlinePulseDot: { position: 'absolute', bottom: 1, right: 1, width: 10, height: 10, borderRadius: 5, backgroundColor: '#22C55E', borderWidth: 2, borderColor: '#FFF' },
+  userTextWrap: { flex: 1 },
+  welcomeRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  welcomeText: { fontSize: 11, color: COLORS.textMuted, fontWeight: '700' },
+  instituteSubtitle: { fontSize: FONT_SIZE.xs + 1, color: COLORS.textPrimary, fontWeight: '800', marginTop: 1 },
 
-  notifBtn: { width: 44, height: 44, borderRadius: BORDER_RADIUS.md, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center' },
-  notifDot: { position: 'absolute', top: 10, right: 10, width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.success },
+  notifBtn: { width: 42, height: 42, borderRadius: BORDER_RADIUS.md, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  notifBadgeCount: { position: 'absolute', top: 4, right: 4, backgroundColor: '#EF4444', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 8, minWidth: 16, alignItems: 'center' },
+  notifBadgeCountText: { fontSize: 9, color: '#FFF', fontWeight: '800' },
+
+  quickShortcutsGrid: { flexDirection: 'row', gap: 6, marginBottom: 12 },
+  shortcutItemGreen: { flex: 1, borderRadius: BORDER_RADIUS.md, overflow: 'hidden', borderWidth: 1, borderColor: '#34D399' },
+  shortcutGradient: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 7, paddingVertical: 8 },
+  shortcutIconBgWhite: { width: 24, height: 24, borderRadius: BORDER_RADIUS.sm, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  livePulseDotSmall: { position: 'absolute', top: -1, right: -1, width: 6, height: 6, borderRadius: 3, backgroundColor: '#EF4444' },
+  shortcutLabelWhite: { fontSize: 10, color: '#FFFFFF', fontWeight: '800' },
 
   badgesRow: { marginHorizontal: -SPACING.base },
-  badgesContent: { paddingHorizontal: SPACING.base, gap: 8, paddingBottom: SPACING.md },
+  badgesContent: { paddingHorizontal: SPACING.base, gap: 8, paddingBottom: 8 },
   regBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: BORDER_RADIUS.full, borderWidth: 1, backgroundColor: '#D1FAE5' },
   regBadgeText: { fontSize: 10, color: '#047857', fontWeight: '700' },
 
@@ -433,9 +762,9 @@ const styles = StyleSheet.create({
   placementText: { fontSize: 10, color: COLORS.success, fontWeight: '700' },
 
   // Teacher Card
-  teacherCard: { width: 140, borderRadius: BORDER_RADIUS.xl, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, padding: SPACING.md, alignItems: 'center' },
-  teacherAvatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#ECFDF5', borderWidth: 2, borderColor: COLORS.borderGreen, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  teacherAvatarImg: { width: 60, height: 60, borderRadius: 30 },
+  teacherCard: { width: 144, borderRadius: BORDER_RADIUS.xl, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border, padding: SPACING.md, alignItems: 'center' },
+  teacherAvatarSquare: { width: 76, height: 76, borderRadius: BORDER_RADIUS.lg, backgroundColor: '#ECFDF5', borderWidth: 2, borderColor: COLORS.borderGreen, alignItems: 'center', justifyContent: 'center', marginBottom: 10, overflow: 'hidden' },
+  teacherAvatarImgSquare: { width: '100%', height: '100%', borderRadius: BORDER_RADIUS.md },
   teacherAvatarText: { fontSize: FONT_SIZE.xl, color: COLORS.success, fontWeight: '800' },
   teacherName: { fontSize: FONT_SIZE.sm, color: COLORS.textPrimary, fontWeight: '700', textAlign: 'center' },
   teacherDesignation: { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, marginTop: 2, textAlign: 'center' },
@@ -444,16 +773,24 @@ const styles = StyleSheet.create({
 
   // Class Card
   classesList: { paddingHorizontal: SPACING.base, gap: 10 },
-  classCard: { borderRadius: BORDER_RADIUS.xl, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.border, backgroundColor: '#FFFFFF' },
-  classCardGradient: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: SPACING.md },
-  classTime: { alignItems: 'center', minWidth: 48 },
-  classDay: { fontSize: 10, color: COLORS.textMuted, fontWeight: '600', textTransform: 'uppercase' },
-  classHour: { fontSize: FONT_SIZE.sm, color: COLORS.textPrimary, fontWeight: '700', marginTop: 2 },
-  classInfo: { flex: 1 },
-  classTitle: { fontSize: FONT_SIZE.sm, color: COLORS.textPrimary, fontWeight: '700', lineHeight: 18 },
-  classByTeacher: { fontSize: FONT_SIZE.xs, color: COLORS.textMuted, marginTop: 2 },
-  joinBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: COLORS.accentGreen, paddingHorizontal: 10, paddingVertical: 6, borderRadius: BORDER_RADIUS.sm },
-  joinBtnText: { fontSize: FONT_SIZE.xs, color: '#fff', fontWeight: '700' },
+  classCard: { borderRadius: BORDER_RADIUS.xl, overflow: 'hidden', borderWidth: 1, borderColor: COLORS.borderGreen, backgroundColor: '#FFFFFF' },
+  classCardGradient: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: SPACING.md, position: 'relative' },
+  classAccentBar: { position: 'absolute', top: 0, left: 0, bottom: 0, width: 4, backgroundColor: COLORS.success },
+  classTimeBox: { alignItems: 'center', backgroundColor: '#ECFDF5', paddingHorizontal: 8, paddingVertical: 6, borderRadius: BORDER_RADIUS.md, borderWidth: 1, borderColor: COLORS.borderGreen, minWidth: 64 },
+  classDayText: { fontSize: 10, color: COLORS.success, fontWeight: '800' },
+  classHourText: { fontSize: 10, color: COLORS.textMuted, fontWeight: '700', marginTop: 2 },
+  classMainContent: { flex: 1 },
+  classLivePill: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 },
+  livePulseDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.success },
+  classLivePillText: { fontSize: 8, color: COLORS.success, fontWeight: '800', letterSpacing: 0.5 },
+  classTitle: { fontSize: FONT_SIZE.xs + 1, color: COLORS.textPrimary, fontWeight: '800', lineHeight: 18 },
+  classFacultyRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  classFacultyAvatar: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#ECFDF5', borderWidth: 1, borderColor: COLORS.borderGreen, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  classFacultyImg: { width: '100%', height: '100%' },
+  classFacultyInitial: { fontSize: 10, color: COLORS.success, fontWeight: '800' },
+  classByTeacher: { fontSize: 11, color: COLORS.textMuted, fontWeight: '600' },
+  joinBtnSmall: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: COLORS.accentGreen, paddingHorizontal: 12, paddingVertical: 8, borderRadius: BORDER_RADIUS.md },
+  joinBtnSmallText: { fontSize: FONT_SIZE.xs, color: '#fff', fontWeight: '800' },
 
   // Skeleton
   skeleton: { backgroundColor: 'rgba(16,185,129,0.06)', height: 220 },

@@ -37,11 +37,14 @@ export const passwordSchema = z
 
 export const paginationSchema = z.object({
   page: z.coerce.number().min(1).default(1),
-  limit: z.coerce.number().min(1).max(100).default(10),
+  limit: z.coerce.number().min(1).max(100).default(50),
   search: z.string().optional(),
   sortBy: z.string().optional(),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
-});
+  level: z.string().optional(),
+  domain: z.string().optional(),
+  isPopular: z.string().optional(),
+}).passthrough();
 
 // ─── Auth Schemas ─────────────────────────────────────────────────────────────
 
@@ -195,9 +198,9 @@ export const updateCourseSchema = createCourseSchema.partial();
 
 export const createClassSchema = z.object({
   title: z.string().min(3).max(200).trim(),
-  subject: z.string().optional().default('Industrial Safety Management'),
+  subject: z.string().optional().default('Industrial Safety'),
   description: z.string().max(1000).optional().default('Live interactive safety drill and lecture'),
-  courseId: objectIdSchema.or(z.string()),
+  courseId: objectIdSchema.or(z.string()).optional(),   // optional — admin may not link to a specific course
   teacherId: objectIdSchema.or(z.string()),
   scheduledAt: z.string().or(z.date()).transform((v) => new Date(v).toISOString()),
   durationMinutes: z.number().int().min(15).max(480).default(60),

@@ -17,7 +17,13 @@ export const configureAgenda = async (): Promise<Agenda> => {
     db: {
       address: uri,
       collection: 'agenda_jobs',
-      options: {},
+      options: {
+        maxPoolSize: 5,
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+        connectTimeoutMS: 10000,
+        family: 4,
+      },
     },
     processEvery: '30 seconds',
     maxConcurrency: 10,
@@ -26,7 +32,13 @@ export const configureAgenda = async (): Promise<Agenda> => {
   });
 
   agendaInstance.on('ready', () => logger.info('✅ Agenda.js job queue ready'));
-  agendaInstance.on('error', (err: Error) => logger.error('❌ Agenda.js error:', err));
+  agendaInstance.on('error', (err: any) => {
+    if (err?.message?.includes('ECONNRESET') || err?.code === 'ECONNRESET') {
+      logger.warn('⚠️ Agenda.js socket reset connection re-establishing...');
+      return;
+    }
+    logger.error('❌ Agenda.js error:', err);
+  });
 
   await agendaInstance.start();
   logger.info('✅ Agenda.js background job scheduler started');

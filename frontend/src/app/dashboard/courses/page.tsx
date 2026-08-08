@@ -134,7 +134,7 @@ export default function CoursesAdminPage() {
                       <h3 className="font-heading text-base font-bold text-vireon-text-primary mt-2">{c.title}</h3>
                       <p className="text-xs text-vireon-text-muted mt-0.5">Code: {c.code} • Duration: {c.duration} {c.durationType.toLowerCase()}</p>
                     </div>
-                    <span className="text-base font-bold text-vireon-success">{formatCurrency(c.feeAmount)}</span>
+                    <span className="vireon-badge-green text-xs">Govt Accredited</span>
                   </div>
                   <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between text-xs">
                     {c.isPlacementGuaranteed && (

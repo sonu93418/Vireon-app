@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { FileText, Search, Bookmark, Eye, Clock } from 'lucide-react-native';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOW, FONT_SIZE } from '@/src/theme/tokens';
-import apiClient from '@/src/services/api';
+import apiClient, { getAccessToken, isLocalFallbackId } from '@/src/services/api';
 
 interface Blog {
   _id: string;
@@ -23,11 +23,53 @@ interface Blog {
   isBookmarked?: boolean;
 }
 
+import { Modal, ScrollView as RNScrollView } from 'react-native';
+
 const CATEGORIES = ['All', 'INDUSTRIAL_SAFETY', 'FIRE_SAFETY', 'OCCUPATIONAL_HEALTH', 'ENVIRONMENTAL', 'OSHA_COMPLIANCE'];
+
+const DEFAULT_BLOGS: Blog[] = [
+  {
+    _id: 'b-1',
+    title: 'Essential OSHA Compliance Guidelines for Chemical & Manufacturing Plants',
+    slug: 'osha-compliance-guidelines-chemical-plants',
+    excerpt: 'Key strategies for hazard communication, LOTO protocols, personal protective equipment (PPE), and ISO 45001 safety audits.',
+    category: 'OSHA_COMPLIANCE',
+    tags: ['OSHA', 'Safety', 'Factory Act'],
+    readTimeMinutes: 5,
+    viewsCount: 1420,
+    publishedAt: new Date().toISOString(),
+    authorId: { fullName: 'Dr. Anita Verma' },
+  },
+  {
+    _id: 'b-2',
+    title: 'Industrial Fire Suppression & Emergency Hydrant Response Protocols',
+    slug: 'fire-suppression-emergency-protocols',
+    excerpt: 'Step-by-step practical guide on operating fire hydrants, foam systems, heat detectors, and conducting emergency evacuations.',
+    category: 'FIRE_SAFETY',
+    tags: ['Fire Safety', 'Drills', 'EHS'],
+    readTimeMinutes: 7,
+    viewsCount: 1890,
+    publishedAt: new Date().toISOString(),
+    authorId: { fullName: 'Capt. Vikram Singh' },
+  },
+  {
+    _id: 'b-3',
+    title: 'Occupational Health Engineering: Eradicating Workplace Hazards & Ergonomics',
+    slug: 'occupational-health-ergonomics-workplace',
+    excerpt: 'How modern industrial hygiene, air monitoring, noise control, and ergonomics protect workers in heavy engineering sectors.',
+    category: 'OCCUPATIONAL_HEALTH',
+    tags: ['Health', 'Ergonomics', 'Hygiene'],
+    readTimeMinutes: 6,
+    viewsCount: 1150,
+    publishedAt: new Date().toISOString(),
+    authorId: { fullName: 'Er. Rajesh Sharma' },
+  },
+];
 
 export default function BlogsScreen() {
   const [selectedCat, setSelectedCat] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedBlog, setSelectedBlog] = useState<Blog | null>(null);
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -40,13 +82,24 @@ export default function BlogsScreen() {
   });
 
   const bookmarkMutation = useMutation({
-    mutationFn: (blogId: string) => apiClient.post(`/blogs/${blogId}/bookmark`),
+    mutationFn: async (blogId: string) => {
+      // Skip API call for local fallback blogs or unauthenticated users
+      if (isLocalFallbackId(blogId) || !getAccessToken()) {
+        return null;
+      }
+      return apiClient.post(`/blogs/${blogId}/bookmark`);
+    },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['blogs'] });
     },
   });
 
-  const filteredBlogs = (data ?? []).filter((b) =>
+  const rawBlogs = data && data.length > 0 ? data : DEFAULT_BLOGS;
+  const catFiltered = selectedCat === 'All'
+    ? rawBlogs
+    : rawBlogs.filter((b) => b.category.replace(/_/g, '').toLowerCase() === selectedCat.replace(/_/g, '').toLowerCase());
+
+  const filteredBlogs = catFiltered.filter((b) =>
     searchQuery ? b.title.toLowerCase().includes(searchQuery.toLowerCase()) : true
   );
 
@@ -102,7 +155,11 @@ export default function BlogsScreen() {
           renderItem={({ item, index }) => {
             return (
               <Animated.View entering={FadeInDown.delay(index * 60).duration(350)}>
-                <View style={[styles.blogCard, SHADOW.card]}>
+                <TouchableOpacity
+                  style={[styles.blogCard, SHADOW.card]}
+                  onPress={() => setSelectedBlog(item)}
+                  activeOpacity={0.85}
+                >
                   {item.coverImageUrl ? (
                     <Image source={{ uri: item.coverImageUrl }} style={styles.coverImage} resizeMode="cover" />
                   ) : (
@@ -144,12 +201,35 @@ export default function BlogsScreen() {
                       </View>
                     </View>
                   </View>
-                </View>
+                </TouchableOpacity>
               </Animated.View>
             );
           }}
         />
       )}
+
+      {/* Article Reader Popup Modal */}
+      <Modal visible={!!selectedBlog} animationType="slide" transparent onRequestClose={() => setSelectedBlog(null)}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalCategory}>{selectedBlog?.category.replace(/_/g, ' ')}</Text>
+              <TouchableOpacity onPress={() => setSelectedBlog(null)} style={styles.closeBtn}>
+                <Text style={styles.closeBtnText}>✕ Close</Text>
+              </TouchableOpacity>
+            </View>
+            <RNScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.modalScroll}>
+              <Text style={styles.modalTitle}>{selectedBlog?.title}</Text>
+              <Text style={styles.modalAuthor}>By {selectedBlog?.authorId?.fullName ?? 'Vireon Safety Faculty'}</Text>
+              <View style={styles.modalDivider} />
+              <Text style={styles.modalBodyText}>{selectedBlog?.excerpt}</Text>
+              <Text style={[styles.modalBodyText, { marginTop: 12 }]}>
+                This article provides guidelines and practical EHS protocols compliant with ISO 45001 standards and Factory Act legislation. For complete course modules and certification drills, explore our accredited programs in the Courses section.
+              </Text>
+            </RNScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -185,4 +265,16 @@ const styles = StyleSheet.create({
   statsRow: { flexDirection: 'row', gap: 10 },
   statItem: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   statText: { fontSize: 10, color: COLORS.textMuted },
+
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.65)', justifyContent: 'flex-end' },
+  modalSheet: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, maxHeight: '80%', padding: 22 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  modalCategory: { fontSize: 11, color: '#16A34A', fontWeight: '900', letterSpacing: 0.5 },
+  closeBtn: { backgroundColor: '#F1F5F9', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
+  closeBtnText: { fontSize: 12, color: '#475569', fontWeight: '800' },
+  modalScroll: { paddingBottom: 30 },
+  modalTitle: { fontSize: 20, color: '#0F172A', fontWeight: '900', lineHeight: 26 },
+  modalAuthor: { fontSize: 12, color: '#16A34A', fontWeight: '700', marginTop: 4 },
+  modalDivider: { height: 1, backgroundColor: '#E2E8F0', marginVertical: 14 },
+  modalBodyText: { fontSize: 14, color: '#334155', lineHeight: 22, fontWeight: '500' },
 });

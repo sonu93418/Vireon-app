@@ -21,7 +21,11 @@ class CourseRepository extends BaseRepository<ICourseDocument> {
     return CourseModel.findOne({ slug, isActive: true }).populate('assignedTeachers', '-__v').lean().exec() as unknown as Promise<ICourseDocument | null>;
   }
   async findPopular(limit = 20): Promise<ICourseDocument[]> {
-    return CourseModel.find({ isPopular: true, isActive: true }).limit(limit).lean().exec() as unknown as Promise<ICourseDocument[]>;
+    return CourseModel.find({ isPopular: true, isActive: true })
+      .select('title code slug level duration durationType feeAmount isPlacementGuaranteed thumbnailUrl isPopular')
+      .limit(limit)
+      .lean()
+      .exec() as unknown as Promise<ICourseDocument[]>;
   }
 }
 

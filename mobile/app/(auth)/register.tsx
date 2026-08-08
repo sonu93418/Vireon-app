@@ -4,6 +4,7 @@ import {
   Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform, BackHandler, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { router } from 'expo-router';
 import { User, Mail, Phone, Lock, ArrowLeft } from 'lucide-react-native';
 import { useQueryClient } from '@tanstack/react-query';
@@ -74,7 +75,7 @@ export default function MobileRegisterScreen() {
       setAccessToken(tokens.accessToken);
       setRefreshToken(tokens.refreshToken);
       if (user) {
-        setUserProfileStorage(user);
+        setUserProfileStorage({ ...user, justLoggedIn: true });
         queryClient.setQueryData(['auth', 'me'], user);
       }
 
@@ -82,9 +83,7 @@ export default function MobileRegisterScreen() {
         if (fcmToken) void sendFcmTokenToServer(fcmToken);
       });
 
-      Alert.alert('Welcome to Vireon!', 'Your account has been created successfully.', [
-        { text: 'Explore Platform', onPress: () => router.replace('/(tabs)') },
-      ]);
+      router.replace({ pathname: '/(tabs)', params: { celebrate: 'true' } } as any);
     } catch (err: unknown) {
       const errData = (err as any)?.response?.data;
       const firstFieldError = errData?.errors?.[0]?.message;
@@ -114,7 +113,7 @@ export default function MobileRegisterScreen() {
       setAccessToken(tokens.accessToken);
       setRefreshToken(tokens.refreshToken);
       if (user) {
-        setUserProfileStorage(user);
+        setUserProfileStorage({ ...user, justLoggedIn: true });
         queryClient.setQueryData(['auth', 'me'], user);
       }
 
@@ -122,7 +121,7 @@ export default function MobileRegisterScreen() {
         if (fcmToken) void sendFcmTokenToServer(fcmToken);
       });
 
-      router.replace('/(tabs)');
+      router.replace({ pathname: '/(tabs)', params: { celebrate: 'true' } } as any);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
         ?? (err instanceof Error ? err.message : 'Google Sign-Up failed');
@@ -134,6 +133,7 @@ export default function MobileRegisterScreen() {
 
   return (
     <View style={styles.root}>
+      <StatusBar style="light" translucent animated />
       {/* ── Green Solid Header ── */}
       <SafeAreaView style={styles.greenHeader} edges={['top']}>
         {/* Back Button */}

@@ -27,6 +27,7 @@ class TeacherRepository extends BaseRepository<ITeacherDocument> {
   }
   async findActiveTeachers(): Promise<ITeacherDocument[]> {
     return TeacherModel.find({ isActive: true, isVerified: true })
+      .select('designation specialization profileImageUrl certifications rating totalStudentsCount isAvailableForMentorship userId')
       .populate('userId', 'fullName email avatarUrl')
       .sort({ rating: -1 })
       .lean()

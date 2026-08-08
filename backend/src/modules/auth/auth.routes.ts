@@ -195,5 +195,7 @@ router.patch('/change-password', authenticate, validate({ body: changePasswordSc
  *       - BearerAuth: []
  */
 router.get('/me', authenticate, controller.me);
+router.patch('/me', authenticate, controller.updateProfile);
+router.patch('/profile', authenticate, controller.updateProfile);
 
 export default router;

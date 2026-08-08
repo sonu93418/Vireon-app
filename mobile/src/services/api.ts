@@ -6,8 +6,6 @@ import * as Device from 'expo-device';
 const getDynamicApiUrl = (): string => {
   let envUrl = process.env.EXPO_PUBLIC_API_URL;
 
-  // On Android devices/emulators, "localhost" points to the device itself.
-  // We rewrite localhost on Android to 10.0.2.2 or Metro host IP for reliable API connectivity.
   if (envUrl && Platform.OS === 'android' && (envUrl.includes('localhost') || envUrl.includes('127.0.0.1'))) {
     envUrl = undefined;
   }
@@ -30,9 +28,9 @@ const getDynamicApiUrl = (): string => {
     }
   }
 
-  // 3. Local Wi-Fi Network IP fallback
+  // 3. Local Wi-Fi Network IP fallback (Host IP)
   if (Platform.OS === 'android') {
-    return 'http://10.105.200.148:5000/api/v1';
+    return 'http://10.64.3.148:5000/api/v1';
   }
 
   return 'http://localhost:5000/api/v1';
@@ -98,27 +96,47 @@ export const getUserProfileStorage = (): any | null => {
 };
 
 export const clearTokens = (): void => {
-  if (mmkvInstance) {
-    mmkvInstance.delete('accessToken');
-    mmkvInstance.delete('refreshToken');
-    mmkvInstance.delete('userProfile');
-  } else {
-    memoryStorage.delete('accessToken');
-    memoryStorage.delete('refreshToken');
-    memoryStorage.delete('userProfile');
-  }
+  try {
+    if (mmkvInstance) {
+      mmkvInstance.delete('accessToken');
+      mmkvInstance.delete('refreshToken');
+      mmkvInstance.delete('userProfile');
+    }
+  } catch {}
+  memoryStorage.delete('accessToken');
+  memoryStorage.delete('refreshToken');
+  memoryStorage.delete('userProfile');
 };
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000,
-  headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+  timeout: 25000,
+  headers: {
+    Accept: 'application/json',
+  },
 });
+
+// ─── Local fallback IDs that should never hit the server ─────────────────────
+export const LOCAL_FALLBACK_PREFIXES = ['cls-', 'b-', 'dflt-'];
+export const isLocalFallbackId = (id: string): boolean =>
+  LOCAL_FALLBACK_PREFIXES.some((prefix) => id.startsWith(prefix));
 
 // ─── Request Interceptor ───────────────────────────────────────────────────────
 apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = getAccessToken();
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  } else {
+    delete config.headers.Authorization;
+  }
+
+  // Handle FormData in React Native — remove default Content-Type header so boundary is auto-generated
+  if (config.data && typeof config.data === 'object' && (config.data._parts || config.data instanceof FormData)) {
+    delete config.headers['Content-Type'];
+  } else if (!config.headers['Content-Type']) {
+    config.headers['Content-Type'] = 'application/json';
+  }
+
   return config;
 });
 
@@ -136,29 +154,31 @@ apiClient.interceptors.response.use(
   async (error: AxiosError) => {
     const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    // Handle 401 Unauthorized Token Refresh
+    // ─── Handle 401 Unauthorized: try Token Refresh ──────────────────────────
     if (error.response?.status === 401 && !original._retry) {
+      // If no refresh token at all — clear state and silently reject
+      const refreshToken = getRefreshToken();
+      if (!refreshToken) {
+        clearTokens();
+        return Promise.reject(error);
+      }
+
       if (isRefreshing) {
+        // Queue this request until refresh completes
         return new Promise((resolve, reject) => failedQueue.push({ resolve, reject })).then((token) => {
           original.headers.Authorization = `Bearer ${token}`;
           return apiClient(original);
-        });
+        }).catch((err) => Promise.reject(err));
       }
 
       original._retry = true;
       isRefreshing = true;
 
-      const refreshToken = getRefreshToken();
-      if (!refreshToken) {
-        clearTokens();
-        processQueue(error, null);
-        return Promise.reject(error);
-      }
-
       try {
         const res = await axios.post<{ data: { accessToken: string; refreshToken: string } }>(
           `${API_BASE_URL}/auth/refresh`,
-          { refreshToken }
+          { refreshToken },
+          { timeout: 8000 }
         );
         const { accessToken, refreshToken: newRefreshToken } = res.data.data;
         setAccessToken(accessToken);
@@ -167,31 +187,35 @@ apiClient.interceptors.response.use(
         original.headers.Authorization = `Bearer ${accessToken}`;
         return apiClient(original);
       } catch (refreshErr) {
+        // Refresh failed — clear all auth state so we don't spam anymore
         clearTokens();
         processQueue(refreshErr, null);
+        // Remove Authorization from this failed request so it won't resend
+        delete original.headers.Authorization;
         return Promise.reject(refreshErr);
       } finally {
         isRefreshing = false;
       }
     }
 
-    // Automatic Network Error Multi-IP Retry Strategy
-    if ((!error.response || error.code === 'ERR_NETWORK') && original && !(original as any)._ipRetry) {
+    // ─── Network Error Multi-IP Fast Retry ───────────────────────────────────
+    if ((!error.response || error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') && original && !(original as any)._ipRetry) {
       (original as any)._ipRetry = true;
       const currentUrl = original.baseURL ?? API_BASE_URL;
 
       let fallbackUrl = 'http://10.0.2.2:5000/api/v1';
       if (currentUrl.includes('10.0.2.2')) {
-        fallbackUrl = 'http://10.105.200.148:5000/api/v1';
-      } else if (currentUrl.includes('10.105.200.148')) {
+        fallbackUrl = 'http://10.64.3.148:5000/api/v1';
+      } else if (currentUrl.includes('10.64.3.148')) {
         fallbackUrl = 'http://10.0.2.2:5000/api/v1';
       }
 
       original.baseURL = fallbackUrl;
+      original.timeout = 5000;
       try {
         return await axios(original);
       } catch {
-        // Return original error if fallback also fails
+        // Both IPs failed — return original error
       }
     }
 

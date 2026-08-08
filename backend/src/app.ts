@@ -28,6 +28,7 @@ import galleryRoutes from './modules/gallery/gallery.module';
 import cmsRoutes from './modules/cms/cms.module';
 import reportsRoutes from './modules/reports/reports.module';
 import userRoutes from './modules/user/user.module';
+import { cacheMiddleware, bustCache, cacheStatsHandler } from './middlewares/cache.middleware';
 
 const createApp = (): Application => {
   const app = express();
@@ -82,6 +83,13 @@ const createApp = (): Application => {
     })
   );
 
+  // ─── HTTP Keep-Alive (reuse TCP connections from mobile clients) ─────────────
+  app.use((_req, res, next) => {
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Keep-Alive', 'timeout=30, max=100');
+    next();
+  });
+
   // ─── Health Check ────────────────────────────────────────────────────────────
   app.get('/health', (_req, res) => {
     res.status(200).json({
@@ -120,20 +128,37 @@ const createApp = (): Application => {
   const swaggerSpec = swaggerJSDoc(swaggerOptions);
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { customSiteTitle: 'Vireon API Docs' }));
 
-  // ─── API Routes (v1) ─────────────────────────────────────────────────────────
+  // ─── API Routes (v1) with Caching ────────────────────────────────────────────
   const apiPrefix = '/api/v1';
+
+  // Auth — no cache (security-sensitive)
   app.use(`${apiPrefix}/auth`, authRoutes);
-  app.use(`${apiPrefix}/courses`, courseRoutes);
-  app.use(`${apiPrefix}/teachers`, teacherRoutes);
-  app.use(`${apiPrefix}/classes`, classRoutes);
-  app.use(`${apiPrefix}/blogs`, blogRoutes);
+
+  // Courses — 5 min cache (changes rarely)
+  app.use(`${apiPrefix}/courses`, cacheMiddleware(300, 'courses'), courseRoutes);
+
+  // Teachers — 10 min cache (very stable)
+  app.use(`${apiPrefix}/teachers`, cacheMiddleware(600, 'teachers'), teacherRoutes);
+
+  // Classes — 60s cache (schedules can change)
+  app.use(`${apiPrefix}/classes`, cacheMiddleware(60, 'classes'), classRoutes);
+
+  // Blogs — 3 min cache
+  app.use(`${apiPrefix}/blogs`, cacheMiddleware(180, 'blogs'), blogRoutes);
+
+  // Notifications — no cache
   app.use(`${apiPrefix}/notifications`, notificationRoutes);
+
+  // Upload, Dashboard, Gallery, CMS, Reports, Users — no cache
   app.use(`${apiPrefix}/upload`, uploadRoutes);
   app.use(`${apiPrefix}/dashboard`, dashboardRoutes);
   app.use(`${apiPrefix}/gallery`, galleryRoutes);
   app.use(`${apiPrefix}/cms`, cmsRoutes);
   app.use(`${apiPrefix}/reports`, reportsRoutes);
   app.use(`${apiPrefix}/users`, userRoutes);
+
+  // Cache stats endpoint (admin only)
+  app.get(`${apiPrefix}/cache/stats`, cacheStatsHandler);
 
   // ─── 404 Handler ─────────────────────────────────────────────────────────────
   app.use(notFoundHandler);

@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Platform, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Home, BookOpen, Video, FileText, User } from 'lucide-react-native';
+import { Home, BookOpen, Video, FileText, User, Download } from 'lucide-react-native';
 import { COLORS, BORDER_RADIUS } from '@/src/theme/tokens';
 import Animated, {
   useAnimatedStyle,
@@ -19,7 +19,7 @@ const TAB_CONFIG = [
   { name: 'index', label: 'Home', Icon: Home },
   { name: 'courses', label: 'Courses', Icon: BookOpen },
   { name: 'classes', label: 'Classes', Icon: Video },
-  { name: 'blogs', label: 'Blogs', Icon: FileText },
+  { name: 'resources', label: 'Resources', Icon: Download },
   { name: 'profile', label: 'Profile', Icon: User },
 ];
 
@@ -165,8 +165,10 @@ export default function TabLayout() {
       <Tabs.Screen name="index" options={{ title: 'Home' }} />
       <Tabs.Screen name="courses" options={{ title: 'Courses' }} />
       <Tabs.Screen name="classes" options={{ title: 'Classes' }} />
-      <Tabs.Screen name="blogs" options={{ title: 'Blogs' }} />
+      <Tabs.Screen name="resources" options={{ title: 'Resources' }} />
       <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
+      {/* Hide blogs from tab bar — accessible via deeplink or home button */}
+      <Tabs.Screen name="blogs" options={{ href: null }} />
     </Tabs>
   );
 }

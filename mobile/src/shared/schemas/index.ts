@@ -40,11 +40,14 @@ export const passwordSchema = z
 
 export const paginationSchema = z.object({
   page: z.coerce.number().min(1).default(1),
-  limit: z.coerce.number().min(1).max(100).default(10),
+  limit: z.coerce.number().min(1).max(100).default(50),
   search: z.string().optional(),
   sortBy: z.string().optional(),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
-});
+  level: z.string().optional(),
+  domain: z.string().optional(),
+  isPopular: z.string().optional(),
+}).passthrough();
 
 // ─── Auth Schemas ─────────────────────────────────────────────────────────────
 

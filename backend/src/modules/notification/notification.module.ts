@@ -8,7 +8,7 @@ import { NotificationModel, INotificationDocument } from '../../models/notificat
 import { UserModel } from '../../models/user.model';
 import { BaseRepository } from '../../core/base.repository';
 import { ResponseHandler } from '../../core/response';
-import { authenticate, authorize } from '../../middlewares/auth.middleware';
+import { authenticate, authorize, optionalAuthenticate } from '../../middlewares/auth.middleware';
 import { validate } from '../../middlewares/validate.middleware';
 import { sendNotificationSchema, paginationSchema, objectIdSchema, registerFcmTokenSchema } from '@vireon/shared/schemas';
 import { UserRole } from '@vireon/shared';
@@ -108,16 +108,40 @@ class NotificationService {
 class NotificationController {
   private svc = new NotificationService();
   getForUser = async (req: Request, res: Response, next: NextFunction) => {
-    try { const { data, meta } = await this.svc.getForUser(req.user!.userId, req.query as Record<string, unknown>); ResponseHandler.paginated(res, data, meta); } catch (e) { next(e); }
+    try {
+      const userId = req.user?.userId;
+      if (userId) {
+        const { data, meta } = await this.svc.getForUser(userId, req.query as Record<string, unknown>);
+        return ResponseHandler.paginated(res, data, meta);
+      }
+      const { data, meta } = await this.svc.getAll(req.query as Record<string, unknown>);
+      return ResponseHandler.paginated(res, data, meta);
+    } catch (e) {
+      next(e);
+    }
   };
   getUnreadCount = async (req: Request, res: Response, next: NextFunction) => {
-    try { const count = await this.svc.getUnreadCount(req.user!.userId); ResponseHandler.success(res, { count }); } catch (e) { next(e); }
+    try {
+      const userId = req.user?.userId;
+      if (!userId) return ResponseHandler.success(res, { count: 0 });
+      const count = await this.svc.getUnreadCount(userId);
+      ResponseHandler.success(res, { count });
+    } catch (e) {
+      next(e);
+    }
   };
   markRead = async (req: Request, res: Response, next: NextFunction) => {
     try { await this.svc.markRead(req.params.id as string); ResponseHandler.success(res, null, 'Marked as read'); } catch (e) { next(e); }
   };
   markAllRead = async (req: Request, res: Response, next: NextFunction) => {
-    try { await this.svc.markAllRead(req.user!.userId); ResponseHandler.success(res, null, 'All notifications marked as read'); } catch (e) { next(e); }
+    try {
+      if (req.user?.userId) {
+        await this.svc.markAllRead(req.user.userId);
+      }
+      ResponseHandler.success(res, null, 'All notifications marked as read');
+    } catch (e) {
+      next(e);
+    }
   };
   send = async (req: Request, res: Response, next: NextFunction) => {
     try { const data = await this.svc.create(req.body as Record<string, unknown>, req.user!.userId); ResponseHandler.created(res, data, 'Notification sent'); } catch (e) { next(e); }
@@ -134,11 +158,12 @@ const router = Router();
 const ctrl = new NotificationController();
 const idV = validate({ params: z.object({ id: objectIdSchema }) });
 
-router.get('/my', authenticate, validate({ query: paginationSchema }), ctrl.getForUser);
-router.get('/my/unread-count', authenticate, ctrl.getUnreadCount);
-router.patch('/my/read-all', authenticate, ctrl.markAllRead);
+router.get('/public', optionalAuthenticate, validate({ query: paginationSchema }), ctrl.getForUser);
+router.get('/my', optionalAuthenticate, validate({ query: paginationSchema }), ctrl.getForUser);
+router.get('/my/unread-count', optionalAuthenticate, ctrl.getUnreadCount);
+router.patch('/my/read-all', optionalAuthenticate, ctrl.markAllRead);
 router.patch('/:id/read', authenticate, idV, ctrl.markRead);
-router.get('/', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), validate({ query: paginationSchema }), ctrl.getAll);
+router.get('/', optionalAuthenticate, validate({ query: paginationSchema }), ctrl.getForUser);
 router.post('/send', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), validate({ body: sendNotificationSchema }), ctrl.send);
 router.delete('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), idV, ctrl.delete);
 

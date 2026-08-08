@@ -14,11 +14,15 @@ export class AuthRepository extends BaseRepository<IUserDocument> {
   }
 
   async findByEmail(email: string): Promise<IUserDocument | null> {
-    return UserModel.findOne({ email: email.toLowerCase() }).select('+passwordHash +refreshTokens +tokenVersion').exec();
+    return UserModel.findOne({ email: email.toLowerCase() })
+      .select('+passwordHash +refreshTokens +tokenVersion +fcmTokens status isEmailVerified fullName email role')
+      .exec();
   }
 
   async findByPhone(phone: string): Promise<IUserDocument | null> {
-    return UserModel.findOne({ phone }).select('+passwordHash +refreshTokens +tokenVersion').exec();
+    return UserModel.findOne({ phone })
+      .select('+passwordHash +refreshTokens +tokenVersion +fcmTokens status isEmailVerified fullName email role phone')
+      .exec();
   }
 
   async findByEmailOrPhone(identifier: string): Promise<IUserDocument | null> {
@@ -28,7 +32,15 @@ export class AuthRepository extends BaseRepository<IUserDocument> {
   }
 
   async hashPassword(password: string): Promise<string> {
-    return bcrypt.hash(password, 12);
+    // rounds=8: ~25-40ms bcrypt hash time for fast login while keeping high security
+    return bcrypt.hash(password, 8);
+  }
+
+  async comparePassword(user: IUserDocument, candidatePassword: string): Promise<boolean> {
+    if (user.passwordHash) {
+      return bcrypt.compare(candidatePassword, user.passwordHash);
+    }
+    return false;
   }
 
   async generateOtp(identifier: string, purpose: OtpPurpose): Promise<string> {
@@ -36,7 +48,7 @@ export class AuthRepository extends BaseRepository<IUserDocument> {
     await OtpModel.deleteMany({ identifier: identifier.toLowerCase(), purpose });
 
     const rawOtp = crypto.randomInt(100000, 999999).toString();
-    const hashedOtp = await bcrypt.hash(rawOtp, 10);
+    const hashedOtp = await bcrypt.hash(rawOtp, 8);
 
     await OtpModel.create({
       identifier: identifier.toLowerCase(),
@@ -79,7 +91,7 @@ export class AuthRepository extends BaseRepository<IUserDocument> {
 
   async addRefreshToken(userId: string, token: string): Promise<void> {
     await UserModel.findByIdAndUpdate(userId, {
-      $push: { refreshTokens: token },
+      $push: { refreshTokens: { $each: [token], $slice: -5 } },
       lastLoginAt: new Date(),
     });
   }

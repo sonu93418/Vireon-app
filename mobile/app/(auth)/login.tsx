@@ -4,6 +4,7 @@ import {
   Alert, ActivityIndicator, BackHandler, ScrollView, KeyboardAvoidingView, Platform, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { router } from 'expo-router';
 import { Eye, EyeOff, Lock, Mail, ArrowLeft } from 'lucide-react-native';
 import { useQueryClient } from '@tanstack/react-query';
@@ -12,7 +13,6 @@ import { configureGoogleSignIn, signInWithGoogle } from '@/src/services/google-a
 import { registerForPushNotifications, sendFcmTokenToServer } from '@/src/services/notifications';
 
 const APP_LOGO = require('@/assets/favicon.png');
-
 
 export default function MobileLoginScreen() {
   const queryClient = useQueryClient();
@@ -37,13 +37,13 @@ export default function MobileLoginScreen() {
     setAccessToken(accessToken);
     setRefreshToken(refreshToken);
     if (userData) {
-      setUserProfileStorage(userData);
+      setUserProfileStorage({ ...userData, justLoggedIn: true });
       queryClient.setQueryData(['auth', 'me'], userData);
     }
     void registerForPushNotifications().then((fcmToken) => {
       if (fcmToken) void sendFcmTokenToServer(fcmToken);
     });
-    router.replace('/(tabs)');
+    router.replace({ pathname: '/(tabs)', params: { celebrate: 'true' } } as any);
   };
 
   const handleLogin = async () => {
@@ -53,15 +53,15 @@ export default function MobileLoginScreen() {
     }
     setLoading(true);
     try {
-      const res = await apiClient.post('/auth/login/email', { email, password });
+      const res = await apiClient.post('/auth/login/email', { email: email.trim(), password });
       const { tokens, user } = res.data.data;
+      setLoading(false);
       await onLoginSuccess(tokens.accessToken, tokens.refreshToken, user);
     } catch (err: unknown) {
+      setLoading(false);
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
         ?? (err instanceof Error ? err.message : 'Unable to connect to server. Please check network.');
       Alert.alert('Login Failed', msg);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -80,18 +80,19 @@ export default function MobileLoginScreen() {
         avatarUrl: gResult.avatarUrl,
       });
       const { tokens, user } = res.data.data;
+      setGoogleLoading(false);
       await onLoginSuccess(tokens.accessToken, tokens.refreshToken, user);
     } catch (err: unknown) {
+      setGoogleLoading(false);
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
         ?? (err instanceof Error ? err.message : 'Google Sign-In failed');
       Alert.alert('Google Sign-In', msg);
-    } finally {
-      setGoogleLoading(false);
     }
   };
 
   return (
     <View style={styles.root}>
+      <StatusBar style="light" translucent animated />
       {/* ── Green Solid Header ── */}
       <SafeAreaView style={styles.greenHeader} edges={['top']}>
         {/* Back Button */}

@@ -4,7 +4,7 @@
 // ============================================================
 import { Router, Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
-import { authenticate, authorize } from '../../middlewares/auth.middleware';
+import { authenticate, authorize, optionalAuthenticate } from '../../middlewares/auth.middleware';
 import { uploadRateLimiter } from '../../middlewares/rateLimiter.middleware';
 import {
   uploadMiddleware,
@@ -315,6 +315,23 @@ router.get('/my', authenticate, async (req: Request, res: Response, next: NextFu
       .sort({ createdAt: -1 })
       .limit(50);
     ResponseHandler.success(res, uploads, 'Upload history fetched');
+  } catch (e) { next(e); }
+});
+
+/**
+ * @swagger
+ * /api/v1/upload/all:
+ *   get:
+ *     tags: [Upload]
+ *     summary: Get all public uploads (PDFs, docs) visible to all authenticated users
+ */
+router.get('/all', optionalAuthenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const uploads = await UploadModel.find({ isDeleted: false })
+      .sort({ createdAt: -1 })
+      .limit(100)
+      .select('-__v');
+    ResponseHandler.success(res, uploads, 'All resources fetched');
   } catch (e) { next(e); }
 });
 

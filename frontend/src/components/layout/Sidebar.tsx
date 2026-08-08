@@ -18,6 +18,7 @@ import {
   LogOut,
   X,
   Shield,
+  Upload,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebarStore } from '@/store/ui.store';
@@ -52,6 +53,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
     items: [
       { id: 'blogs', label: 'Blogs', href: '/dashboard/blogs', icon: FileText },
       { id: 'gallery', label: 'Gallery', href: '/dashboard/gallery', icon: ImageIcon },
+      { id: 'resources', label: 'Resources & PDFs', href: '/dashboard/resources', icon: Upload },
       { id: 'cms', label: 'CMS Pages', href: '/dashboard/cms', icon: FileText },
     ],
   },

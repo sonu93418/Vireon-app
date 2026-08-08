@@ -11,7 +11,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useRef } from 'react';
+import { AppState } from 'react-native';
 import { setupNotificationListeners } from '@/src/services/notifications';
+import apiClient from '@/src/services/api';
 import '../global.css';
 
 SplashScreen.preventAutoHideAsync();
@@ -35,14 +37,28 @@ export default function RootLayout() {
   const notificationCleanup = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    // Hide splash after fonts/assets loaded
-    void SplashScreen.hideAsync();
+    // Hide native splash after initial mount
+    void SplashScreen.hideAsync().catch(() => {});
 
     // Set up push notification listeners for foreground/background handling
     notificationCleanup.current = setupNotificationListeners();
 
+    // App state prefetching on foreground focus
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        void queryClient.prefetchQuery({
+          queryKey: ['courses', 'popular'],
+          queryFn: () => apiClient.get('/courses/popular').then((r) => r.data.data),
+        });
+        void queryClient.prefetchQuery({
+          queryKey: ['classes', 'upcoming'],
+          queryFn: () => apiClient.get('/classes/upcoming?limit=5').then((r) => r.data.data),
+        });
+      }
+    });
+
     return () => {
-      // Clean up notification listeners on unmount
+      subscription.remove();
       if (notificationCleanup.current) {
         notificationCleanup.current();
       }
@@ -50,10 +66,10 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#16A34A' }}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
-          <StatusBar style="dark" />
+          <StatusBar style="dark" translucent animated />
           <Slot />
         </QueryClientProvider>
       </SafeAreaProvider>

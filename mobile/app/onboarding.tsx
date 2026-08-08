@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { Shield, BookOpen, Flame, Award, ArrowRight, CheckCircle2 } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -83,9 +84,11 @@ export default function OnboardingScreen() {
 
   return (
     <View style={styles.container}>
+      <StatusBar style="light" translucent backgroundColor="transparent" />
+
       {/* Top Floating Logo + Skip Row */}
       <View style={styles.topRow}>
-        <Image source={require('@/assets/favicon.png')} style={styles.floatingLogo} resizeMode="contain" />
+        <Image source={require('@/assets/icon.png')} style={styles.floatingLogo} resizeMode="contain" />
         <TouchableOpacity onPress={finishOnboarding} style={styles.skipBtn} activeOpacity={0.8}>
           <Text style={styles.skipText}>Skip</Text>
         </TouchableOpacity>

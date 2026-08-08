@@ -33,6 +33,7 @@ class ClassRepository extends BaseRepository<IClassDocument> {
       scheduledAt: { $gte: startOfDay, $lte: endOfDay },
       status: { $in: [ClassStatus.SCHEDULED, ClassStatus.LIVE] },
     })
+      .select('title subject description scheduledAt durationMinutes zoomJoinUrl status teacherId courseId')
       .populate('teacherId', 'designation profileImageUrl userId')
       .populate('courseId', 'title code level')
       .sort({ scheduledAt: 1 })
@@ -44,6 +45,7 @@ class ClassRepository extends BaseRepository<IClassDocument> {
       scheduledAt: { $gte: new Date() },
       status: ClassStatus.SCHEDULED,
     })
+      .select('title subject description scheduledAt durationMinutes zoomJoinUrl status teacherId courseId')
       .populate('teacherId', 'designation profileImageUrl userId')
       .populate('courseId', 'title code level')
       .sort({ scheduledAt: 1 })

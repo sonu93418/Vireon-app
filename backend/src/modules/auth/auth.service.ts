@@ -72,8 +72,8 @@ export class AuthService {
       status: UserStatus.ACTIVE,
     });
 
-    // Send welcome email
-    await sendWelcomeEmail(email, fullName);
+    // Send welcome email asynchronously in background
+    void sendWelcomeEmail(email, fullName).catch(() => {});
 
     return { message: 'Registration successful. You can now log in.' };
   }
@@ -112,7 +112,7 @@ export class AuthService {
       throw new UnauthorizedError('Your account has been suspended. Contact support.', 'ACCOUNT_SUSPENDED');
     }
 
-    const isPasswordValid = await user.comparePassword(password);
+    const isPasswordValid = await this.repo.comparePassword(user, password);
     if (!isPasswordValid) {
       throw new UnauthorizedError('Invalid email or password');
     }
@@ -142,7 +142,7 @@ export class AuthService {
       throw new UnauthorizedError('Your account has been suspended. Contact support.', 'ACCOUNT_SUSPENDED');
     }
 
-    const isPasswordValid = await user.comparePassword(password);
+    const isPasswordValid = await this.repo.comparePassword(user, password);
     if (!isPasswordValid) {
       throw new UnauthorizedError('Invalid phone number or password');
     }

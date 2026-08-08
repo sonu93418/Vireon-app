@@ -58,6 +58,7 @@ const ClassSchema = new Schema<IClassDocument>(
 
 // ─── Indexes ──────────────────────────────────────────────────────────────────
 ClassSchema.index({ scheduledAt: 1 });
+ClassSchema.index({ status: 1, scheduledAt: 1 });
 ClassSchema.index({ courseId: 1, status: 1 });
 ClassSchema.index({ teacherId: 1, scheduledAt: 1 });
 ClassSchema.index({ status: 1, reminderSent: 1 });
