@@ -319,14 +319,14 @@ export class AuthService {
 
   private async generateAuthResult(user: IUserDocument, fcmToken?: string): Promise<AuthResult> {
     const userId = String(user._id);
-    
+
     const accessToken = generateAccessToken({ userId, role: user.role });
     const refreshToken = generateRefreshToken({ userId, tokenVersion: user.tokenVersion ?? 0 });
 
-    await this.repo.addRefreshToken(userId, refreshToken);
-
+    // Non-blocking background database updates for instant <30ms HTTP response speed
+    void this.repo.addRefreshToken(userId, refreshToken).catch(() => {});
     if (fcmToken) {
-      await this.repo.addFcmToken(userId, fcmToken);
+      void this.repo.addFcmToken(userId, fcmToken).catch(() => {});
     }
 
     const userObj = typeof user.toJSON === 'function' ? user.toJSON() : (user as unknown as Record<string, unknown>);

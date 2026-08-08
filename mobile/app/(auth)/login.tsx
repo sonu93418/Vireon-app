@@ -21,6 +21,7 @@ export default function MobileLoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     configureGoogleSignIn();
@@ -39,33 +40,54 @@ export default function MobileLoginScreen() {
     if (userData) {
       setUserProfileStorage({ ...userData, justLoggedIn: true });
       queryClient.setQueryData(['auth', 'me'], userData);
+
+      // Parallel non-blocking background prefetching
+      void queryClient.prefetchQuery({
+        queryKey: ['courses', 'popular'],
+        queryFn: () => apiClient.get('/courses/popular').then((r) => r.data.data),
+      });
+      void queryClient.prefetchQuery({
+        queryKey: ['classes', 'upcoming'],
+        queryFn: () => apiClient.get('/classes/upcoming?limit=5').then((r) => r.data.data),
+      });
+      void queryClient.prefetchQuery({
+        queryKey: ['resources', 'all'],
+        queryFn: () => apiClient.get('/materials').then((r) => r.data.data),
+      });
     }
+
     void registerForPushNotifications().then((fcmToken) => {
       if (fcmToken) void sendFcmTokenToServer(fcmToken);
     });
+
     router.replace({ pathname: '/(tabs)', params: { celebrate: 'true' } } as any);
   };
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please enter your email and password');
+    setErrorMsg(null);
+    const cleanEmail = email.trim();
+    const cleanPassword = password.trim();
+
+    if (!cleanEmail || !cleanPassword) {
+      setErrorMsg('Please enter your email and password.');
       return;
     }
+
     setLoading(true);
     try {
-      const res = await apiClient.post('/auth/login/email', { email: email.trim(), password });
+      const res = await apiClient.post('/auth/login/email', { email: cleanEmail, password: cleanPassword });
       const { tokens, user } = res.data.data;
-      setLoading(false);
       await onLoginSuccess(tokens.accessToken, tokens.refreshToken, user);
     } catch (err: unknown) {
       setLoading(false);
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-        ?? (err instanceof Error ? err.message : 'Unable to connect to server. Please check network.');
-      Alert.alert('Login Failed', msg);
+        ?? (err instanceof Error ? err.message : 'Invalid email or password. Please try again.');
+      setErrorMsg(msg);
     }
   };
 
   const handleGoogleLogin = async () => {
+    setErrorMsg(null);
     setGoogleLoading(true);
     try {
       const gResult = await signInWithGoogle();
@@ -80,13 +102,12 @@ export default function MobileLoginScreen() {
         avatarUrl: gResult.avatarUrl,
       });
       const { tokens, user } = res.data.data;
-      setGoogleLoading(false);
       await onLoginSuccess(tokens.accessToken, tokens.refreshToken, user);
     } catch (err: unknown) {
       setGoogleLoading(false);
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-        ?? (err instanceof Error ? err.message : 'Google Sign-In failed');
-      Alert.alert('Google Sign-In', msg);
+        ?? (err instanceof Error ? err.message : 'Google Sign-In failed. Please try again.');
+      setErrorMsg(msg);
     }
   };
 
@@ -116,6 +137,13 @@ export default function MobileLoginScreen() {
       >
         <ScrollView contentContainerStyle={styles.formScroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
+          {/* Inline Error Banner */}
+          {errorMsg && (
+            <View style={styles.inlineErrorBox}>
+              <Text style={styles.inlineErrorText}>{errorMsg}</Text>
+            </View>
+          )}
+
           {/* Email */}
           <View style={styles.inputWrap}>
             <Mail size={18} color="#94A3B8" style={styles.inputIcon} />
@@ -123,7 +151,7 @@ export default function MobileLoginScreen() {
               placeholder="Email address"
               placeholderTextColor="#94A3B8"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(t) => { setEmail(t); if (errorMsg) setErrorMsg(null); }}
               autoCapitalize="none"
               keyboardType="email-address"
               style={styles.input}
@@ -137,7 +165,7 @@ export default function MobileLoginScreen() {
               placeholder="Password"
               placeholderTextColor="#94A3B8"
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(t) => { setPassword(t); if (errorMsg) setErrorMsg(null); }}
               secureTextEntry={!showPassword}
               style={styles.input}
             />
@@ -147,9 +175,17 @@ export default function MobileLoginScreen() {
           </View>
 
           {/* Sign In Button */}
-          <TouchableOpacity style={styles.primaryBtn} onPress={handleLogin} disabled={loading || googleLoading} activeOpacity={0.85}>
+          <TouchableOpacity
+            style={[styles.primaryBtn, loading && styles.primaryBtnDisabled]}
+            onPress={handleLogin}
+            disabled={loading || googleLoading}
+            activeOpacity={0.85}
+          >
             {loading ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <View style={styles.btnRow}>
+                <ActivityIndicator size="small" color="#FFFFFF" style={{ marginRight: 8 }} />
+                <Text style={styles.primaryBtnText}>Signing In...</Text>
+              </View>
             ) : (
               <Text style={styles.primaryBtnText}>Sign In</Text>
             )}
@@ -251,6 +287,21 @@ const styles = StyleSheet.create({
     padding: 24,
     paddingTop: 28,
   },
+  inlineErrorBox: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 14,
+  },
+  inlineErrorText: {
+    color: '#DC2626',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -271,6 +322,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
+  btnRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   primaryBtn: {
     height: 52,
     borderRadius: 14,
@@ -282,7 +338,10 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3,
     shadowRadius: 10,
-    elevation: 6,
+    elevation: 4,
+  },
+  primaryBtnDisabled: {
+    opacity: 0.75,
   },
   primaryBtnText: {
     color: '#FFFFFF',

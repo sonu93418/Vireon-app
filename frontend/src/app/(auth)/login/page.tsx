@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,7 +10,6 @@ import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import apiClient from '@/lib/api-client';
-import type { Metadata } from 'next';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -31,6 +30,11 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const setAuth = useAuthStore((s) => s.setAuth);
+
+  useEffect(() => {
+    // Prefetch dashboard route bundle immediately
+    router.prefetch('/dashboard');
+  }, [router]);
 
   const {
     register,

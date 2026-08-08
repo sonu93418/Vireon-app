@@ -22,6 +22,7 @@ export default function MobileRegisterScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     configureGoogleSignIn();
@@ -34,24 +35,54 @@ export default function MobileRegisterScreen() {
     return () => backHandler.remove();
   }, []);
 
+  const handleRegisterSuccess = (tokens: any, user: any) => {
+    setAccessToken(tokens.accessToken);
+    setRefreshToken(tokens.refreshToken);
+    if (user) {
+      setUserProfileStorage({ ...user, justLoggedIn: true });
+      queryClient.setQueryData(['auth', 'me'], user);
+
+      // Parallel non-blocking background prefetching
+      void queryClient.prefetchQuery({
+        queryKey: ['courses', 'popular'],
+        queryFn: () => apiClient.get('/courses/popular').then((r) => r.data.data),
+      });
+      void queryClient.prefetchQuery({
+        queryKey: ['classes', 'upcoming'],
+        queryFn: () => apiClient.get('/classes/upcoming?limit=5').then((r) => r.data.data),
+      });
+      void queryClient.prefetchQuery({
+        queryKey: ['resources', 'all'],
+        queryFn: () => apiClient.get('/materials').then((r) => r.data.data),
+      });
+    }
+
+    void registerForPushNotifications().then((fcmToken) => {
+      if (fcmToken) void sendFcmTokenToServer(fcmToken);
+    });
+
+    router.replace({ pathname: '/(tabs)', params: { celebrate: 'true' } } as any);
+  };
+
   const handleRegister = async () => {
+    setErrorMsg(null);
     const cleanName = fullName.trim();
     const cleanEmail = email.trim().toLowerCase();
     const cleanPhone = phone.replace(/\D/g, '');
     const cleanPassword = password.trim();
 
     if (!cleanName || !cleanEmail || !cleanPhone || !cleanPassword) {
-      Alert.alert('Missing Fields', 'Please enter your Full Name, Email, 10-digit Phone Number, and Password.');
+      setErrorMsg('Please enter your Full Name, Email, 10-digit Phone, and Password.');
       return;
     }
 
     if (cleanPhone.length !== 10) {
-      Alert.alert('Invalid Phone Number', 'Please enter a valid 10-digit mobile number.');
+      setErrorMsg('Please enter a valid 10-digit mobile number.');
       return;
     }
 
     if (cleanPassword.length < 6) {
-      Alert.alert('Short Password', 'Password must be at least 6 characters.');
+      setErrorMsg('Password must be at least 6 characters.');
       return;
     }
 
@@ -72,29 +103,18 @@ export default function MobileRegisterScreen() {
       });
 
       const { tokens, user } = loginRes.data.data;
-      setAccessToken(tokens.accessToken);
-      setRefreshToken(tokens.refreshToken);
-      if (user) {
-        setUserProfileStorage({ ...user, justLoggedIn: true });
-        queryClient.setQueryData(['auth', 'me'], user);
-      }
-
-      void registerForPushNotifications().then((fcmToken) => {
-        if (fcmToken) void sendFcmTokenToServer(fcmToken);
-      });
-
-      router.replace({ pathname: '/(tabs)', params: { celebrate: 'true' } } as any);
+      handleRegisterSuccess(tokens, user);
     } catch (err: unknown) {
+      setLoading(false);
       const errData = (err as any)?.response?.data;
       const firstFieldError = errData?.errors?.[0]?.message;
-      const msg = firstFieldError ?? errData?.message ?? (err instanceof Error ? err.message : 'Registration failed');
-      Alert.alert('Registration Status', msg);
-    } finally {
-      setLoading(false);
+      const msg = firstFieldError ?? errData?.message ?? (err instanceof Error ? err.message : 'Registration failed. Please check your information.');
+      setErrorMsg(msg);
     }
   };
 
   const handleGoogleSignUp = async () => {
+    setErrorMsg(null);
     setGoogleLoading(true);
     try {
       const gResult = await signInWithGoogle();
@@ -110,24 +130,12 @@ export default function MobileRegisterScreen() {
         avatarUrl: gResult.avatarUrl,
       });
       const { tokens, user } = res.data.data;
-      setAccessToken(tokens.accessToken);
-      setRefreshToken(tokens.refreshToken);
-      if (user) {
-        setUserProfileStorage({ ...user, justLoggedIn: true });
-        queryClient.setQueryData(['auth', 'me'], user);
-      }
-
-      void registerForPushNotifications().then((fcmToken) => {
-        if (fcmToken) void sendFcmTokenToServer(fcmToken);
-      });
-
-      router.replace({ pathname: '/(tabs)', params: { celebrate: 'true' } } as any);
+      handleRegisterSuccess(tokens, user);
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-        ?? (err instanceof Error ? err.message : 'Google Sign-Up failed');
-      Alert.alert('Google Sign-Up', msg);
-    } finally {
       setGoogleLoading(false);
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+        ?? (err instanceof Error ? err.message : 'Google Sign-Up failed. Please try again.');
+      setErrorMsg(msg);
     }
   };
 
@@ -157,6 +165,13 @@ export default function MobileRegisterScreen() {
       >
         <ScrollView contentContainerStyle={styles.formScroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
+          {/* Inline Error Banner */}
+          {errorMsg && (
+            <View style={styles.inlineErrorBox}>
+              <Text style={styles.inlineErrorText}>{errorMsg}</Text>
+            </View>
+          )}
+
           {/* Google Sign-Up */}
           <TouchableOpacity style={styles.googleBtn} onPress={handleGoogleSignUp} disabled={loading || googleLoading} activeOpacity={0.85}>
             {googleLoading ? (
@@ -183,7 +198,7 @@ export default function MobileRegisterScreen() {
               placeholder="Full Name"
               placeholderTextColor="#94A3B8"
               value={fullName}
-              onChangeText={setFullName}
+              onChangeText={(t) => { setFullName(t); if (errorMsg) setErrorMsg(null); }}
               style={styles.input}
             />
           </View>
@@ -195,7 +210,7 @@ export default function MobileRegisterScreen() {
               placeholder="Email Address"
               placeholderTextColor="#94A3B8"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(t) => { setEmail(t); if (errorMsg) setErrorMsg(null); }}
               autoCapitalize="none"
               keyboardType="email-address"
               style={styles.input}
@@ -209,7 +224,7 @@ export default function MobileRegisterScreen() {
               placeholder="Mobile Phone Number"
               placeholderTextColor="#94A3B8"
               value={phone}
-              onChangeText={setPhone}
+              onChangeText={(t) => { setPhone(t); if (errorMsg) setErrorMsg(null); }}
               keyboardType="phone-pad"
               style={styles.input}
             />
@@ -222,16 +237,24 @@ export default function MobileRegisterScreen() {
               placeholder="Password (min 6 characters)"
               placeholderTextColor="#94A3B8"
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(t) => { setPassword(t); if (errorMsg) setErrorMsg(null); }}
               secureTextEntry
               style={styles.input}
             />
           </View>
 
           {/* Create Account Button */}
-          <TouchableOpacity style={styles.primaryBtn} onPress={handleRegister} disabled={loading || googleLoading} activeOpacity={0.85}>
+          <TouchableOpacity
+            style={[styles.primaryBtn, loading && styles.primaryBtnDisabled]}
+            onPress={handleRegister}
+            disabled={loading || googleLoading}
+            activeOpacity={0.85}
+          >
             {loading ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <View style={styles.btnRow}>
+                <ActivityIndicator size="small" color="#FFFFFF" style={{ marginRight: 8 }} />
+                <Text style={styles.primaryBtnText}>Creating Account...</Text>
+              </View>
             ) : (
               <Text style={styles.primaryBtnText}>Create Account</Text>
             )}
@@ -315,6 +338,21 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     paddingBottom: 40,
   },
+  inlineErrorBox: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 14,
+  },
+  inlineErrorText: {
+    color: '#DC2626',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -324,7 +362,7 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     paddingHorizontal: 14,
     height: 52,
-    marginBottom: 12,
+    marginBottom: 14,
   },
   inputIcon: {
     marginRight: 10,
@@ -335,19 +373,27 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
+  btnRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   primaryBtn: {
     height: 52,
     borderRadius: 14,
     backgroundColor: '#16A34A',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 4,
-    marginBottom: 16,
+    marginTop: 6,
+    marginBottom: 18,
     shadowColor: '#16A34A',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3,
     shadowRadius: 10,
-    elevation: 6,
+    elevation: 4,
+  },
+  primaryBtnDisabled: {
+    opacity: 0.75,
   },
   primaryBtnText: {
     color: '#FFFFFF',
