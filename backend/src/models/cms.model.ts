@@ -23,7 +23,7 @@ const CmsPageSchema = new Schema<ICmsPageDocument>(
     contentHtml: { type: String, required: true },
     metaTitle: { type: String, maxlength: 60 },
     metaDescription: { type: String, maxlength: 160 },
-    lastUpdatedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    lastUpdatedBy: { type: Schema.Types.ObjectId, ref: 'User' },
     isPublished: { type: Boolean, default: true },
   },
   {

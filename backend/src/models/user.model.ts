@@ -127,12 +127,9 @@ const UserSchema = new Schema<IUserDocument>(
 );
 
 // ─── Indexes ──────────────────────────────────────────────────────────────────
-UserSchema.index({ email: 1 });
-UserSchema.index({ phone: 1 });
 UserSchema.index({ role: 1, status: 1 });
 UserSchema.index({ status: 1, fcmTokens: 1 });
 UserSchema.index({ createdAt: -1 });
-UserSchema.index({ googleId: 1 }, { sparse: true });
 UserSchema.index({ '$**': 'text' }); // full-text search
 
 // ─── Instance Methods ─────────────────────────────────────────────────────────

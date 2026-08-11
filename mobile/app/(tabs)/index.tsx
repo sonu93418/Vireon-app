@@ -414,9 +414,22 @@ export default function HomeScreen() {
       return res.data.data;
     },
     initialData: () => getCacheData<ClassItem[]>('classes_upcoming') ?? undefined,
-    staleTime: 2 * 60 * 1000,       // 2 min cache for classes
-    refetchInterval: 60 * 1000,     // refresh every 60s for real-time feel
+    staleTime: 2 * 60 * 1000,
+    refetchInterval: 60 * 1000,
     retry: 1,
+  });
+
+  const { data: unreadCount = 0 } = useQuery<number>({
+    queryKey: ['notifications', 'unread-count'],
+    queryFn: async () => {
+      if (!getAccessToken()) return 0;
+      const res = await apiClient.get<{ data: { count: number } }>('/notifications/my/unread-count');
+      return res.data?.data?.count ?? 0;
+    },
+    enabled: isLoggedIn,
+    staleTime: 30 * 1000,
+    refetchInterval: 60 * 1000,
+    retry: false,
   });
 
   const params = useLocalSearchParams<{ celebrate?: string }>();
@@ -498,9 +511,11 @@ export default function HomeScreen() {
               activeOpacity={0.85}
             >
               <Bell size={20} color={COLORS.textPrimary} />
-              <View style={styles.notifBadgeCount}>
-                <Text style={styles.notifBadgeCountText}>3</Text>
-              </View>
+              {unreadCount > 0 && (
+                <View style={styles.notifBadgeCount}>
+                  <Text style={styles.notifBadgeCountText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                </View>
+              )}
             </TouchableOpacity>
           </View>
 

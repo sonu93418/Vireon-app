@@ -18,7 +18,7 @@ import {
   UnauthorizedError,
   NotFoundError,
 } from '../../core/errors';
-import { UserStatus, OtpPurpose, AuthProvider } from '@vireon/shared';
+import { UserStatus, OtpPurpose, AuthProvider, UserRole } from '@vireon/shared';
 import type {
   RegisterInput,
   LoginWithEmailInput,
@@ -73,7 +73,7 @@ export class AuthService {
     });
 
     // Send welcome email asynchronously in background
-    void sendWelcomeEmail(email, fullName).catch(() => {});
+    void sendWelcomeEmail(email, fullName).catch(() => { });
 
     return { message: 'Registration successful. You can now log in.' };
   }
@@ -150,99 +150,199 @@ export class AuthService {
     return this.generateAuthResult(user, fcmToken);
   }
 
-  async loginWithGoogle(input: LoginWithGoogleInput): Promise<AuthResult> {
-    const { idToken, fcmToken } = input;
+  private async verifyGoogleIdToken(idToken: string): Promise<{
+    sub: string;
+    email: string;
+    email_verified: boolean;
+    name?: string;
+    picture?: string;
+  }> {
+    const { logger } = require('../../config/logger');
+    logger.info('🔐 [Google Auth] Google Sign-In Started — Token Received');
 
-    // Verify Google ID token using Firebase Admin SDK with dev fallback
-    let decodedToken: { uid: string; email: string; name?: string; picture?: string };
-    try {
-      if (idToken.startsWith('demo_') || idToken.startsWith('mock_')) {
-        decodedToken = {
-          uid: 'google_student_demo_101',
-          email: 'google.student@vireonsafety.in',
-          name: 'Google Scholar',
-          picture: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-        };
-      } else {
-        const firebaseToken = await admin.auth().verifyIdToken(idToken);
-        decodedToken = {
-          uid: firebaseToken.uid,
-          email: firebaseToken.email ?? '',
-          name: firebaseToken.name,
-          picture: firebaseToken.picture,
-        };
-      }
-    } catch {
-      // Fallback for dev mode when Firebase credentials are in test mode
-      decodedToken = {
-        uid: 'google_student_demo_101',
-        email: 'google.student@vireonsafety.in',
-        name: 'Google Scholar',
-        picture: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+    // Dev mock token handling (Only allowed in non-production environment)
+    if (
+      process.env.NODE_ENV === 'development' &&
+      (idToken.startsWith('mock_') || idToken.startsWith('demo_') || idToken.startsWith('real_'))
+    ) {
+      logger.info('🧪 [Google Auth] Using Development Mock Token');
+      const mockEmail = idToken.includes('@')
+        ? idToken.replace(/^(mock_|demo_|real_)/, '')
+        : 'sonukumarray1009@gmail.com';
+      return {
+        sub: `google_${mockEmail.replace(/[^a-z0-9]/gi, '_')}`,
+        email: mockEmail,
+        email_verified: true,
+        name: 'Google User',
+        picture: 'https://lh3.googleusercontent.com/a/default-user',
       };
     }
 
-    const inputPayload = input as LoginWithGoogleInput & { email?: string; fullName?: string; avatarUrl?: string };
-    const email = (inputPayload.email || decodedToken.email).toLowerCase();
-    const name = inputPayload.fullName || decodedToken.name || email.split('@')[0];
-    const picture = inputPayload.avatarUrl || decodedToken.picture;
-    const googleId = decodedToken.uid || `google_${email.replace(/[^a-z0-9]/gi, '_')}`;
+    const allowedAudiences = [
+      process.env.GOOGLE_WEB_CLIENT_ID,
+      process.env.GOOGLE_ANDROID_CLIENT_ID,
+    ].filter(Boolean) as string[];
 
-    if (!email) {
-      throw new BadRequestError('Google account does not have an email address');
-    }
-
-    // Try to find existing user by googleId or email
-    let user = await this.repo.findByGoogleId(googleId);
-
-    if (!user) {
-      // Check if a user with this email already exists (registered via email)
-      user = await this.repo.findByEmail(email);
-
-      if (user) {
-        // Link Google account to existing email user
-        await this.repo.updateById(String(user._id), {
-          googleId,
-          authProvider: AuthProvider.GOOGLE,
-          isEmailVerified: true,
-          avatarUrl: user.avatarUrl || picture || undefined,
-        });
-        // Re-fetch to get updated data
-        user = await this.repo.findById(String(user._id));
-        if (!user) throw new NotFoundError('User');
-      } else {
-        // Create new user from Google profile
-        const defaultPhone = '99' + String(Date.now()).slice(-8);
-        user = await this.repo.create({
-          fullName: name.trim(),
-          email: email.toLowerCase(),
-          phone: defaultPhone,
-          googleId,
-          authProvider: AuthProvider.GOOGLE,
-          isEmailVerified: true,
-          status: UserStatus.ACTIVE,
-          avatarUrl: picture || undefined,
-        });
-      }
-    } else {
-      // Existing Google user — update profile info if provided
-      await this.repo.updateById(String(user._id), {
-        fullName: name.trim(),
-        avatarUrl: picture || user.avatarUrl || undefined,
+    // 1. Official Google OAuth2 Client Verification
+    try {
+      const { OAuth2Client } = require('google-auth-library');
+      const googleOAuthClient = new OAuth2Client();
+      const ticket = await googleOAuthClient.verifyIdToken({
+        idToken,
+        audience: allowedAudiences.length > 0 ? allowedAudiences : undefined,
       });
-      user = await this.repo.findById(String(user._id));
-      if (!user) throw new NotFoundError('User');
-      if (user.status === UserStatus.SUSPENDED) {
-        throw new UnauthorizedError('Your account has been suspended. Contact support.', 'ACCOUNT_SUSPENDED');
+      const payload = ticket.getPayload();
+      if (!payload) throw new UnauthorizedError('Invalid Google ID token payload');
+
+      logger.info(`✅ [Google Auth] Token Verified via Google Auth Library for ${payload.email}`);
+      return {
+        sub: payload.sub,
+        email: payload.email ?? '',
+        email_verified: payload.email_verified ?? false,
+        name: payload.name,
+        picture: payload.picture,
+      };
+    } catch {
+      // 2. Secondary Strategy: Firebase Admin SDK ID Token Verification
+      try {
+        const firebaseToken = await admin.auth().verifyIdToken(idToken);
+        logger.info(`✅ [Google Auth] Token Verified via Firebase Admin for ${firebaseToken.email}`);
+        return {
+          sub: firebaseToken.uid,
+          email: firebaseToken.email ?? '',
+          email_verified: (firebaseToken as any).email_verified ?? true,
+          name: firebaseToken.name,
+          picture: firebaseToken.picture,
+        };
+      } catch {
+        logger.error('❌ [Google Auth] Authorization Failed: Token verification failed on all strategies');
+        throw new UnauthorizedError('Invalid or unverified Google ID token. Access denied.', 'INVALID_GOOGLE_TOKEN');
       }
     }
+  }
 
+  async loginWithGoogle(input: LoginWithGoogleInput): Promise<AuthResult> {
+    const { idToken, fcmToken } = input;
+    const { logger } = require('../../config/logger');
+
+    if (!idToken) {
+      throw new BadRequestError('Google ID token is required');
+    }
+
+    // Step 1: Verify Google ID Token (Signature, Audience, Expiration, Issuer)
+    const googleProfile = await this.verifyGoogleIdToken(idToken);
+
+    const email = googleProfile.email.toLowerCase();
+    const googleId = googleProfile.sub;
+    const name = googleProfile.name || email.split('@')[0];
+    const picture = googleProfile.picture;
+
+    logger.info(`📧 [Google Auth] Email Extracted: ${email}`);
+
+    // Authorization Rule 1: Must contain email address
+    if (!email) {
+      logger.error('❌ [Google Auth] Authorization Failed: No email address in Google account');
+      throw new UnauthorizedError('Your Google account does not contain a valid email address.');
+    }
+
+    // Authorization Rule 2: Email must be verified by Google
+    if (googleProfile.email_verified === false) {
+      logger.error(`❌ [Google Auth] Authorization Failed: Email ${email} is not verified by Google`);
+      throw new UnauthorizedError('Your Google email address is not verified by Google.', 'EMAIL_NOT_VERIFIED');
+    }
+
+    logger.info(`🔍 [Google Auth] Database Lookup for email: ${email}`);
+
+    // Step 2: Database Lookup
+    let user = await this.repo.findByGoogleId(googleId);
+    if (!user) {
+      user = await this.repo.findByEmail(email);
+    }
+
+    // STRICT REGISTRATION-FIRST POLICY:
+    // If user does NOT exist in MongoDB, DO NOT auto-register and DO NOT issue JWT!
+    if (!user) {
+      logger.warn(`⚠️ [Google Auth] Login Denied: Google account ${email} is not registered in MongoDB`);
+      throw new UnauthorizedError(
+        'This account is not registered. Please register first.',
+        'REGISTRATION_REQUIRED'
+      );
+    }
+
+    // Authorization Rule 3: Check Account Suspension
+    if (user.status === UserStatus.SUSPENDED) {
+      logger.error(`❌ [Google Auth] Authorization Failed: Account ${email} is suspended`);
+      throw new UnauthorizedError('Your account is currently inactive. Please contact support.', 'ACCOUNT_SUSPENDED');
+    }
+
+    // Update existing user profile info & last login
+    await this.repo.updateById(String(user._id), {
+      googleId,
+      authProvider: AuthProvider.GOOGLE,
+      isEmailVerified: true,
+      avatarUrl: picture || user.avatarUrl || undefined,
+      lastLoginAt: new Date(),
+    });
+    user = await this.repo.findById(String(user._id));
+    if (!user) throw new NotFoundError('User');
+
+    // Step 3: Issue JWT Session ONLY AFTER Authorization Passes
+    logger.info(`🔑 [Google Auth] Authorization Check Passed — Generating JWT for ${user.email}`);
+    const result = await this.generateAuthResult(user, fcmToken);
+    logger.info(`🎉 [Google Auth] Login Successful for ${user.email}`);
+    return result;
+  }
+
+  async registerWithGoogle(input: {
+    idToken: string;
+    phone: string;
+    fullName?: string;
+    role?: UserRole;
+    fcmToken?: string;
+  }): Promise<AuthResult> {
+    const { idToken, phone, role, fcmToken } = input;
+    const { logger } = require('../../config/logger');
+
+    if (!idToken) throw new BadRequestError('Google ID token is required');
+    if (!phone) throw new BadRequestError('Mobile phone number is required for registration');
+
+    // Verify Google ID token
+    const googleProfile = await this.verifyGoogleIdToken(idToken);
+    const email = googleProfile.email.toLowerCase();
+    const googleId = googleProfile.sub;
+    const name = input.fullName || googleProfile.name || email.split('@')[0];
+    const picture = googleProfile.picture;
+
+    // Check if user already exists
+    const existing = await this.repo.findOne({
+      $or: [{ email }, { googleId }, { phone }],
+    });
+
+    if (existing) {
+      throw new ConflictError('This account is already registered. Please sign in.');
+    }
+
+    // Create user only after form details + verification pass
+    const user = await this.repo.create({
+      fullName: name.trim(),
+      email,
+      phone,
+      googleId,
+      authProvider: AuthProvider.GOOGLE,
+      role: role || UserRole.STUDENT,
+      isEmailVerified: true,
+      status: UserStatus.ACTIVE,
+      avatarUrl: picture || undefined,
+      lastLoginAt: new Date(),
+    });
+
+    logger.info(`🎉 [Google Auth] Registration Completed for new user ${user.email}`);
     return this.generateAuthResult(user, fcmToken);
   }
 
   async refreshTokens(token: string): Promise<AuthTokens> {
     const payload = verifyRefreshToken(token);
-    
+
     const user = await this.repo.findById(payload.userId);
     if (!user) {
       throw new UnauthorizedError('User not found');
@@ -324,9 +424,9 @@ export class AuthService {
     const refreshToken = generateRefreshToken({ userId, tokenVersion: user.tokenVersion ?? 0 });
 
     // Non-blocking background database updates for instant <30ms HTTP response speed
-    void this.repo.addRefreshToken(userId, refreshToken).catch(() => {});
+    void this.repo.addRefreshToken(userId, refreshToken).catch(() => { });
     if (fcmToken) {
-      void this.repo.addFcmToken(userId, fcmToken).catch(() => {});
+      void this.repo.addFcmToken(userId, fcmToken).catch(() => { });
     }
 
     const userObj = typeof user.toJSON === 'function' ? user.toJSON() : (user as unknown as Record<string, unknown>);

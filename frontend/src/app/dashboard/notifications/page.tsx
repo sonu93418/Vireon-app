@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Plus, Search, Send, Users, Bell } from 'lucide-react';
+import { Plus, Search, Send, Users, Bell, Trash2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -39,7 +39,7 @@ export default function NotificationsPage() {
     },
   });
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<NotifForm>({
+  const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm<NotifForm>({
     resolver: zodResolver(notifSchema),
     defaultValues: { type: 'ANNOUNCEMENT', targetRoles: [] },
   });
@@ -50,8 +50,35 @@ export default function NotificationsPage() {
       void queryClient.invalidateQueries({ queryKey: ['notifications'] });
       reset();
       setShowForm(false);
+      alert('✅ Lock Screen Push Notification sent successfully!');
+    },
+    onError: (err: any) => {
+      const status = err?.response?.status;
+      const msg = err?.response?.data?.message || err?.message || 'Failed to send notification.';
+      if (status === 401 || msg.includes('Access token has expired')) {
+        alert('⚠️ Session Expired: Your admin login session has expired. Please log in again to send notifications.');
+        window.location.href = '/login';
+      } else {
+        alert(`❌ Notification Send Error: ${msg}`);
+      }
     },
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiClient.delete(`/notifications/${id}`),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+
+  const PRESET_TEMPLATES = [
+    { label: '⏰ Class Reminder', type: 'CLASS_REMINDER', title: '⏰ Upcoming Class: React Native Deep Dive', body: 'Your live session starts in 15 minutes. Tap to open your classroom now!' },
+    { label: '🚨 Class Live', type: 'CLASS_STARTED', title: '🚨 LIVE NOW: Advanced Web Development', body: 'Professor Sharma has launched the live class! Click to join immediately.' },
+    { label: '💼 Placement Drive', type: 'PLACEMENT', title: '💼 Placement Alert: Google SDE-1 Hiring', body: 'Package: 18 LPA. Apply before tomorrow 5 PM. Tap to check requirements.' },
+    { label: '📚 New Module', type: 'COURSE_UPDATE', title: '📚 New Course Content: Node.js Microservices', body: 'Module 4: Distributed Tracing & Caching is now published! Start learning today.' },
+    { label: '📢 Campus Notice', type: 'ANNOUNCEMENT', title: '📢 Campus Update: Mid-Term Examination Schedule', body: 'The mid-term exam schedule for Fall 2026 is released. Check the portal for details.' },
+    { label: '⚙️ System Notice', type: 'SYSTEM', title: '⚙️ System Maintenance: Scheduled Upgrades', body: 'Vireon services will undergo maintenance tonight from 2 AM to 4 AM IST.' },
+  ];
 
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
@@ -69,7 +96,34 @@ export default function NotificationsPage() {
       {/* Send Form */}
       {showForm && (
         <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="vireon-card p-6 border border-vireon-accent-green/20">
-          <h2 className="font-heading text-base font-semibold text-vireon-text-primary mb-4">📣 Send Broadcast Notification</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-heading text-base font-semibold text-vireon-text-primary">📣 Send Lock Screen Push Notification</h2>
+            <span className="vireon-badge-green text-xs font-semibold flex items-center gap-1 px-2.5 py-1">
+              ⚡ High Priority & Lock Screen Display
+            </span>
+          </div>
+
+          {/* Quick Lock Screen Templates */}
+          <div className="mb-5 bg-slate-50 p-3.5 rounded-xl border border-slate-200/80">
+            <p className="text-xs font-bold text-slate-700 mb-2">⚡ Quick Lock Screen Templates:</p>
+            <div className="flex flex-wrap gap-2">
+              {PRESET_TEMPLATES.map((tpl) => (
+                <button
+                  key={tpl.label}
+                  type="button"
+                  onClick={() => {
+                    setValue('title', tpl.title);
+                    setValue('body', tpl.body);
+                    setValue('type', tpl.type);
+                  }}
+                  className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white border border-slate-300 text-slate-700 hover:border-vireon-accent-green hover:bg-green-50/50 hover:text-green-800 transition-all shadow-2xs cursor-pointer"
+                >
+                  {tpl.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit((d) => sendMutation.mutate(d))} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -103,7 +157,7 @@ export default function NotificationsPage() {
             <div className="flex gap-3">
               <button type="submit" disabled={sendMutation.isPending} className="vireon-btn-primary" id="notif-submit-btn">
                 <Send className="w-4 h-4" />
-                {sendMutation.isPending ? 'Sending...' : 'Send Now'}
+                {sendMutation.isPending ? 'Sending Push...' : 'Send Lock Screen Push'}
               </button>
               <button type="button" onClick={() => setShowForm(false)} className="vireon-btn-secondary">Cancel</button>
             </div>
@@ -130,7 +184,22 @@ export default function NotificationsPage() {
                   </div>
                   <p className="text-xs text-slate-600 font-medium mt-1 line-clamp-2">{notif.body}</p>
                 </div>
-                <span className="text-[10px] text-slate-400 font-bold flex-shrink-0">{formatDateTime(notif.createdAt)}</span>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-[10px] text-slate-400 font-bold">{formatDateTime(notif.createdAt)}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm('Are you sure you want to delete this notification record?')) {
+                        deleteMutation.mutate(notif._id);
+                      }
+                    }}
+                    disabled={deleteMutation.isPending}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                    title="Delete Notification"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             ))
         }

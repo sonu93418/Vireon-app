@@ -107,7 +107,16 @@ export default function DashboardPage() {
       const res = await apiClient.get<{ data: DashboardData }>('/dashboard/overview');
       return res.data.data;
     },
-    refetchInterval: 5000, // Real-time polling every 5 seconds
+    refetchInterval: (query) => {
+      const status = (query.state.error as any)?.response?.status;
+      if (status === 401 || status === 403) return false;
+      return 30000;
+    },
+    retry: (failureCount, error) => {
+      const status = (error as any)?.response?.status;
+      if (status === 401 || status === 403) return false;
+      return failureCount < 2;
+    },
     refetchOnWindowFocus: true,
   });
 

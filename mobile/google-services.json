@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "52937404971",
+    "project_id": "vireon-app-504612",
+    "storage_bucket": "vireon-app-504612.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:52937404971:android:4a3d45d31b739ddca89c91",
+        "android_client_info": {
+          "package_name": "com.vireon.safety"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "52937404971-e0vqiesg2fqjktgtaoba5n06fs5utdor.apps.googleusercontent.com",
+          "client_type": 3
+        },
+        {
+          "client_id": "52937404971-0pqohi2arkbtpdmrakt99jrtjgevpjl4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.vireon.safety",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBhKFUfz0jKSE65bUygICWhLolQAyVS3MU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "52937404971-e0vqiesg2fqjktgtaoba5n06fs5utdor.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

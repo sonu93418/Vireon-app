@@ -62,6 +62,9 @@ apiClient.interceptors.response.use(
         const { refreshToken, setTokens, logout } = useAuthStore.getState();
         if (!refreshToken) {
           logout();
+          if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+            window.location.href = '/login';
+          }
           return Promise.reject(error);
         }
 
@@ -76,6 +79,9 @@ apiClient.interceptors.response.use(
         processQueue(refreshError, null);
         const { logout } = useAuthStore.getState();
         logout();
+        if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

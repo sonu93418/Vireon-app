@@ -12,7 +12,8 @@ import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
-import { setupNotificationListeners } from '@/src/services/notifications';
+import { setupNotificationListeners, registerForPushNotifications, sendFcmTokenToServer } from '@/src/services/notifications';
+import { configureGoogleSignIn } from '@/src/services/google-auth';
 import apiClient from '@/src/services/api';
 import '../global.css';
 
@@ -40,8 +41,16 @@ export default function RootLayout() {
     // Hide native splash after initial mount
     void SplashScreen.hideAsync().catch(() => {});
 
+    // Configure Google OAuth Sign-In
+    configureGoogleSignIn();
+
     // Set up push notification listeners for foreground/background handling
     notificationCleanup.current = setupNotificationListeners();
+
+    // Register & sync FCM push token with backend on every app open
+    void registerForPushNotifications().then((fcmToken) => {
+      if (fcmToken) void sendFcmTokenToServer(fcmToken);
+    });
 
     // App state prefetching on foreground focus
     const subscription = AppState.addEventListener('change', (nextAppState) => {

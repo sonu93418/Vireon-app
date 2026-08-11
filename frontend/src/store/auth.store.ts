@@ -30,23 +30,13 @@ interface AuthState {
   logout: () => void;
 }
 
-const DEFAULT_ADMIN: AuthUser = {
-  _id: 'admin_demo_01',
-  fullName: 'Vireon Director',
-  email: 'admin@vireonsafety.in',
-  phone: '+91 9876543210',
-  role: 'SUPER_ADMIN',
-  isEmailVerified: true,
-  status: 'ACTIVE',
-};
-
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      user: DEFAULT_ADMIN,
-      accessToken: 'demo_access_token',
-      refreshToken: 'demo_refresh_token',
-      isAuthenticated: true,
+      user: null,
+      accessToken: null,
+      refreshToken: null,
+      isAuthenticated: false,
       isLoading: false,
 
       setUser: (user) => set({ user }),

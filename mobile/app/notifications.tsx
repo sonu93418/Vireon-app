@@ -26,6 +26,7 @@ import {
   CheckCheck,
   ChevronRight,
   Sparkles,
+  Trash2,
 } from 'lucide-react-native';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOW, FONT_SIZE } from '@/src/theme/tokens';
 import apiClient from '@/src/services/api';
@@ -170,10 +171,33 @@ function formatTimeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 }
 
+import { scheduleTestLockScreenNotification } from '@/src/services/notifications';
+import { Alert } from 'react-native';
+
 export default function NotificationsScreen() {
   const [activeTab, setActiveTab] = useState('ALL');
   const [refreshing, setRefreshing] = useState(false);
   const [readNotifs, setReadNotifs] = useState<Record<string, boolean>>({});
+  const [deletedIds, setDeletedIds] = useState<Record<string, boolean>>({});
+  const [testScheduled, setTestScheduled] = useState(false);
+
+  const handleTestLockScreen = async () => {
+    setTestScheduled(true);
+    const success = await scheduleTestLockScreenNotification(5);
+    if (success) {
+      Alert.alert(
+        '⏰ Test Lock Screen Alert Scheduled!',
+        'Lock your phone screen NOW within 5 seconds!\n\nA high-priority notification with PUBLIC lock screen visibility will appear on your lock screen.',
+        [{ text: 'OK, Locking Now!' }]
+      );
+    } else {
+      Alert.alert(
+        '⚠️ Notification Permission Required',
+        'Please allow notification permissions in your phone Settings > Apps > Vireon > Notifications to see lock screen alerts.'
+      );
+    }
+    setTimeout(() => setTestScheduled(false), 6000);
+  };
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['notifications', 'mobile'],
@@ -194,11 +218,13 @@ export default function NotificationsScreen() {
   const rawList = data && data.length > 0 ? data : DEFAULT_NOTIFICATIONS;
 
   const notifications = useMemo(() => {
-    return rawList.map((n) => ({
-      ...n,
-      isRead: readNotifs[n._id] ?? n.isRead,
-    }));
-  }, [rawList, readNotifs]);
+    return rawList
+      .filter((n) => !deletedIds[n._id])
+      .map((n) => ({
+        ...n,
+        isRead: readNotifs[n._id] ?? n.isRead,
+      }));
+  }, [rawList, readNotifs, deletedIds]);
 
   const unreadCount = useMemo(() => notifications.filter((n) => !n.isRead).length, [notifications]);
 
@@ -220,6 +246,55 @@ export default function NotificationsScreen() {
     } catch {
       // Ignore API failure
     }
+  };
+
+  const handleDeleteItem = (id: string) => {
+    Alert.alert(
+      'Delete Notification',
+      'Are you sure you want to delete this notification message?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setDeletedIds((prev) => ({ ...prev, [id]: true }));
+            try {
+              await apiClient.delete(`/notifications/${id}`);
+            } catch {
+              // Ignore API failure
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleClearAll = () => {
+    if (notifications.length === 0) return;
+    Alert.alert(
+      'Clear All Notifications',
+      'Are you sure you want to clear all notification messages?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear All',
+          style: 'destructive',
+          onPress: async () => {
+            const allDeleted: Record<string, boolean> = {};
+            notifications.forEach((n) => {
+              allDeleted[n._id] = true;
+            });
+            setDeletedIds((prev) => ({ ...prev, ...allDeleted }));
+            try {
+              await apiClient.delete('/notifications/my/clear-all');
+            } catch {
+              // Ignore API failure
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleItemPress = (notif: NotifItem) => {
@@ -252,11 +327,46 @@ export default function NotificationsScreen() {
             {unreadCount > 0 ? `${unreadCount} unread updates` : 'All notifications read'}
           </Text>
         </View>
-        <TouchableOpacity style={styles.markReadBtn} onPress={handleMarkAllRead} activeOpacity={0.85}>
-          <CheckCheck size={14} color={COLORS.success} />
-          <Text style={styles.markReadText}>Mark Read</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <TouchableOpacity style={styles.markReadBtn} onPress={handleMarkAllRead} activeOpacity={0.85}>
+            <CheckCheck size={13} color={COLORS.success} />
+            <Text style={styles.markReadText}>Read</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.markReadBtn, { backgroundColor: '#FEF2F2', borderColor: '#FECACA' }]} onPress={handleClearAll} activeOpacity={0.85}>
+            <Trash2 size={13} color="#DC2626" />
+            <Text style={[styles.markReadText, { color: '#DC2626' }]}>Clear</Text>
+          </TouchableOpacity>
+        </View>
       </View>
+
+      {/* Lock Screen Test Banner */}
+      <TouchableOpacity
+        style={{
+          marginHorizontal: SPACING.base,
+          marginTop: SPACING.sm,
+          padding: 10,
+          backgroundColor: '#EFF6FF',
+          borderRadius: BORDER_RADIUS.lg,
+          borderWidth: 1,
+          borderColor: '#BFDBFE',
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+        onPress={handleTestLockScreen}
+        disabled={testScheduled}
+        activeOpacity={0.8}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+          <Sparkles size={16} color="#2563EB" />
+          <Text style={{ fontSize: 11, fontWeight: '700', color: '#1E40AF' }}>
+            {testScheduled ? '⏰ Lock screen NOW within 5s...' : '⚡ Test Lock Screen Alert (5s Delay)'}
+          </Text>
+        </View>
+        <View style={{ backgroundColor: '#2563EB', paddingHorizontal: 10, paddingVertical: 4, borderRadius: BORDER_RADIUS.md }}>
+          <Text style={{ fontSize: 10, fontWeight: '800', color: '#FFF' }}>Test Now</Text>
+        </View>
+      </TouchableOpacity>
 
       {/* Filter Tabs */}
       <View style={styles.tabsRow}>
@@ -343,10 +453,23 @@ export default function NotificationsScreen() {
 
                       {/* Action Footer */}
                       <View style={styles.actionFooter}>
-                        <Text style={[styles.actionBtnText, { color: config.color }]}>
-                          {notif.actionText ?? 'Tap to View Details'}
-                        </Text>
-                        <ChevronRight size={14} color={config.color} />
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                          <Text style={[styles.actionBtnText, { color: config.color }]}>
+                            {notif.actionText ?? 'Tap to View Details'}
+                          </Text>
+                          <ChevronRight size={14} color={config.color} />
+                        </View>
+                        <TouchableOpacity
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            handleDeleteItem(notif._id);
+                          }}
+                          style={{ padding: 4, borderRadius: 6, backgroundColor: 'rgba(239, 68, 68, 0.08)' }}
+                          activeOpacity={0.7}
+                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                          <Trash2 size={14} color="#EF4444" />
+                        </TouchableOpacity>
                       </View>
                     </View>
                   </LinearGradient>
@@ -401,7 +524,7 @@ const styles = StyleSheet.create({
   notifTitleUnread: { fontWeight: '800' },
   notifBodyText: { fontSize: 11, color: COLORS.textMuted, marginTop: 3, lineHeight: 17 },
 
-  actionFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 2, marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: COLORS.border },
+  actionFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: COLORS.border },
   actionBtnText: { fontSize: 11, fontWeight: '800' },
 
   emptyState: { alignItems: 'center', justifyContent: 'center', paddingTop: 60, paddingHorizontal: 32 },

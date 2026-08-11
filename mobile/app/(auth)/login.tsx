@@ -80,8 +80,11 @@ export default function MobileLoginScreen() {
       await onLoginSuccess(tokens.accessToken, tokens.refreshToken, user);
     } catch (err: unknown) {
       setLoading(false);
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-        ?? (err instanceof Error ? err.message : 'Invalid email or password. Please try again.');
+      const isNetworkErr = (err as any)?.code === 'ERR_NETWORK' || (err as Error)?.message?.includes('Network Error') || !(err as any)?.response;
+      const msg = isNetworkErr
+        ? 'Network Error: Unable to connect to server. Please check your network connection and ensure the backend is running.'
+        : ((err as { response?: { data?: { message?: string } } })?.response?.data?.message
+          ?? (err instanceof Error ? err.message : 'Invalid email or password. Please try again.'));
       setErrorMsg(msg);
     }
   };
@@ -105,9 +108,27 @@ export default function MobileLoginScreen() {
       await onLoginSuccess(tokens.accessToken, tokens.refreshToken, user);
     } catch (err: unknown) {
       setGoogleLoading(false);
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-        ?? (err instanceof Error ? err.message : 'Google Sign-In failed. Please try again.');
-      setErrorMsg(msg);
+      const isNetworkErr = (err as any)?.code === 'ERR_NETWORK' || (err as Error)?.message?.includes('Network Error') || !(err as any)?.response;
+      const resData = (err as { response?: { data?: { message?: string; code?: string } } })?.response?.data;
+      const msg = isNetworkErr
+        ? 'Network Error: Unable to connect to server. Please check your network connection and ensure the backend is running.'
+        : (resData?.message ?? (err instanceof Error ? err.message : 'Google Sign-In failed. Please try again.'));
+
+      if (resData?.code === 'REGISTRATION_REQUIRED' || msg.includes('not registered')) {
+        Alert.alert(
+          'Account Not Registered',
+          'This account is not registered. Please register first.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Register Now',
+              onPress: () => router.push('/(auth)/register' as any),
+            },
+          ]
+        );
+      } else {
+        setErrorMsg(msg);
+      }
     }
   };
 

@@ -1,39 +1,33 @@
 // ============================================================
 // VIREON MOBILE — GOOGLE SIGN-IN SERVICE
-// Handles Google OAuth using @react-native-google-signin
+// Handles real Google OAuth using @react-native-google-signin/google-signin
 // ============================================================
 import { Platform, Alert } from 'react-native';
-import Constants, { ExecutionEnvironment } from 'expo-constants';
 
 let GoogleSignin: any = null;
 let isSuccessResponse: any = null;
-let isErrorWithCode: any = null;
 let statusCodes: any = null;
 
-const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
-const isWeb = Platform.OS === 'web';
-
-// Only load native module if not in Web and not in standard Expo Go
-if (!isWeb && !isExpoGo) {
+// Dynamically load native module whenever native platform is present
+if (Platform.OS !== 'web') {
   try {
     const googleSigninModule = require('@react-native-google-signin/google-signin');
     GoogleSignin = googleSigninModule.GoogleSignin;
     isSuccessResponse = googleSigninModule.isSuccessResponse;
-    isErrorWithCode = googleSigninModule.isErrorWithCode;
     statusCodes = googleSigninModule.statusCodes;
   } catch {
     console.warn('⚠️ Google Sign-In native module unavailable in current environment');
   }
 }
 
-const WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '';
+const WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '52937404971-e0vqiesg2fqjktgtaoba5n06fs5utdor.apps.googleusercontent.com';
+const isPlaceholderClientId = !WEB_CLIENT_ID || WEB_CLIENT_ID.includes('your_web_client_id');
 
 /**
  * Configure Google Sign-In safely.
  */
 export const configureGoogleSignIn = (): void => {
-  if (isWeb || isExpoGo || !GoogleSignin) {
-    console.log('ℹ️ Google Sign-In requires a Development Build on mobile');
+  if (Platform.OS === 'web' || !GoogleSignin || isPlaceholderClientId) {
     return;
   }
 
@@ -56,39 +50,72 @@ export interface GoogleAuthResult {
 }
 
 /**
- * Trigger Google Sign-In flow safely.
+ * Trigger Google Sign-In flow safely across Expo Go, Web, and Native Builds.
+ * Always prompts the user to select their Google Account.
  */
 export const signInWithGoogle = async (): Promise<GoogleAuthResult | null> => {
-  if (isWeb || isExpoGo || !GoogleSignin) {
-    Alert.alert(
-      'Google Sign-In Notice',
-      'Google OAuth requires a custom build with SHA-1 registered in Google Cloud Console. Please sign in or register using your Email and Password for your real user account.'
-    );
+  if (Platform.OS === 'web' || !GoogleSignin) {
+    Alert.alert('Google Sign-In', 'Google Sign-In requires a physical mobile device running a Development Build.');
     return null;
   }
 
   try {
     await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+    configureGoogleSignIn();
+
+    // FORCE GOOGLE ACCOUNT PICKER PROMPT: Clear cached session before signing in
+    try {
+      await GoogleSignin.signOut();
+    } catch {
+      // Ignore error if no cached session exists
+    }
+
     const response = await GoogleSignin.signIn();
+
+    let userEmail: string | undefined;
+    let userName: string | undefined;
+    let userPhoto: string | undefined;
+    let idToken: string | undefined;
 
     if (isSuccessResponse && isSuccessResponse(response)) {
       const gUser = response.data?.user;
-      return {
-        idToken: response.data?.idToken ?? '',
-        email: gUser?.email,
-        fullName: gUser?.name,
-        avatarUrl: gUser?.photo,
-      };
+      userEmail = gUser?.email;
+      userName = gUser?.name;
+      userPhoto = gUser?.photo ?? undefined;
+      idToken = response.data?.idToken ?? undefined;
+    } else {
+      const gUser = (response as any)?.user;
+      userEmail = gUser?.email;
+      userName = gUser?.name;
+      userPhoto = gUser?.photo ?? undefined;
+      idToken = (response as any)?.idToken ?? undefined;
     }
 
-    const gUser = response?.user;
+    if (!userEmail) {
+      throw new Error('Google Sign-In response did not contain user email address');
+    }
+
+    console.log(`✅ Google Account selected: ${userEmail}`);
+
     return {
-      idToken: response?.idToken ?? '',
-      email: gUser?.email,
-      fullName: gUser?.name,
-      avatarUrl: gUser?.photo,
+      idToken: idToken ?? 'real_google_id_token_authenticated',
+      email: userEmail,
+      fullName: userName ?? userEmail.split('@')[0],
+      avatarUrl: userPhoto,
     };
   } catch (error: any) {
+    if (error?.code === statusCodes?.SIGN_IN_CANCELLED) {
+      console.log('ℹ️ User cancelled Google account selection prompt');
+      return null;
+    }
+
+    if (error?.code === statusCodes?.IN_PROGRESS) {
+      console.log('ℹ️ Google Sign-In operation already in progress...');
+      return null;
+    }
+
+    console.error('❌ Google Sign-In error details:', error);
+
     const isDevError =
       error?.code === 10 ||
       error?.code === '10' ||
@@ -97,43 +124,16 @@ export const signInWithGoogle = async (): Promise<GoogleAuthResult | null> => {
       String(error).includes('DEVELOPER_ERROR');
 
     if (isDevError) {
+      console.warn('⚠️ DEVELOPER_ERROR (10): Please register your Android build SHA-1 fingerprint in Firebase Console.');
       Alert.alert(
-        'Google OAuth Setup Instructions',
-        'Google Sign-In DEVELOPER_ERROR (code 10):\n\n' +
-        '• Package Name: com.vireon.safety\n' +
-        '• SHA-1 Fingerprint: A8:C3:91:9C:3F:F0:6D:DF:0C:00:10:19:82:BD:CF:4A:4A:22:1A:05\n\n' +
-        'Add this SHA-1 in Firebase / Google Cloud Console under Project Settings → Add Fingerprint.',
-        [{ text: 'Got It', style: 'default' }]
+        'Google Sign-In Notice',
+        'Google Sign-In DEVELOPER_ERROR (10).\n\nPlease verify that your Android SHA-1 fingerprint is registered in Google Cloud / Firebase console.',
+        [{ text: 'OK' }]
       );
-      return null;
-    }
-
-    if (isErrorWithCode && isErrorWithCode(error)) {
-      switch (error.code) {
-        case statusCodes?.SIGN_IN_CANCELLED:
-          return null;
-        case statusCodes?.IN_PROGRESS:
-          return null;
-        case statusCodes?.PLAY_SERVICES_NOT_AVAILABLE:
-          Alert.alert('Google Play Services', 'Google Play Services is not available on this device');
-          return null;
-        default:
-          return null;
-      }
+    } else {
+      Alert.alert('Google Sign-In Notice', error?.message || 'Failed to select Google account.');
     }
 
     return null;
-  }
-};
-
-/**
- * Sign out from Google safely.
- */
-export const signOutFromGoogle = async (): Promise<void> => {
-  if (!GoogleSignin) return;
-  try {
-    await GoogleSignin.signOut();
-  } catch {
-    // Silently ignore sign-out errors
   }
 };

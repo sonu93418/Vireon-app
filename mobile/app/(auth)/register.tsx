@@ -35,6 +35,8 @@ export default function MobileRegisterScreen() {
     return () => backHandler.remove();
   }, []);
 
+  const [googleIdToken, setGoogleIdToken] = useState<string | null>(null);
+
   const handleRegisterSuccess = (tokens: any, user: any) => {
     setAccessToken(tokens.accessToken);
     setRefreshToken(tokens.refreshToken);
@@ -71,8 +73,8 @@ export default function MobileRegisterScreen() {
     const cleanPhone = phone.replace(/\D/g, '');
     const cleanPassword = password.trim();
 
-    if (!cleanName || !cleanEmail || !cleanPhone || !cleanPassword) {
-      setErrorMsg('Please enter your Full Name, Email, 10-digit Phone, and Password.');
+    if (!cleanName || !cleanEmail || !cleanPhone) {
+      setErrorMsg('Please enter your Full Name, Email, and 10-digit Phone.');
       return;
     }
 
@@ -81,7 +83,27 @@ export default function MobileRegisterScreen() {
       return;
     }
 
-    if (cleanPassword.length < 6) {
+    if (googleIdToken) {
+      // User verified via Google — submit Google Registration
+      setLoading(true);
+      try {
+        const res = await apiClient.post('/auth/register/google', {
+          idToken: googleIdToken,
+          phone: cleanPhone,
+          fullName: cleanName,
+          role: 'STUDENT',
+        });
+        const { tokens, user } = res.data.data;
+        handleRegisterSuccess(tokens, user);
+      } catch (err: unknown) {
+        setLoading(false);
+        const errData = (err as any)?.response?.data;
+        setErrorMsg(errData?.message || 'Google Registration failed.');
+      }
+      return;
+    }
+
+    if (!cleanPassword || cleanPassword.length < 6) {
       setErrorMsg('Password must be at least 6 characters.');
       return;
     }
@@ -103,12 +125,14 @@ export default function MobileRegisterScreen() {
       });
 
       const { tokens, user } = loginRes.data.data;
-      handleRegisterSuccess(tokens, user);
     } catch (err: unknown) {
       setLoading(false);
+      const isNetworkErr = (err as any)?.code === 'ERR_NETWORK' || (err as Error)?.message?.includes('Network Error') || !(err as any)?.response;
       const errData = (err as any)?.response?.data;
       const firstFieldError = errData?.errors?.[0]?.message;
-      const msg = firstFieldError ?? errData?.message ?? (err instanceof Error ? err.message : 'Registration failed. Please check your information.');
+      const msg = isNetworkErr
+        ? 'Network Error: Unable to connect to server. Please check your network connection and ensure the backend is running.'
+        : (firstFieldError ?? errData?.message ?? (err instanceof Error ? err.message : 'Registration failed. Please check your information.'));
       setErrorMsg(msg);
     }
   };
@@ -123,14 +147,29 @@ export default function MobileRegisterScreen() {
         return;
       }
 
-      const res = await apiClient.post('/auth/login/google', {
-        idToken: gResult.idToken,
-        email: gResult.email,
-        fullName: gResult.fullName,
-        avatarUrl: gResult.avatarUrl,
-      });
-      const { tokens, user } = res.data.data;
-      handleRegisterSuccess(tokens, user);
+      setGoogleLoading(false);
+      setFullName(gResult.fullName || '');
+      setEmail(gResult.email || '');
+      setGoogleIdToken(gResult.idToken);
+
+      const cleanPhone = phone.replace(/\D/g, '');
+      if (cleanPhone.length === 10) {
+        setLoading(true);
+        const res = await apiClient.post('/auth/register/google', {
+          idToken: gResult.idToken,
+          phone: cleanPhone,
+          fullName: gResult.fullName,
+          role: 'STUDENT',
+        });
+        const { tokens, user } = res.data.data;
+        handleRegisterSuccess(tokens, user);
+      } else {
+        Alert.alert(
+          'Google Profile Verified',
+          'Name & Email pre-filled from Google! Please enter your 10-digit Mobile Phone Number below and tap Register.',
+          [{ text: 'OK' }]
+        );
+      }
     } catch (err: unknown) {
       setGoogleLoading(false);
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message

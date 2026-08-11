@@ -3,40 +3,46 @@ import { Platform } from 'react-native';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Device from 'expo-device';
 
-const getDynamicApiUrl = (): string => {
-  let envUrl = process.env.EXPO_PUBLIC_API_URL;
+export const getCandidateApiUrls = (): string[] => {
+  const candidates: string[] = [];
+  const envUrl = process.env.EXPO_PUBLIC_API_URL;
 
-  if (envUrl && Platform.OS === 'android' && (envUrl.includes('localhost') || envUrl.includes('127.0.0.1'))) {
-    envUrl = undefined;
+  if (envUrl && !(Platform.OS === 'android' && (envUrl.includes('localhost') || envUrl.includes('127.0.0.1')))) {
+    candidates.push(envUrl);
   }
 
-  if (envUrl) {
-    return envUrl;
-  }
-
-  // 1. Android Emulator (Virtual Device)
-  if (Platform.OS === 'android' && !Device.isDevice) {
-    return 'http://10.0.2.2:5000/api/v1';
-  }
-
-  // 2. Physical Mobile Device via Metro host IP
+  // 1. Dynamic Metro host IP
   const hostUri = Constants.expoConfig?.hostUri ?? (Constants as any).experienceUrl ?? (Constants as any).manifest?.debuggerHost;
   if (hostUri) {
     const hostIp = hostUri.split(':')[0];
     if (hostIp && hostIp !== 'localhost' && hostIp !== '127.0.0.1') {
-      return `http://${hostIp}:5000/api/v1`;
+      candidates.push(`http://${hostIp}:5000/api/v1`);
     }
   }
 
-  // 3. Local Wi-Fi Network IP fallback (Host IP)
+  // 2. Android Emulator virtual host IP & Wi-Fi local subnet IP
   if (Platform.OS === 'android') {
-    return 'http://10.64.3.148:5000/api/v1';
+    candidates.push('http://10.0.2.2:5000/api/v1');
+    candidates.push('http://10.78.118.148:5000/api/v1');
+    candidates.push('http://10.64.3.148:5000/api/v1');
   }
 
-  return 'http://localhost:5000/api/v1';
+  // 3. Localhost fallbacks
+  candidates.push('http://localhost:5000/api/v1');
+  candidates.push('http://127.0.0.1:5000/api/v1');
+
+  // De-duplicate candidates while preserving order
+  return Array.from(new Set(candidates));
 };
 
-export const API_BASE_URL = getDynamicApiUrl();
+export let API_BASE_URL = getCandidateApiUrls()[0] || 'http://localhost:5000/api/v1';
+
+export const updateActiveApiBaseUrl = (newUrl: string): void => {
+  API_BASE_URL = newUrl;
+  if (apiClient) {
+    apiClient.defaults.baseURL = newUrl;
+  }
+};
 
 // In-memory fallback map for Expo Go & Web
 const memoryStorage = new Map<string, string>();
@@ -153,9 +159,10 @@ apiClient.interceptors.response.use(
   (r) => r,
   async (error: AxiosError) => {
     const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const reqUrl = original?.url ?? '';
+    const isAuthRoute = reqUrl.includes('/auth/login') || reqUrl.includes('/auth/register') || reqUrl.includes('/auth/verify-otp');
 
-    // ─── Handle 401 Unauthorized: try Token Refresh ──────────────────────────
-    if (error.response?.status === 401 && !original._retry) {
+    if (error.response?.status === 401 && !original?._retry && !isAuthRoute) {
       // If no refresh token at all — clear state and silently reject
       const refreshToken = getRefreshToken();
       if (!refreshToken) {
@@ -199,24 +206,31 @@ apiClient.interceptors.response.use(
     }
 
     // ─── Network Error Multi-IP Fast Retry ───────────────────────────────────
-    if ((!error.response || error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') && original && !(original as any)._ipRetry) {
+    const isNetworkError = !error.response || error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED';
+    if (isNetworkError && original && !(original as any)._ipRetry) {
       (original as any)._ipRetry = true;
-      const currentUrl = original.baseURL ?? API_BASE_URL;
+      const currentBase = original.baseURL || API_BASE_URL;
+      const candidates = getCandidateApiUrls();
+      const retryCandidates = candidates.filter((c) => c !== currentBase);
 
-      let fallbackUrl = 'http://10.0.2.2:5000/api/v1';
-      if (currentUrl.includes('10.0.2.2')) {
-        fallbackUrl = 'http://10.64.3.148:5000/api/v1';
-      } else if (currentUrl.includes('10.64.3.148')) {
-        fallbackUrl = 'http://10.0.2.2:5000/api/v1';
+      for (const targetUrl of retryCandidates) {
+        try {
+          const testRes = await axios({
+            ...original,
+            baseURL: targetUrl,
+            timeout: 6000,
+          });
+          updateActiveApiBaseUrl(targetUrl);
+          console.log(`✅ [API Network Failover] Successfully connected backend at: ${targetUrl}`);
+          return testRes;
+        } catch {
+          // Candidate unreachable — try next candidate
+        }
       }
+    }
 
-      original.baseURL = fallbackUrl;
-      original.timeout = 5000;
-      try {
-        return await axios(original);
-      } catch {
-        // Both IPs failed — return original error
-      }
+    if (isNetworkError && (!error.message || error.message.includes('Network Error'))) {
+      error.message = 'Unable to connect to Vireon backend server. Please verify the backend is running on port 5000 and your device is connected.';
     }
 
     return Promise.reject(error);

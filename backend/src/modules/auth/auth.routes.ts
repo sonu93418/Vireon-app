@@ -113,6 +113,7 @@ router.post('/login/phone', authRateLimiter, validate({ body: loginWithPhoneSche
  *         description: Invalid Google token
  */
 router.post('/login/google', authRateLimiter, validate({ body: loginWithGoogleSchema }), controller.loginWithGoogle);
+router.post('/register/google', authRateLimiter, controller.registerWithGoogle);
 
 /**
  * @swagger

@@ -59,6 +59,15 @@ export class AuthController {
     }
   };
 
+  registerWithGoogle = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const result = await this.service.registerWithGoogle(req.body as Parameters<AuthService['registerWithGoogle']>[0]);
+      ResponseHandler.created(res, result, 'Registration successful');
+    } catch (error) {
+      next(error);
+    }
+  };
+
   refreshToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { refreshToken } = req.body as { refreshToken: string };
@@ -129,9 +138,10 @@ export class AuthController {
 
   me = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { AuthRepository } = await import('./auth.repository');
-      const repo = new AuthRepository();
-      const user = await repo.findById(req.user!.userId);
+      const { UserModel } = await import('../../models/user.model');
+      const user = await UserModel.findById(req.user!.userId)
+        .select('fullName email phone role avatarUrl coverImageUrl isEmailVerified status createdAt')
+        .lean();
       ResponseHandler.success(res, user, 'Profile fetched successfully');
     } catch (error) {
       next(error);

@@ -17,6 +17,7 @@ export interface INotificationDocument extends Document {
   sentAt?: Date;
   isSent: boolean;
   targetRoles?: UserRole[];
+  deletedByUsers?: mongoose.Types.ObjectId[];
 }
 
 const NotificationSchema = new Schema<INotificationDocument>(
@@ -33,6 +34,7 @@ const NotificationSchema = new Schema<INotificationDocument>(
     sentAt: { type: Date },
     isSent: { type: Boolean, default: false },
     targetRoles: [{ type: String, enum: Object.values(UserRole) }],
+    deletedByUsers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
   },
   {
     timestamps: true,

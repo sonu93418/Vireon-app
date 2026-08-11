@@ -17,7 +17,11 @@ import {
   paginationSchema,
   objectIdSchema,
 } from '@vireon/shared/schemas';
-import { UserRole, ClassStatus } from '@vireon/shared';
+import { UserRole, ClassStatus, NotificationType } from '@vireon/shared';
+import { NotificationModel } from '../../models/notification.model';
+import { UserModel } from '../../models/user.model';
+import { getFirebaseMessaging } from '../../config/firebase';
+import { logger } from '../../config/logger';
 
 // ─── Repository ───────────────────────────────────────────────────────────────
 class ClassRepository extends BaseRepository<IClassDocument> {
@@ -91,7 +95,63 @@ class ClassService {
     if (!cls) throw new NotFoundError('Class');
     return cls;
   }
-  async create(data: Record<string, unknown>) { return this.repo.create(data as Partial<IClassDocument>); }
+  async create(data: Record<string, unknown>) {
+    const cls = await this.repo.create(data as Partial<IClassDocument>);
+
+    try {
+      const scheduledDateStr = new Date(cls.scheduledAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+      const scheduledTimeStr = new Date(cls.scheduledAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+      const notifTitle = `📅 New Class Scheduled: ${cls.title}`;
+      const notifBody = `Scheduled for ${scheduledDateStr} at ${scheduledTimeStr}. Tap to view schedule!`;
+
+      await NotificationModel.create({
+        title: notifTitle,
+        body: notifBody,
+        type: NotificationType.CLASS_REMINDER,
+        dataPayload: { classId: String(cls._id), zoomJoinUrl: cls.zoomJoinUrl ?? '' },
+        isSent: true,
+        sentAt: new Date(),
+      });
+
+      const users = await UserModel.find({ status: { $ne: 'SUSPENDED' }, fcmTokens: { $exists: true, $not: { $size: 0 } } }).select('fcmTokens').lean();
+      const tokens = users.flatMap((u) => u.fcmTokens ?? []).filter(Boolean);
+
+      if (tokens.length > 0) {
+        const messaging = getFirebaseMessaging();
+        await messaging.sendEachForMulticast({
+          tokens,
+          notification: { title: notifTitle, body: notifBody },
+          data: {
+            type: NotificationType.CLASS_REMINDER,
+            classId: String(cls._id),
+            zoomJoinUrl: cls.zoomJoinUrl ?? '',
+          },
+          android: {
+            priority: 'high',
+            notification: {
+              channelId: 'vireon_alerts_v3',
+              visibility: 'public',
+              priority: 'max',
+              defaultSound: true,
+              defaultVibrateTimings: true,
+            },
+          },
+          apns: {
+            headers: { 'apns-priority': '10' },
+            payload: {
+              aps: { sound: 'default', badge: 1, contentAvailable: true },
+            },
+          },
+        });
+        logger.info(`✅ Broadcast lock screen push sent for scheduled class: ${cls.title}`);
+      }
+    } catch (err) {
+      logger.error('❌ Failed to send push for new scheduled class:', err);
+    }
+
+    return cls;
+  }
   async update(id: string, data: Record<string, unknown>) {
     const updated = await this.repo.updateById(id, data);
     if (!updated) throw new NotFoundError('Class');
@@ -100,6 +160,58 @@ class ClassService {
   async updateStatus(id: string, data: Record<string, unknown>) {
     const updated = await this.repo.updateById(id, data);
     if (!updated) throw new NotFoundError('Class');
+
+    if (data.status === ClassStatus.LIVE || data.status === 'LIVE') {
+      try {
+        const notifTitle = `🚨 LIVE NOW: ${updated.title}`;
+        const notifBody = `The live session for ${updated.subject} is live right now! Tap to join session.`;
+
+        await NotificationModel.create({
+          title: notifTitle,
+          body: notifBody,
+          type: NotificationType.CLASS_STARTED,
+          dataPayload: { classId: String(updated._id), zoomJoinUrl: updated.zoomJoinUrl ?? '' },
+          isSent: true,
+          sentAt: new Date(),
+        });
+
+        const users = await UserModel.find({ status: { $ne: 'SUSPENDED' }, fcmTokens: { $exists: true, $not: { $size: 0 } } }).select('fcmTokens').lean();
+        const tokens = users.flatMap((u) => u.fcmTokens ?? []).filter(Boolean);
+
+        if (tokens.length > 0) {
+          const messaging = getFirebaseMessaging();
+          await messaging.sendEachForMulticast({
+            tokens,
+            notification: { title: notifTitle, body: notifBody },
+            data: {
+              type: NotificationType.CLASS_STARTED,
+              classId: String(updated._id),
+              zoomJoinUrl: updated.zoomJoinUrl ?? '',
+            },
+            android: {
+              priority: 'high',
+              notification: {
+                channelId: 'vireon_alerts_v3',
+                visibility: 'public',
+                priority: 'max',
+                defaultSound: true,
+                defaultVibrateTimings: true,
+              },
+            },
+            apns: {
+              headers: { 'apns-priority': '10' },
+              payload: {
+                aps: { sound: 'default', badge: 1, contentAvailable: true },
+              },
+            },
+          });
+          logger.info(`✅ Lock screen push sent for LIVE class: ${updated.title}`);
+        }
+      } catch (err) {
+        logger.error('❌ Failed to send push for LIVE status update:', err);
+      }
+    }
+
     return updated;
   }
   async delete(id: string) { await this.repo.softDeleteById(id); }
