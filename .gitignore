@@ -92,6 +92,8 @@ google-services.json
 GoogleService-Info.plist
 mobile/google-services.json
 mobile/GoogleService-Info.plist
+mobile/app.config.js
+app.config.js
 firebase-service-account.json
 service-account*.json
 !google-services.json.example
