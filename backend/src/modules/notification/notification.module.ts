@@ -346,6 +346,18 @@ router.post('/fcm-token', optionalAuthenticate, async (req: Request, res: Respon
     const { fcmToken, email } = req.body as { fcmToken: string; email?: string };
     if (!fcmToken) throw new BadRequestError('fcmToken is required');
 
+    // Reject synthetic fallback or non-FCM tokens
+    if (fcmToken.includes('DEV_LOCAL') || fcmToken.includes('ExponentPushToken')) {
+      logger.warn(`⚠️ [FCM] Rejected synthetic token registration attempt: ${fcmToken}`);
+      throw new BadRequestError('Only valid native FCM device tokens can be registered');
+    }
+
+    // Prune any legacy synthetic fallback tokens from all user records
+    await UserModel.updateMany(
+      {},
+      { $pull: { fcmTokens: { $regex: 'DEV_LOCAL|ExponentPushToken' } } }
+    );
+
     let userId = req.user?.userId;
     if (!userId && email) {
       const user = await UserModel.findOne({ email: email.toLowerCase() });
@@ -354,13 +366,13 @@ router.post('/fcm-token', optionalAuthenticate, async (req: Request, res: Respon
 
     if (userId) {
       await UserModel.findByIdAndUpdate(userId, { $addToSet: { fcmTokens: fcmToken } });
-      logger.info(`✅ FCM token registered for user ${userId} (${email || ''})`);
+      logger.info(`[FCM][TOKEN_REGISTER] ✅ Native FCM token registered for user ${userId} (${email || ''})`);
     } else {
       await UserModel.updateMany({ status: { $ne: 'SUSPENDED' } }, { $addToSet: { fcmTokens: fcmToken } });
-      logger.info(`✅ FCM token registered to user documents`);
+      logger.info(`[FCM][TOKEN_REGISTER] ✅ Native FCM token registered to active user records`);
     }
 
-    ResponseHandler.success(res, null, 'FCM token registered');
+    ResponseHandler.success(res, { success: true }, 'Native FCM token registered successfully');
   } catch (e) { next(e); }
 });
 

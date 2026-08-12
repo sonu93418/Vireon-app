@@ -30,21 +30,24 @@ if (Platform.OS !== 'web') {
 }
 
 /**
- * Request notification permissions and return the FCM/Expo push token.
- * Returns null if permissions are denied or the device is not physical.
+ * Request notification permissions, configure high-priority Android channels,
+ * and fetch the real native FCM device push token via getDevicePushTokenAsync().
+ * Returns null if permissions are denied, device is unsupported, or FCM token generation fails.
  */
 export const registerForPushNotifications = async (): Promise<string | null> => {
   if (Platform.OS === 'web') {
+    console.log('[FCM][PERMISSION] Web platform detected; skipping native FCM registration.');
     return null;
   }
 
   try {
-    // Check existing permissions
+    // 1. Check existing permissions
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
 
-    // Request permission if not already granted with full lockscreen & sound options
+    // Request permission if not already granted
     if (existingStatus !== 'granted') {
+      console.log('[FCM][PERMISSION] Requesting notification permissions...');
       const { status } = await Notifications.requestPermissionsAsync({
         ios: {
           allowAlert: true,
@@ -55,12 +58,13 @@ export const registerForPushNotifications = async (): Promise<string | null> => 
       finalStatus = status;
     }
 
+    console.log(`[FCM][PERMISSION] Final notification permission status: ${finalStatus}`);
     if (finalStatus !== 'granted') {
-      console.log('⚠️ Push notification permission denied');
+      console.warn('[FCM][PERMISSION] Push notification permission denied by user.');
       return null;
     }
 
-    // Android requires high-priority notification channels for lockscreen & heads-up display
+    // 2. Android notification channels configuration
     if (Platform.OS === 'android') {
       const channelAudioAttributes = {
         usage: Notifications.AndroidAudioUsage.NOTIFICATION,
@@ -94,86 +98,70 @@ export const registerForPushNotifications = async (): Promise<string | null> => 
           audioAttributes: channelAudioAttributes,
         });
       }
+      console.log('[FCM][CHANNEL] Android MAX-importance & PUBLIC lockscreen channels configured successfully.');
     }
 
-    // Attempt 1: Fetch native device FCM push token
+    // 3. Direct Native FCM Token Fetch via getDevicePushTokenAsync() ONLY
     try {
+      console.log('[FCM][TOKEN] Requesting native FCM device push token via getDevicePushTokenAsync()...');
       const tokenData = await Notifications.getDevicePushTokenAsync();
       const fcmToken = tokenData?.data ?? null;
-      if (fcmToken) {
-        console.log('📱 ✅ Registered native FCM token:', fcmToken.slice(0, 30) + '...');
+
+      if (fcmToken && typeof fcmToken === 'string' && fcmToken.length > 10) {
+        console.log(`[FCM][TOKEN] ✅ Real Native FCM token generated successfully: ${fcmToken.slice(0, 25)}...`);
         return fcmToken;
       }
-    } catch (e: any) {
-      const errMsg = e?.message || String(e);
+    } catch (tokenErr: any) {
+      const errMsg = tokenErr?.message || String(tokenErr);
       if (errMsg.includes('FIS_AUTH_ERROR')) {
-        console.log(
-          'ℹ️ [FCM] FIS_AUTH_ERROR — native FCM token unavailable. Enable Firebase Installations API at: https://console.cloud.google.com/apis/library/firebaseinstallations.googleapis.com'
+        console.error(
+          '[FCM][TOKEN_ERROR] FIS_AUTH_ERROR: Native FCM token registration failed. Ensure Firebase Installations API & Cloud Messaging API are ENABLED in GCP Console: https://console.cloud.google.com/apis/library/firebaseinstallations.googleapis.com'
         );
       } else {
-        console.warn('⚠️ getDevicePushTokenAsync failed:', errMsg);
+        console.error('[FCM][TOKEN_ERROR] Native getDevicePushTokenAsync failed:', errMsg);
       }
     }
 
-    // Attempt 2: Expo Push Token (works even when native FCM fails)
-    try {
-      const projectId = Constants.expoConfig?.extra?.eas?.projectId;
-      const expoTokenData = await Notifications.getExpoPushTokenAsync(
-        projectId ? { projectId } : undefined
-      );
-      const expoToken = expoTokenData?.data;
-      if (expoToken) {
-        console.log('📱 ✅ Registered Expo Push Token:', expoToken);
-        return expoToken;
-      }
-    } catch (expoErr: any) {
-      const errMsg = expoErr?.message || String(expoErr);
-      if (errMsg.includes('FIS_AUTH_ERROR')) {
-        console.warn('⚠️ getExpoPushTokenAsync failed with FIS_AUTH_ERROR (Firebase Installations API disabled in GCP Console)');
-      } else {
-        console.warn('⚠️ getExpoPushTokenAsync failed:', errMsg);
-      }
-    }
-
-    if (__DEV__) {
-      const devFallbackToken = `ExponentPushToken[DEV_LOCAL_${Device.modelName ? Device.modelName.replace(/\s+/g, '_') : 'EMULATOR'}]`;
-      console.log('ℹ️ [FCM DEV FALLBACK] Registering local DEV push token:', devFallbackToken);
-      return devFallbackToken;
-    }
-
+    console.warn('[FCM][TOKEN] Native FCM token unavailable. Device remains unregistered until native FCM token generation succeeds.');
     return null;
-  } catch (err) {
-    console.warn('⚠️ registerForPushNotifications outer error:', err);
+  } catch (err: any) {
+    console.error('[FCM][TOKEN_ERROR] Unexpected error in registerForPushNotifications:', err?.message || String(err));
     return null;
   }
 };
 
 /**
- * Send the FCM token to the backend for storage with multi-IP fail-safe retries.
+ * Send the REAL native FCM token to the backend for storage.
+ * Does NOT register fake fallback tokens.
  */
 export const sendFcmTokenToServer = async (fcmToken: string): Promise<void> => {
+  if (!fcmToken || fcmToken.includes('DEV_LOCAL') || fcmToken.includes('ExponentPushToken')) {
+    console.warn('[FCM][TOKEN_REGISTER] Rejected non-FCM or synthetic fallback token registration attempt.');
+    return;
+  }
+
   try {
     const user = getUserProfileStorage();
     const payload = { fcmToken, email: user?.email };
 
     try {
       await apiClient.post('/notifications/fcm-token', payload);
-      console.log('✅ FCM token registered with server:', fcmToken.slice(0, 25) + '...');
+      console.log(`[FCM][TOKEN_REGISTER] ✅ Native FCM token registered with server for ${user?.email || 'authenticated device'}`);
       return;
-    } catch {
-      // Primary API client failed — fallback to direct IP retries
+    } catch (err) {
+      // Direct IP fallback retries if primary domain client fails
     }
 
     const hostIps = ['10.78.118.148', '10.64.3.148', '10.0.2.2', 'localhost'];
     for (const ip of hostIps) {
       try {
         await axios.post(`http://${ip}:5000/api/v1/notifications/fcm-token`, payload, { timeout: 4000 });
-        console.log(`✅ FCM token registered via fallback IP (${ip}):`, fcmToken.slice(0, 25) + '...');
+        console.log(`[FCM][TOKEN_REGISTER] ✅ Native FCM token registered via fallback IP (${ip})`);
         return;
       } catch {}
     }
   } catch (error) {
-    console.error('❌ Failed to register FCM token with server:', error);
+    console.error('[FCM][TOKEN_REGISTER] ❌ Failed to send FCM token to backend server:', error);
   }
 };
 

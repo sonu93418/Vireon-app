@@ -41,7 +41,7 @@ mobile/ios/
 *.mobileprovision
 *.orig.*
 web-build/
-convert-png.js
+!mobile/convert-png.js
 
 # ========================================
 # Logs
@@ -90,18 +90,21 @@ coverage/
 .turbo
 google-services.json
 GoogleService-Info.plist
-!mobile/google-services.json
+mobile/google-services.json
 mobile/GoogleService-Info.plist
 firebase-service-account.json
 service-account*.json
+!google-services.json.example
 
 # ========================================
-# Auto-generated Type Declarations
+# Type Declarations & Examples
 # ========================================
-frontend/next-env.d.ts
-mobile/nativewind-env.d.ts
-mobile/env.d.ts
-mobile/expo-env.d.ts
+!.env.example
+!frontend/next-env.d.ts
+!mobile/nativewind-env.d.ts
+!mobile/env.d.ts
+
+
 
 # ========================================
 # Agents / AI Config

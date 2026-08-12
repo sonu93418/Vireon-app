@@ -220,8 +220,10 @@ apiClient.interceptors.response.use(
             baseURL: targetUrl,
             timeout: 6000,
           });
-          updateActiveApiBaseUrl(targetUrl);
-          console.log(`✅ [API Network Failover] Successfully connected backend at: ${targetUrl}`);
+          if (API_BASE_URL !== targetUrl) {
+            updateActiveApiBaseUrl(targetUrl);
+            console.log(`[API][NETWORK_FAILOVER] Successfully connected backend at: ${targetUrl}`);
+          }
           return testRes;
         } catch {
           // Candidate unreachable — try next candidate
