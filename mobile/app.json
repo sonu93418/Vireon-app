@@ -50,7 +50,7 @@
         {
           "icon": "./assets/notification-icon.png",
           "color": "#16A34A",
-          "defaultChannel": "vireon_alerts_v3",
+          "defaultChannel": "vireon_alerts_v4",
           "mode": "production"
         }
       ],

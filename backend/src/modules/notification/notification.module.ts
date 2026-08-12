@@ -69,16 +69,16 @@ class NotificationService {
     switch (type) {
       case 'CLASS_STARTED':
       case 'ANNOUNCEMENT':
-        return 'vireon_alerts_v3';
+        return 'vireon_alerts_v4';
       case 'CLASS_REMINDER':
-        return 'vireon_reminders_v3';
+        return 'vireon_reminders_v4';
       case 'PLACEMENT':
-        return 'vireon_placements_v3';
+        return 'vireon_placements_v4';
       case 'COURSE_UPDATE':
       case 'NEW_BLOG':
-        return 'vireon_courses_v3';
+        return 'vireon_courses_v4';
       default:
-        return 'vireon_default_v3';
+        return 'vireon_default_v4';
     }
   }
 
@@ -128,7 +128,7 @@ class NotificationService {
                 priority: 'high',
                 ttl: 86400000,
                 notification: {
-                  channelId: channelId || 'vireon_alerts_v3',
+                  channelId: channelId || 'vireon_alerts_v4',
                   sound: 'default',
                   visibility: 'public',
                   priority: 'max',

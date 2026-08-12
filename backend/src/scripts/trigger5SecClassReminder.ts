@@ -74,7 +74,7 @@ async function run() {
         priority: 'high',
         ttl: 86400000,
         notification: {
-          channelId: 'vireon_reminders_v3',
+          channelId: 'vireon_reminders_v4',
           visibility: 'public',
           priority: 'max',
           defaultSound: true,
