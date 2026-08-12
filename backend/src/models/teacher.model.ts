@@ -88,7 +88,6 @@ const TeacherSchema = new Schema<ITeacherDocument>(
 );
 
 // ─── Indexes ──────────────────────────────────────────────────────────────────
-TeacherSchema.index({ userId: 1 });
 TeacherSchema.index({ isActive: 1, isVerified: 1 });
 TeacherSchema.index({ certifications: 1 });
 TeacherSchema.index({ rating: -1 });

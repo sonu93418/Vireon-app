@@ -69,7 +69,6 @@ BlogSchema.pre('save', function (next) {
 });
 
 // ─── Indexes ──────────────────────────────────────────────────────────────────
-BlogSchema.index({ slug: 1 });
 BlogSchema.index({ category: 1, isPublished: 1 });
 BlogSchema.index({ publishedAt: -1 });
 BlogSchema.index({ tags: 1 });

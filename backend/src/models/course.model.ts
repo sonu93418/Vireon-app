@@ -84,7 +84,6 @@ CourseSchema.pre('save', function (next) {
 });
 
 // ─── Indexes ──────────────────────────────────────────────────────────────────
-CourseSchema.index({ slug: 1 });
 CourseSchema.index({ level: 1, domain: 1 });
 CourseSchema.index({ isPopular: 1, isActive: 1 });
 CourseSchema.index({ isActive: 1, isPopular: 1, createdAt: -1 });
