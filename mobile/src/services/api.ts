@@ -11,6 +11,9 @@ export const getCandidateApiUrls = (): string[] => {
     candidates.push(envUrl);
   }
 
+  // Live Production Render API Backend
+  candidates.push('https://vireon-app.onrender.com/api/v1');
+
   // 1. Dynamic Metro host IP
   const hostUri = Constants.expoConfig?.hostUri ?? (Constants as any).experienceUrl ?? (Constants as any).manifest?.debuggerHost;
   if (hostUri) {
