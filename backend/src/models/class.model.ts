@@ -2,7 +2,7 @@
 // VIREON — CLASS (ONLINE SESSION) MONGOOSE MODEL
 // ============================================================
 import mongoose, { Schema, Document, Model } from 'mongoose';
-import { ClassStatus } from '@vireon/shared';
+import { ClassStatus } from '../shared';
 
 export interface IClassDocument extends Document {
   title: string;

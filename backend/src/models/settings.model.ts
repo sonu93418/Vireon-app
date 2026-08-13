@@ -2,7 +2,7 @@
 // VIREON — SETTINGS MONGOOSE MODEL
 // ============================================================
 import mongoose, { Schema, Document, Model } from 'mongoose';
-import { IsoCertification } from '@vireon/shared';
+import { IsoCertification } from '../shared';
 
 export interface ISettingsDocument extends Document {
   instituteName: string;

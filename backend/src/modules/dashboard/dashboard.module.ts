@@ -10,7 +10,7 @@ import { BlogModel } from '../../models/blog.model';
 import { ContactModel } from '../../models/misc.models';
 import { ResponseHandler } from '../../core/response';
 import { optionalAuthenticate } from '../../middlewares/auth.middleware';
-import { UserRole, UserStatus, ClassStatus } from '@vireon/shared';
+import { UserRole, UserStatus, ClassStatus } from '../../shared';
 
 const router = Router();
 

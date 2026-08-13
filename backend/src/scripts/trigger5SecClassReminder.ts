@@ -5,7 +5,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 import mongoose from 'mongoose';
 import { UserModel } from '../models/user.model';
 import { configureFirebase, getFirebaseMessaging } from '../config/firebase';
-import { NotificationType } from '@vireon/shared';
+import { NotificationType } from '../shared';
 import { NotificationModel } from '../models/notification.model';
 
 const MONGO_URI = process.env.MONGODB_URI;

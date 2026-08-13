@@ -9,8 +9,8 @@ import { ResponseHandler } from '../../core/response';
 import { BadRequestError } from '../../core/errors';
 import { authenticate, authorize, optionalAuthenticate } from '../../middlewares/auth.middleware';
 import { validate } from '../../middlewares/validate.middleware';
-import { sendNotificationSchema, paginationSchema, objectIdSchema, registerFcmTokenSchema } from '@vireon/shared/schemas';
-import { UserRole } from '@vireon/shared';
+import { sendNotificationSchema, paginationSchema, objectIdSchema, registerFcmTokenSchema } from '../../shared/schemas';
+import { UserRole } from '../../shared';
 import { getFirebaseMessaging } from '../../config/firebase';
 import { logger } from '../../config/logger';
 

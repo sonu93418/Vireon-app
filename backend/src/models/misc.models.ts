@@ -2,7 +2,7 @@
 // VIREON — OTP + CONTACT + REPORT MONGOOSE MODELS
 // ============================================================
 import mongoose, { Schema, Document, Model } from 'mongoose';
-import { OtpPurpose, ContactStatus, ReportType } from '@vireon/shared';
+import { OtpPurpose, ContactStatus, ReportType } from '../shared';
 
 // ─── OTP Model ────────────────────────────────────────────────────────────────
 export interface IOtpDocument extends Document {

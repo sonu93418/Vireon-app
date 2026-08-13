@@ -9,7 +9,7 @@ import { NotificationModel } from '../models/notification.model';
 import { getFirebaseMessaging } from '../config/firebase';
 import { sendClassReminderEmail } from './mailer.util';
 import { logger } from '../config/logger';
-import { ClassStatus, NotificationType } from '@vireon/shared';
+import { ClassStatus, NotificationType } from '../shared';
 
 export const JOB_NAMES = {
   SEND_CLASS_REMINDERS: 'send-class-reminders',

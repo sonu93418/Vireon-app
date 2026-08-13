@@ -10,8 +10,8 @@ import { ResponseHandler } from '../../core/response';
 import { NotFoundError } from '../../core/errors';
 import { authenticate, authorize, optionalAuthenticate } from '../../middlewares/auth.middleware';
 import { validate } from '../../middlewares/validate.middleware';
-import { createBlogSchema, updateBlogSchema, paginationSchema, objectIdSchema } from '@vireon/shared/schemas';
-import { UserRole } from '@vireon/shared';
+import { createBlogSchema, updateBlogSchema, paginationSchema, objectIdSchema } from '../../shared/schemas';
+import { UserRole } from '../../shared';
 
 class BlogRepository extends BaseRepository<IBlogDocument> {
   constructor() { super(BlogModel as Model<IBlogDocument>); }

@@ -5,7 +5,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken, JwtAccessPayload } from '../utils/jwt.util';
 import { UnauthorizedError } from '../core/errors';
-import type { UserRole } from '@vireon/shared';
+import type { UserRole } from '../shared';
 
 // Extend Express Request with typed user
 declare global {

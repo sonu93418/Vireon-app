@@ -4,7 +4,7 @@
 // ============================================================
 import jwt from 'jsonwebtoken';
 import { UnauthorizedError } from '../core/errors';
-import type { UserRole } from '@vireon/shared';
+import type { UserRole } from '../shared';
 
 export interface JwtAccessPayload {
   userId: string;

@@ -2,7 +2,7 @@
 // VIREON — TEACHER MONGOOSE MODEL
 // ============================================================
 import mongoose, { Schema, Document, Model } from 'mongoose';
-import { TeacherCertification } from '@vireon/shared';
+import { TeacherCertification } from '../shared';
 
 export interface ITeacherDocument extends Document {
   userId: mongoose.Types.ObjectId;

@@ -6,7 +6,7 @@ import crypto from 'crypto';
 import { UserModel, IUserDocument } from '../../models/user.model';
 import { OtpModel } from '../../models/misc.models';
 import { BaseRepository } from '../../core/base.repository';
-import { OtpPurpose } from '@vireon/shared';
+import { OtpPurpose } from '../../shared';
 
 export class AuthRepository extends BaseRepository<IUserDocument> {
   constructor() {

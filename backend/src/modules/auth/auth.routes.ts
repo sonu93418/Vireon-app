@@ -16,7 +16,7 @@ import {
   verifyOtpSchema,
   refreshTokenSchema,
   changePasswordSchema,
-} from '@vireon/shared/schemas';
+} from '../../shared/schemas';
 import { z } from 'zod';
 
 const router = Router();

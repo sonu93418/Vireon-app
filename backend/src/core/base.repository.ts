@@ -3,7 +3,7 @@
 // Generic CRUD repository using Mongoose
 // ============================================================
 import { Model, Document, FilterQuery, UpdateQuery, PopulateOptions } from 'mongoose';
-import type { IPaginationMeta, IPaginationQuery } from '@vireon/shared';
+import type { IPaginationMeta, IPaginationQuery } from '../shared';
 
 export interface FindAllResult<T> {
   data: T[];

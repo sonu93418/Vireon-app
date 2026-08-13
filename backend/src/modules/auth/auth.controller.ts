@@ -5,7 +5,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from './auth.service';
 import { ResponseHandler } from '../../core/response';
-import { OtpPurpose } from '@vireon/shared';
+import { OtpPurpose } from '../../shared';
 
 export class AuthController {
   private readonly service: AuthService;

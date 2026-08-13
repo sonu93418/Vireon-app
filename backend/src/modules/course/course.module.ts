@@ -9,8 +9,8 @@ import { ResponseHandler } from '../../core/response';
 import { NotFoundError } from '../../core/errors';
 import { authenticate, authorize } from '../../middlewares/auth.middleware';
 import { validate } from '../../middlewares/validate.middleware';
-import { createCourseSchema, updateCourseSchema, paginationSchema } from '@vireon/shared/schemas';
-import { UserRole } from '@vireon/shared';
+import { createCourseSchema, updateCourseSchema, paginationSchema } from '../../shared/schemas';
+import { UserRole } from '../../shared';
 
 // ─── Repository ───────────────────────────────────────────────────────────────
 class CourseRepository extends BaseRepository<ICourseDocument> {
@@ -116,7 +116,7 @@ class CourseController {
 // ─── Router ───────────────────────────────────────────────────────────────────
 const router = Router();
 const ctrl = new CourseController();
-const idSchema = { params: require('zod').z.object({ id: require('@vireon/shared/schemas').objectIdSchema }) };
+const idSchema = { params: require('zod').z.object({ id: require('../../shared/schemas').objectIdSchema }) };
 
 router.get('/', validate({ query: paginationSchema }), ctrl.getAll);
 router.get('/popular', ctrl.getPopular);

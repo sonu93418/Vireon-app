@@ -4,7 +4,7 @@
 // ============================================================
 import { Response } from 'express';
 import { HttpStatusCode } from './errors';
-import type { ApiResponse, IPaginationMeta, IValidationError } from '@vireon/shared';
+import type { ApiResponse, IPaginationMeta, IValidationError } from '../shared';
 
 export class ResponseHandler {
   static success<T>(

@@ -16,8 +16,8 @@ import {
   updateClassStatusSchema,
   paginationSchema,
   objectIdSchema,
-} from '@vireon/shared/schemas';
-import { UserRole, ClassStatus, NotificationType } from '@vireon/shared';
+} from '../../shared/schemas';
+import { UserRole, ClassStatus, NotificationType } from '../../shared';
 import { NotificationModel } from '../../models/notification.model';
 import { UserModel } from '../../models/user.model';
 import { getFirebaseMessaging } from '../../config/firebase';

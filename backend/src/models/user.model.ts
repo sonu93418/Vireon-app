@@ -3,7 +3,7 @@
 // ============================================================
 import mongoose, { Schema, Document, Model } from 'mongoose';
 import bcrypt from 'bcryptjs';
-import { AuthProvider, UserRole, UserStatus } from '@vireon/shared';
+import { AuthProvider, UserRole, UserStatus } from '../shared';
 
 export interface IUserDocument extends Document {
   fullName: string;

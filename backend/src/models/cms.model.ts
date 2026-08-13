@@ -2,7 +2,7 @@
 // VIREON — CMS PAGE MONGOOSE MODEL
 // ============================================================
 import mongoose, { Schema, Document, Model } from 'mongoose';
-import { CmsPageSlug } from '@vireon/shared';
+import { CmsPageSlug } from '../shared';
 
 export interface ICmsPageDocument extends Document {
   slug: CmsPageSlug;

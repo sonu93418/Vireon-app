@@ -17,8 +17,8 @@ import {
   updateTeacherSchema,
   paginationSchema,
   objectIdSchema,
-} from '@vireon/shared/schemas';
-import { UserRole, ClassStatus } from '@vireon/shared';
+} from '../../shared/schemas';
+import { UserRole, ClassStatus } from '../../shared';
 
 // ─── Repository ───────────────────────────────────────────────────────────────
 class TeacherRepository extends BaseRepository<ITeacherDocument> {

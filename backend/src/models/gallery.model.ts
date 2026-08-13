@@ -2,7 +2,7 @@
 // VIREON — GALLERY MONGOOSE MODEL
 // ============================================================
 import mongoose, { Schema, Document, Model } from 'mongoose';
-import { GalleryCategory, MediaType } from '@vireon/shared';
+import { GalleryCategory, MediaType } from '../shared';
 
 export interface IGalleryDocument extends Document {
   title: string;

@@ -14,7 +14,7 @@ import {
 } from '../../middlewares/upload.middleware';
 import { ResponseHandler } from '../../core/response';
 import { BadRequestError, NotFoundError } from '../../core/errors';
-import { UserRole } from '@vireon/shared';
+import { UserRole } from '../../shared';
 import {
   uploadImageBuffer,
   uploadPdfBuffer,

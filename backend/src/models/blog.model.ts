@@ -3,7 +3,7 @@
 // ============================================================
 import mongoose, { Schema, Document, Model } from 'mongoose';
 import slugify from 'slugify';
-import { BlogCategory } from '@vireon/shared';
+import { BlogCategory } from '../shared';
 
 export interface IBlogDocument extends Document {
   title: string;

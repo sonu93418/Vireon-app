@@ -2,7 +2,7 @@
 // VIREON — NOTIFICATION MONGOOSE MODEL
 // ============================================================
 import mongoose, { Schema, Document, Model } from 'mongoose';
-import { NotificationType, UserRole } from '@vireon/shared';
+import { NotificationType, UserRole } from '../shared';
 
 export interface INotificationDocument extends Document {
   recipientId?: mongoose.Types.ObjectId; // null = broadcast

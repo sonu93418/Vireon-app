@@ -18,7 +18,7 @@ import {
   UnauthorizedError,
   NotFoundError,
 } from '../../core/errors';
-import { UserStatus, OtpPurpose, AuthProvider, UserRole } from '@vireon/shared';
+import { UserStatus, OtpPurpose, AuthProvider, UserRole } from '../../shared';
 import type {
   RegisterInput,
   LoginWithEmailInput,
@@ -26,7 +26,7 @@ import type {
   VerifyOtpInput,
   ChangePasswordInput,
   LoginWithGoogleInput,
-} from '@vireon/shared/schemas';
+} from '../../shared/schemas';
 import { IUserDocument } from '../../models/user.model';
 import { admin } from '../../config/firebase';
 

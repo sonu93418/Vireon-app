@@ -5,7 +5,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { UserModel } from '../../models/user.model';
 import { ResponseHandler } from '../../core/response';
 import { authenticate, authorize } from '../../middlewares/auth.middleware';
-import { UserRole } from '@vireon/shared';
+import { UserRole } from '../../shared';
 import { NotFoundError, BadRequestError } from '../../core/errors';
 
 const router = Router();

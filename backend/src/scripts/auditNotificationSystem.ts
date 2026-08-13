@@ -11,7 +11,7 @@ import mongoose from 'mongoose';
 import { UserModel } from '../models/user.model';
 import { configureFirebase, getFirebaseMessaging } from '../config/firebase';
 import { LOCK_SCREEN_TEMPLATES, renderLockScreenTemplate } from '../modules/notification/notification.templates';
-import { NotificationType } from '@vireon/shared';
+import { NotificationType } from '../shared';
 import { NotificationModel } from '../models/notification.model';
 
 let passCount = 0;

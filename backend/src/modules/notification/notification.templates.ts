@@ -2,7 +2,7 @@
 // VIREON — LOCK SCREEN NOTIFICATION TEMPLATES REGISTRY
 // High-priority lock screen optimized notification templates
 // ============================================================
-import { NotificationType } from '@vireon/shared';
+import { NotificationType } from '../../shared';
 
 export interface LockScreenTemplate {
   id: string;
