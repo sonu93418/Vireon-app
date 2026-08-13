@@ -11,9 +11,9 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "paths": {
-      "@/*": ["./src/*"],
-      "@vireon/shared": ["./src/shared"],
-      "@vireon/shared/*": ["./src/shared/*"]
+      "@/*": ["./src/*", "./dist/*"],
+      "@vireon/shared": ["./src/shared", "./dist/shared"],
+      "@vireon/shared/*": ["./src/shared/*", "./dist/shared/*"]
     },
     "sourceMap": true
   },
