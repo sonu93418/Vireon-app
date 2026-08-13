@@ -30,8 +30,7 @@ export const configureFirebase = (): void => {
 
     logger.info('✅ Firebase Admin SDK initialized successfully');
   } catch (error) {
-    logger.error('❌ Firebase initialization failed:', error);
-    throw error;
+    logger.warn('⚠️ Firebase Admin SDK initialization warning:', error);
   }
 };
 
