@@ -623,7 +623,8 @@ export default function HomeScreen() {
         {/* Popular Courses */}
         {(() => {
           const hasPopular = Boolean(popularCourses && popularCourses.length > 0);
-          const listToRender = hasPopular ? (popularCourses as Course[]) : DEFAULT_COURSES;
+          const rawCourses = hasPopular ? (popularCourses as Course[]) : DEFAULT_COURSES;
+          const listToRender = Array.from(new Map(rawCourses.map((c: Course) => [c._id || c.code || c.title, c])).values());
           return (
             <View style={styles.section}>
               <SectionHeader title="Popular Courses" subtitle="Govt. certified industrial safety programs" onSeeAll={() => router.push('/(tabs)/courses')} />
@@ -642,7 +643,8 @@ export default function HomeScreen() {
         {/* Industrial Trainers */}
         {(() => {
           const hasTeachers = Boolean(teachers && teachers.length > 0);
-          const teachersList = hasTeachers ? (teachers as Teacher[]) : DEFAULT_TEACHERS;
+          const rawTeachers = hasTeachers ? (teachers as Teacher[]) : DEFAULT_TEACHERS;
+          const teachersList = Array.from(new Map(rawTeachers.map((t: Teacher) => [t._id || t.userId?.fullName, t])).values());
           return (
             <View style={styles.section}>
               <SectionHeader title="Get Trained By" subtitle="Industrial Experts & Certified Trainers" onSeeAll={() => router.push('/(tabs)/courses')} />
