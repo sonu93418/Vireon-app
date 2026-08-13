@@ -1,4 +1,6 @@
-# Expo & Node Dependencies
+# EAS Build Exclude List — Drastically reduces upload tarball size from 71MB to 3MB
+
+# Dependencies & Build Caches
 node_modules/
 .expo/
 .expo-shared/
@@ -13,8 +15,11 @@ android/app/.cxx/
 # iOS Native Build Outputs & Caches
 ios/Pods/
 ios/build/
+*.xcworkspace
+*.xcodeproj
 
-# Environment Local Overrides (keep .env checked in if needed for build)
-.env.local
+# Temporary & Local Files
 *.log
-expo-env.d.ts
+*.tmp
+.DS_Store
+Thumbs.db
