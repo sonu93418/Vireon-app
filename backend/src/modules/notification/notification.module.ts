@@ -44,12 +44,16 @@ class NotificationRepository extends BaseRepository<INotificationDocument> {
       deletedByUsers: { $ne: userId },
     });
   }
-  async clearAllForUser(userId: string): Promise<void> {
-    await NotificationModel.deleteMany({ recipientId: userId });
-    await NotificationModel.updateMany(
-      { recipientId: null, deletedByUsers: { $ne: userId } },
-      { $addToSet: { deletedByUsers: userId } }
-    );
+  async clearAllForUser(userId: string, isAdmin = false): Promise<void> {
+    if (isAdmin) {
+      await NotificationModel.deleteMany({});
+    } else {
+      await NotificationModel.deleteMany({ recipientId: userId });
+      await NotificationModel.updateMany(
+        { recipientId: null, deletedByUsers: { $ne: userId } },
+        { $addToSet: { deletedByUsers: userId } }
+      );
+    }
   }
   async deleteForUser(id: string, userId: string): Promise<void> {
     const notif = await NotificationModel.findById(id);
@@ -243,7 +247,7 @@ class NotificationService {
 
   async getForUser(userId: string, query: Record<string, unknown>) { return this.repo.findForUser(userId, query); }
   async markAllRead(userId: string) { await this.repo.markAllRead(userId); }
-  async clearAllForUser(userId: string) { await this.repo.clearAllForUser(userId); }
+  async clearAllForUser(userId: string, isAdmin = false) { await this.repo.clearAllForUser(userId, isAdmin); }
   async getUnreadCount(userId: string) { return this.repo.getUnreadCount(userId); }
   async markRead(id: string) { return this.repo.updateById(id, { isRead: true, readAt: new Date() }); }
   async getAll(query: Record<string, unknown>) { return this.repo.findAll({}, query as Parameters<NotificationRepository['findAll']>[1]); }
@@ -291,8 +295,12 @@ class NotificationController {
   };
   clearAllForUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (req.user?.userId) {
-        await this.svc.clearAllForUser(req.user.userId);
+      const user = req.user;
+      const isAdmin = user?.role === UserRole.ADMIN || user?.role === UserRole.SUPER_ADMIN;
+      if (user?.userId) {
+        await this.svc.clearAllForUser(user.userId, isAdmin);
+      } else if (isAdmin) {
+        await NotificationModel.deleteMany({});
       }
       ResponseHandler.success(res, null, 'Notifications cleared');
     } catch (e) {

@@ -278,7 +278,9 @@ async function seedCourses() {
     console.log('🔄 Connecting to MongoDB Atlas...');
     await mongoose.connect(MONGODB_URI as string, {
       serverSelectionTimeoutMS: 30000,
+      connectTimeoutMS: 30000,
       socketTimeoutMS: 60000,
+      family: 4,
     });
     console.log('✅ Connected to MongoDB Atlas.');
 

@@ -15,7 +15,12 @@ async function check() {
     }
 
     console.log('Connecting to Live MongoDB Atlas...');
-    await mongoose.connect(MONGO_URI);
+    await mongoose.connect(MONGO_URI, {
+      serverSelectionTimeoutMS: 30000,
+      connectTimeoutMS: 30000,
+      socketTimeoutMS: 60000,
+      family: 4,
+    });
     const users = await UserModel.find().select('fullName email status fcmTokens role googleId').lean();
     console.log('------------------------------------------------------------');
     console.log(`📊 TOTAL USERS IN LIVE MONGODB: ${users.length}`);

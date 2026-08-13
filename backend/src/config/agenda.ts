@@ -18,11 +18,11 @@ export const configureAgenda = async (): Promise<Agenda> => {
       address: uri,
       collection: 'agenda_jobs',
       options: {
-        maxPoolSize: 5,
-        serverSelectionTimeoutMS: 5000,
-        socketTimeoutMS: 45000,
-        connectTimeoutMS: 10000,
-        family: 4,
+        maxPoolSize: 10,
+        serverSelectionTimeoutMS: 30000, // 30s timeout to allow DNS & network IP shifts
+        connectTimeoutMS: 30000,
+        socketTimeoutMS: 60000,
+        family: 4, // Enforce IPv4 to avoid Windows IPv6 resolution timeouts
       },
     },
     processEvery: '30 seconds',
@@ -33,15 +33,24 @@ export const configureAgenda = async (): Promise<Agenda> => {
 
   agendaInstance.on('ready', () => logger.info('✅ Agenda.js job queue ready'));
   agendaInstance.on('error', (err: any) => {
-    if (err?.message?.includes('ECONNRESET') || err?.code === 'ECONNRESET') {
-      logger.warn('⚠️ Agenda.js socket reset connection re-establishing...');
+    if (
+      err?.message?.includes('ECONNRESET') ||
+      err?.code === 'ECONNRESET' ||
+      err?.name === 'MongoServerSelectionError' ||
+      err?.message?.includes('timed out')
+    ) {
+      logger.warn('⚠️ Agenda.js transient MongoDB connection timeout - auto-reconnecting...');
       return;
     }
-    logger.error('❌ Agenda.js error:', err);
+    logger.error('❌ Agenda.js error:', err?.message ?? err);
   });
 
-  await agendaInstance.start();
-  logger.info('✅ Agenda.js background job scheduler started');
+  try {
+    await agendaInstance.start();
+    logger.info('✅ Agenda.js background job scheduler started');
+  } catch (err: any) {
+    logger.warn('⚠️ Agenda.js background scheduler start delayed until DB completes connection:', err?.message ?? err);
+  }
 
   // Graceful shutdown
   const gracefulShutdown = async (): Promise<void> => {

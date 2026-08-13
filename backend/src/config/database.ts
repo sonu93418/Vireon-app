@@ -12,11 +12,12 @@ let retryCount = 0;
 let isConnecting = false;
 
 const mongooseOptions: mongoose.ConnectOptions = {
-  serverSelectionTimeoutMS: 15000, // 15s timeout to allow for DNS & network IP shifts
-  connectTimeoutMS: 15000,
-  socketTimeoutMS: 45000,
-  maxPoolSize: 25,
+  serverSelectionTimeoutMS: 30000, // 30s timeout to allow for DNS & network IP shifts
+  connectTimeoutMS: 30000,
+  socketTimeoutMS: 60000,
+  maxPoolSize: 30,
   minPoolSize: 5,
+  family: 4, // Enforce IPv4 to avoid Windows IPv6 resolution delays
   heartbeatFrequencyMS: 10000,
   retryWrites: true,
   retryReads: true,

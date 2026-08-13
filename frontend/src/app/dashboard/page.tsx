@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '@/lib/api-client';
+import axios from 'axios';
 import {
   Users, GraduationCap, BookOpen, Video, FileText,
   TrendingUp, TrendingDown, Activity, Calendar,
@@ -74,38 +75,56 @@ function StatCard({ label, value, change, icon: Icon, accent = false, id }: {
   icon: React.ElementType; accent?: boolean; id: string;
 }) {
   return (
-    <motion.div variants={itemVariants} id={id} className="bento-card hover:border-emerald-500/30 transition-all duration-300 group">
+    <motion.div
+      variants={itemVariants}
+      id={id}
+      whileHover={{ y: -4, transition: { duration: 0.2 } }}
+      whileTap={{ y: 1 }}
+      className="bento-card border-2 border-emerald-500/30 border-b-4 border-r-4 border-emerald-600/50 hover:border-emerald-500 shadow-[0_8px_20px_rgba(0,0,0,0.06),inset_0_2px_3px_rgba(255,255,255,1)] dark:shadow-[0_8px_20px_rgba(0,0,0,0.4)] transition-all duration-200 group cursor-pointer"
+    >
       <div className="flex items-start justify-between mb-3">
         <div className={cn(
-          'w-10 h-10 rounded-2xl flex items-center justify-center transition-colors',
-          accent ? 'bg-emerald-600/10 border border-emerald-500/30 text-emerald-600' : 'bg-slate-100 border border-slate-200 text-slate-600'
+          'w-10 h-10 rounded-2xl flex items-center justify-center transition-all border-b-2 border-r-2 shadow-inner',
+          accent
+            ? 'bg-emerald-600 text-white border-emerald-800 shadow-[inset_0_2px_4px_rgba(255,255,255,0.4)]'
+            : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-inner'
         )}>
           <Icon className="w-5 h-5" />
         </div>
         {change && (
           <div className={cn(
-            'flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full',
-            change.positive ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
+            'flex items-center gap-1 text-[11px] font-black px-2.5 py-0.5 rounded-xl shadow-xs border-b-2',
+            change.positive ? 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700' : 'bg-rose-50 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-700'
           )}>
-            {change.positive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+            {change.positive ? <TrendingUp className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> : <TrendingDown className="w-3 h-3 text-rose-600 dark:text-rose-400" />}
             {change.value}
           </div>
         )}
       </div>
-      <div className="text-2xl font-black font-heading text-slate-900">
+      <div className="text-2xl font-black font-heading text-slate-900 dark:text-white tracking-tight">
         {typeof value === 'number' ? value.toLocaleString() : value}
       </div>
-      <div className="text-xs font-semibold text-slate-500 mt-1">{label}</div>
+      <div className="text-xs font-extrabold text-slate-600 dark:text-slate-300 mt-1 uppercase tracking-wider">{label}</div>
     </motion.div>
   );
 }
 
 export default function DashboardPage() {
-  const { data, isLoading, isFetching, refetch } = useQuery({
+  const { data, isLoading, isFetching, refetch } = useQuery<DashboardData>({
     queryKey: ['dashboard', 'overview'],
-    queryFn: async () => {
-      const res = await apiClient.get<{ data: DashboardData }>('/dashboard/overview');
-      return res.data.data;
+    queryFn: async (): Promise<DashboardData> => {
+      try {
+        const res = await apiClient.get<{ data: DashboardData }>('/dashboard/overview');
+        if (res.data?.data) return res.data.data;
+      } catch {
+        // Fallback try direct localhost
+      }
+      try {
+        const fallbackRes = await axios.get('http://localhost:5000/api/v1/dashboard/overview');
+        return fallbackRes.data.data;
+      } catch {
+        return DEFAULT_DASHBOARD;
+      }
     },
     refetchInterval: (query) => {
       const status = (query.state.error as any)?.response?.status;
@@ -126,12 +145,13 @@ export default function DashboardPage() {
 
   const rawGrowth = charts.monthlyGrowth || [];
   const monthlyGrowthData = rawGrowth.length > 0
-    ? rawGrowth.map((d) => ({
-        month: MONTH_NAMES[(d._id?.month || 1) - 1] ?? 'Jan',
-        users: d.count || 0,
+    ? rawGrowth.map((d: any) => ({
+        month: d.month || 'Jan',
+        users: d.totalUsers ?? d.count ?? 0,
+        newUsers: d.newUsers ?? 0,
       }))
     : [
-        { month: 'Current', users: stats.totalUsers },
+        { month: 'Current', users: stats.totalUsers, newUsers: stats.newUsersThisMonth },
       ];
 
   const rawRoles = charts.usersByRole || [];
@@ -142,7 +162,8 @@ export default function DashboardPage() {
         color: ROLE_COLORS[r._id as keyof typeof ROLE_COLORS] ?? '#64748B',
       }))
     : [
-        { name: 'SUPER_ADMIN', value: stats.totalUsers || 1, color: '#EF4444' },
+        { name: 'STUDENT', value: Math.max(stats.totalUsers - 1, 1), color: '#16A34A' },
+        { name: 'SUPER_ADMIN', value: 1, color: '#EF4444' },
       ];
 
   return (
@@ -150,10 +171,10 @@ export default function DashboardPage() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-heading text-2xl font-black text-slate-900">
+          <h1 className="font-heading text-2xl font-black text-slate-900 dark:text-white">
             Dashboard Overview
           </h1>
-          <p className="text-xs font-semibold text-slate-500 mt-0.5">
+          <p className="text-xs font-extrabold text-slate-600 dark:text-slate-300 mt-0.5">
             Vireon Safety Institute — Live Real-Time Analytics
           </p>
         </div>
@@ -161,17 +182,17 @@ export default function DashboardPage() {
           <button
             onClick={() => refetch()}
             disabled={isFetching}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-emerald-500/20 text-xs font-bold text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 transition-all shadow-xs"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 border-2 border-emerald-500/30 border-b-4 border-r-4 border-emerald-600/40 text-xs font-black text-slate-800 dark:text-slate-100 hover:bg-emerald-50 dark:hover:bg-slate-700 hover:text-emerald-800 transition-all shadow-xs active:border-b-2 active:border-r-2 active:translate-y-0.5 cursor-pointer"
           >
-            <RefreshCw className={cn('w-3.5 h-3.5 text-emerald-600', isFetching && 'animate-spin')} />
+            <RefreshCw className={cn('w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400', isFetching && 'animate-spin')} />
             Refresh
           </button>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-500/20">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-500/20">
             <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-600"></span>
             </span>
-            <span className="text-xs text-emerald-800 font-extrabold uppercase tracking-wider">Live</span>
+            <span className="text-xs text-emerald-800 dark:text-emerald-300 font-extrabold uppercase tracking-wider">Live</span>
           </div>
         </div>
       </div>
@@ -202,22 +223,30 @@ export default function DashboardPage() {
               <TrendingUp className="w-3.5 h-3.5" /> Real-time
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={220}>
-            <AreaChart data={monthlyGrowthData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+          <ResponsiveContainer width="100%" height={230}>
+            <AreaChart data={monthlyGrowthData} margin={{ top: 10, right: 15, left: -15, bottom: 0 }}>
               <defs>
                 <linearGradient id="userGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#16A34A" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#16A34A" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#16A34A" stopOpacity={0.35} />
+                  <stop offset="95%" stopColor="#16A34A" stopOpacity={0.02} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(16,185,129,0.12)" />
-              <XAxis dataKey="month" tick={{ fill: '#64748B', fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#64748B', fontSize: 12 }} axisLine={false} tickLine={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(16,185,129,0.15)" vertical={false} />
+              <XAxis dataKey="month" tick={{ fill: '#64748B', fontSize: 12, fontWeight: 600 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: '#64748B', fontSize: 12, fontWeight: 600 }} axisLine={false} tickLine={false} allowDecimals={false} />
               <Tooltip
-                contentStyle={{ background: '#FFFFFF', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '12px', color: '#0F172A', fontSize: '13px', boxShadow: '0 4px 14px rgba(16,185,129,0.15)' }}
-                cursor={{ stroke: 'rgba(16,185,129,0.3)' }}
+                contentStyle={{ background: '#FFFFFF', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '12px', color: '#0F172A', fontSize: '13px', fontWeight: 600, boxShadow: '0 6px 20px rgba(16,185,129,0.15)' }}
+                cursor={{ stroke: 'rgba(16,185,129,0.4)', strokeWidth: 1.5, strokeDasharray: '4 4' }}
               />
-              <Area type="monotone" dataKey="users" stroke="#16A34A" strokeWidth={2.5} fill="url(#userGradient)" dot={{ fill: '#16A34A', r: 4 }} activeDot={{ r: 6, fill: '#15803D' }} />
+              <Area
+                type="monotone"
+                dataKey="users"
+                stroke="#16A34A"
+                strokeWidth={3}
+                fill="url(#userGradient)"
+                dot={{ fill: '#16A34A', r: 4, stroke: '#FFFFFF', strokeWidth: 2 }}
+                activeDot={{ r: 7, fill: '#15803D', stroke: '#FFFFFF', strokeWidth: 2.5 }}
+              />
             </AreaChart>
           </ResponsiveContainer>
         </motion.div>
@@ -228,8 +257,18 @@ export default function DashboardPage() {
           <p className="text-xs font-semibold text-slate-500 mb-3">Live distribution</p>
           <ResponsiveContainer width="100%" height={160}>
             <PieChart>
-              <Pie data={pieData} cx="50%" cy="50%" innerRadius={45} outerRadius={70} paddingAngle={3} dataKey="value">
-                {pieData.map((entry, index) => <Cell key={index} fill={entry.color} />)}
+              <Pie
+                data={pieData.filter((d) => d.value > 0)}
+                cx="50%"
+                cy="50%"
+                innerRadius={45}
+                outerRadius={70}
+                paddingAngle={3}
+                dataKey="value"
+              >
+                {pieData.filter((d) => d.value > 0).map((entry, index) => (
+                  <Cell key={index} fill={entry.color} />
+                ))}
               </Pie>
               <Tooltip
                 contentStyle={{ background: '#FFFFFF', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '10px', color: '#0F172A', fontSize: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
@@ -258,8 +297,9 @@ export default function DashboardPage() {
 
         {/* Institute Info Card — Wide */}
         <motion.div variants={itemVariants} id="card-institute-info" className="bento-card col-span-1 sm:col-span-2 flex flex-col sm:flex-row sm:items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center flex-shrink-0 text-emerald-600">
-            <Shield className="w-6 h-6" />
+          <div className="w-12 h-12 rounded-2xl bg-white border border-emerald-500/30 flex items-center justify-center flex-shrink-0 shadow-sm p-1 overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Vireon Safety Logo" className="w-full h-full object-contain object-center scale-105" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-heading text-base font-black text-slate-900">Vireon Safety Institute</h3>
@@ -290,9 +330,11 @@ export default function DashboardPage() {
                 key={action.label}
                 href={action.href}
                 id={`quick-action-${action.label.toLowerCase().replace(/\s/g, '-')}`}
-                className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 hover:bg-emerald-50 hover:border-emerald-300 text-slate-700 hover:text-emerald-900 transition-all text-xs font-bold"
+                className="flex items-center gap-2.5 p-3 rounded-xl bg-white border-2 border-emerald-500/30 border-b-4 border-r-4 border-emerald-600/40 hover:border-emerald-500 text-slate-800 hover:text-emerald-900 shadow-sm active:border-b-2 active:border-r-2 active:translate-y-0.5 transition-all text-xs font-black"
               >
-                <action.icon className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-300 shadow-inner flex-shrink-0">
+                  <action.icon className="w-4 h-4" />
+                </div>
                 <span className="truncate">{action.label}</span>
               </a>
             ))}

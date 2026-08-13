@@ -297,13 +297,13 @@ export const scheduleTestLockScreenNotification = async (delaySeconds = 5): Prom
         badge: 1,
         priority: Notifications.AndroidNotificationPriority.MAX,
         vibrate: [0, 500, 250, 500],
-        channelId: 'vireon_alerts_v4',
         data: { type: 'CLASS_STARTED', screen: '/classes' },
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
         seconds: delaySeconds,
-      },
+        channelId: 'vireon_alerts_v4',
+      } as Notifications.SchedulableNotificationTriggerInput,
     });
     return true;
   } catch (error) {

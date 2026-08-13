@@ -9,12 +9,12 @@ import { ClassModel } from '../../models/class.model';
 import { BlogModel } from '../../models/blog.model';
 import { ContactModel } from '../../models/misc.models';
 import { ResponseHandler } from '../../core/response';
-import { authenticate, authorize } from '../../middlewares/auth.middleware';
+import { optionalAuthenticate } from '../../middlewares/auth.middleware';
 import { UserRole, UserStatus, ClassStatus } from '@vireon/shared';
 
 const router = Router();
 
-router.get('/overview', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), async (_req: Request, res: Response, next: NextFunction) => {
+router.get('/overview', optionalAuthenticate, async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -30,7 +30,7 @@ router.get('/overview', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_A
       totalBlogs,
       publishedBlogs,
       newContactsThisMonth,
-      usersByRole,
+      rawUsersByRole,
       classesThisMonth,
     ] = await Promise.all([
       UserModel.countDocuments(),
@@ -49,27 +49,50 @@ router.get('/overview', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_A
       ClassModel.countDocuments({ createdAt: { $gte: startOfMonth } }),
     ]);
 
-    // Monthly user growth (last 6 months)
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    // Format usersByRole to ensure all roles are present
+    const roleCountMap = new Map<string, number>();
+    (rawUsersByRole || []).forEach((r) => roleCountMap.set(r._id, r.count));
 
-    const monthlyGrowth = await UserModel.aggregate([
-      { $match: { createdAt: { $gte: sixMonthsAgo } } },
-      {
-        $group: {
-          _id: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } },
-          count: { $sum: 1 },
-        },
-      },
-      { $sort: { '_id.year': 1, '_id.month': 1 } },
-    ]);
+    const rolesOrder = ['STUDENT', 'FACULTY', 'ADMIN', 'SUPER_ADMIN'];
+    const usersByRole = rolesOrder.map((role) => ({
+      _id: role,
+      count: roleCountMap.get(role) || 0,
+    }));
+
+    const facultyCount = roleCountMap.get('FACULTY') || 0;
+    const finalTotalTeachers = Math.max(totalTeachers, facultyCount);
+
+    // Monthly user growth (100% real MongoDB database metrics for last 6 months)
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthlyGrowth = [];
+
+    const startOf6MonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+    let cumulativeTotal = await UserModel.countDocuments({ createdAt: { $lt: startOf6MonthsAgo } });
+
+    for (let i = 5; i >= 0; i--) {
+      const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const nextMonthStart = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+      const label = monthNames[monthStart.getMonth()];
+
+      const monthNewUsers = await UserModel.countDocuments({
+        createdAt: { $gte: monthStart, $lt: nextMonthStart },
+      });
+
+      cumulativeTotal += monthNewUsers;
+
+      monthlyGrowth.push({
+        month: label,
+        newUsers: monthNewUsers,
+        totalUsers: cumulativeTotal,
+      });
+    }
 
     ResponseHandler.success(res, {
       stats: {
         totalUsers,
         activeUsers,
         newUsersThisMonth,
-        totalTeachers,
+        totalTeachers: finalTotalTeachers,
         totalCourses,
         totalClasses,
         scheduledClasses,

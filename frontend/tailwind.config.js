@@ -84,6 +84,7 @@ module.exports = {
         '7.5': '1.875rem',
         '8.5': '2.125rem',
         '9.5': '2.375rem',
+        '68': '17rem',
       },
       boxShadow: {
         'clay': '8px 8px 16px rgba(16, 185, 129, 0.08), -8px -8px 16px #ffffff, inset 2px 2px 4px rgba(255, 255, 255, 0.8), inset -2px -2px 4px rgba(16, 185, 129, 0.1)',

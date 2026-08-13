@@ -77,11 +77,30 @@ const bootstrap = async (): Promise<void> => {
     process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
     process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
-    process.on('unhandledRejection', (reason: Error) => {
+    process.on('unhandledRejection', (reason: any) => {
+      const msg = reason?.message ?? String(reason);
+      if (
+        reason?.name === 'MongoServerSelectionError' ||
+        msg.includes('Server selection timed out') ||
+        msg.includes('ECONNRESET') ||
+        msg.includes('ETIMEDOUT')
+      ) {
+        logger.warn('⚠️ MongoDB network timeout detected (auto-reconnecting in background):', msg);
+        return;
+      }
       logger.error('⚠️ Unhandled Promise Rejection (handled safely):', reason);
     });
 
-    process.on('uncaughtException', (error: Error) => {
+    process.on('uncaughtException', (error: any) => {
+      const msg = error?.message ?? String(error);
+      if (
+        error?.name === 'MongoServerSelectionError' ||
+        msg.includes('Server selection timed out') ||
+        msg.includes('ECONNRESET')
+      ) {
+        logger.warn('⚠️ MongoDB network exception detected (auto-reconnecting in background):', msg);
+        return;
+      }
       logger.error('⚠️ Uncaught Exception (handled safely):', error);
     });
   } catch (error) {

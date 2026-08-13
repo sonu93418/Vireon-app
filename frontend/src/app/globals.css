@@ -68,6 +68,62 @@
     @apply font-heading font-semibold text-slate-900;
   }
 
+  html.dark {
+    background-color: #0B132B;
+    color: #F8FAFC;
+  }
+
+  html.dark body {
+    background-color: #0B132B;
+    color: #F8FAFC;
+    background-image: 
+      radial-gradient(ellipse at 10% 20%, rgba(16, 185, 129, 0.12) 0%, transparent 60%),
+      radial-gradient(ellipse at 90% 80%, rgba(16, 185, 129, 0.08) 0%, transparent 60%),
+      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  }
+
+  html.dark h1, html.dark h2, html.dark h3, html.dark h4, html.dark h5, html.dark h6 {
+    color: #F8FAFC;
+  }
+
+  /* ─── Global Dark Mode Text & Surface High-Contrast Overrides ─── */
+  .dark .text-slate-900 { color: #F8FAFC !important; }
+  .dark .text-slate-800 { color: #F1F5F9 !important; }
+  .dark .text-slate-700 { color: #E2E8F0 !important; }
+  .dark .text-slate-600 { color: #CBD5E1 !important; }
+  .dark .text-slate-500 { color: #94A3B8 !important; }
+  .dark .text-slate-400 { color: #94A3B8 !important; }
+
+  .dark .bg-slate-50 { background-color: #1E293B !important; }
+  .dark .bg-slate-100 { background-color: #334155 !important; }
+  .dark .bg-white { background-color: #0F172A !important; }
+
+  .dark .border-slate-100,
+  .dark .border-slate-200,
+  .dark .border-slate-300,
+  .dark .border-slate-200\/80 {
+    border-color: rgba(255, 255, 255, 0.12) !important;
+  }
+
+  .dark input, .dark textarea, .dark select, .dark .clay-input {
+    background-color: #1E293B !important;
+    color: #F8FAFC !important;
+    border-color: rgba(16, 185, 129, 0.4) !important;
+  }
+  .dark input::placeholder, .dark .clay-input::placeholder {
+    color: #94A3B8 !important;
+  }
+
+  .dark table th {
+    background-color: #1E293B !important;
+    color: #F8FAFC !important;
+  }
+  .dark table td {
+    color: #E2E8F0 !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+  }
+
   /* Custom Clay Scrollbar */
   ::-webkit-scrollbar { width: 7px; height: 7px; }
   ::-webkit-scrollbar-track { background: #EBF5F0; }
@@ -79,39 +135,65 @@
 /* ─── Claymorphism Component Classes ─────────────────────────────────────────────── */
 @layer components {
 
-  /* Pure White Clay Card */
+  /* Pure Tactile 3D Card Class (Solid 3D Bevel, Inset Depth Shadow, No Glow) */
   .clay-card {
     background: #FFFFFF;
     border-radius: 1.5rem;
-    border: 1px solid rgba(22, 163, 74, 0.2);
+    border: 2px solid rgba(16, 185, 129, 0.35);
+    border-bottom: 4px solid rgba(16, 185, 129, 0.6);
+    border-right: 4px solid rgba(16, 185, 129, 0.6);
     box-shadow: 
-      8px 8px 18px rgba(22, 163, 74, 0.08),
-      -8px -8px 18px #FFFFFF,
-      inset 3px 3px 6px rgba(255, 255, 255, 0.9),
-      inset -3px -3px 6px rgba(22, 163, 74, 0.12);
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      0 10px 24px rgba(0, 0, 0, 0.07),
+      inset 0 2px 4px rgba(255, 255, 255, 1),
+      inset 0 -3px 6px rgba(16, 185, 129, 0.08);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
+
+  /* Dark Mode 3D Card Class */
+  .dark .clay-card {
+    background: #0F172A;
+    color: #F8FAFC;
+    border: 2px solid rgba(16, 185, 129, 0.4);
+    border-bottom: 4px solid rgba(16, 185, 129, 0.7);
+    border-right: 4px solid rgba(16, 185, 129, 0.7);
+    box-shadow: 
+      0 12px 28px rgba(0, 0, 0, 0.5),
+      inset 0 2px 4px rgba(255, 255, 255, 0.12),
+      inset 0 -4px 8px rgba(0, 0, 0, 0.5);
+  }
+
   .clay-card-hover {
     @apply clay-card;
   }
-  .clay-card-hover:hover {
+  .clay-card-hover:hover,
+  .clay-card:hover {
     transform: translateY(-3px);
     box-shadow: 
-      12px 12px 28px rgba(22, 163, 74, 0.15),
-      -12px -12px 28px #FFFFFF,
-      inset 4px 4px 8px rgba(255, 255, 255, 1),
-      inset -4px -4px 8px rgba(22, 163, 74, 0.18);
+      0 16px 36px rgba(16, 185, 129, 0.14),
+      inset 0 3px 6px rgba(255, 255, 255, 1),
+      inset 0 -4px 8px rgba(16, 185, 129, 0.12);
   }
 
-  /* Solid Green Clay Surface */
+  .dark .clay-card-hover:hover,
+  .dark .clay-card:hover {
+    box-shadow: 
+      0 18px 40px rgba(0, 0, 0, 0.65),
+      inset 0 3px 6px rgba(255, 255, 255, 0.18),
+      inset 0 -5px 10px rgba(0, 0, 0, 0.6);
+  }
+
+  /* Solid Green 3D Surface */
   .clay-card-green {
     background: #16A34A;
     color: #FFFFFF;
     border-radius: 1.5rem;
+    border: 2px solid #15803D;
+    border-bottom: 4px solid #166534;
+    border-right: 4px solid #166534;
     box-shadow: 
-      6px 6px 16px rgba(22, 163, 74, 0.4),
-      inset 3px 3px 6px rgba(255, 255, 255, 0.4),
-      inset -3px -3px 6px rgba(21, 128, 61, 0.6);
+      0 10px 24px rgba(22, 163, 74, 0.35),
+      inset 0 3px 6px rgba(255, 255, 255, 0.4),
+      inset 0 -4px 8px rgba(21, 128, 61, 0.6);
   }
 
   /* Backward Compatible Card Class */
@@ -122,7 +204,7 @@
     @apply clay-card-hover;
   }
 
-  /* Bento Grid Cards */
+  /* Bento Grid 3D Cards */
   .bento-card {
     @apply clay-card p-6 overflow-hidden relative;
   }

@@ -80,17 +80,41 @@ export default function NotificationsPage() {
     { label: '⚙️ System Notice', type: 'SYSTEM', title: '⚙️ System Maintenance: Scheduled Upgrades', body: 'Vireon services will undergo maintenance tonight from 2 AM to 4 AM IST.' },
   ];
 
+  const clearAllMutation = useMutation({
+    mutationFn: () => apiClient.delete('/notifications/my/clear-all'),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+
+  const handleClearAll = () => {
+    if (confirm('Are you sure you want to clear all notification messages?')) {
+      clearAllMutation.mutate();
+    }
+  };
+
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="font-heading text-2xl font-bold text-vireon-text-primary">Notifications</h1>
           <p className="text-sm text-vireon-text-muted mt-0.5">{data?.meta.total ?? 0} notifications sent</p>
         </div>
-        <button onClick={() => setShowForm(!showForm)} className="vireon-btn-primary" id="send-notification-btn">
-          <Plus className="w-4 h-4" />
-          Send Notification
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleClearAll}
+            disabled={clearAllMutation.isPending}
+            className="px-3.5 py-2.5 text-xs font-bold rounded-2xl border border-red-200 text-red-600 bg-red-50/50 hover:bg-red-600 hover:text-white flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+            id="clear-all-notifs-btn"
+          >
+            <Trash2 className="w-4 h-4" />
+            {clearAllMutation.isPending ? 'Clearing...' : 'Clear All Messages'}
+          </button>
+          <button onClick={() => setShowForm(!showForm)} className="vireon-btn-primary" id="send-notification-btn">
+            <Plus className="w-4 h-4" />
+            Send Notification
+          </button>
+        </div>
       </div>
 
       {/* Send Form */}

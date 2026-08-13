@@ -52,7 +52,12 @@ async function audit() {
 
   // ── Step 3: MongoDB Atlas Connection ────────────────────────────────────
   try {
-    await mongoose.connect(mongoUri!);
+    await mongoose.connect(mongoUri!, {
+      serverSelectionTimeoutMS: 30000,
+      connectTimeoutMS: 30000,
+      socketTimeoutMS: 60000,
+      family: 4,
+    });
     logStep(3, 'MongoDB Database Connection', 'PASS', 'Connected to Live MongoDB Atlas');
   } catch (err: any) {
     logStep(3, 'MongoDB Database Connection', 'FAIL', `Connection failed: ${err.message}`);

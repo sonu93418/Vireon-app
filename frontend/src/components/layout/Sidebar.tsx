@@ -102,7 +102,7 @@ export function Sidebar() {
       {/* ── Main Sidebar Drawer / Panel ── */}
       <aside
         className={cn(
-          'fixed left-0 top-0 h-screen z-50 flex flex-col bg-white border-r border-emerald-500/15 shadow-xl transition-all duration-300 ease-in-out',
+          'fixed left-0 top-0 h-screen z-50 flex flex-col bg-white dark:bg-slate-900 border-r-2 dark:border-slate-800 shadow-2xl transition-all duration-300 ease-in-out',
           // Mobile responsive drawer positioning
           isMobileOpen ? 'translate-x-0 w-72' : '-translate-x-full md:translate-x-0',
           // Desktop collapsed vs expanded width
@@ -116,18 +116,18 @@ export function Sidebar() {
         />
 
         {/* ── Header / Logo Section ── */}
-        <div className="flex items-center justify-between h-16 px-4 border-b border-emerald-500/10 flex-shrink-0 bg-emerald-50/40">
+        <div className="flex items-center justify-between h-16 px-3.5 border-b border-emerald-800 flex-shrink-0 bg-emerald-700 dark:bg-slate-950">
           <Link href="/dashboard" className="flex items-center gap-3 min-w-0" onClick={handleNavClick}>
-            <div className="w-10 h-10 rounded-2xl bg-white border border-emerald-500/30 flex items-center justify-center flex-shrink-0 shadow-sm overflow-hidden p-1.5">
+            <div className="w-11 h-11 rounded-2xl bg-white dark:bg-slate-800 border-2 border-emerald-500/30 border-b-4 border-r-4 border-emerald-600/40 flex items-center justify-center flex-shrink-0 shadow-md p-1 overflow-hidden">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo.png" alt="Vireon Safety Logo" className="w-full h-full object-contain" />
+              <img src="/logo.png" alt="Vireon Safety Logo" className="w-full h-full object-contain object-center p-0.5" />
             </div>
             {(!isCollapsed || isMobileOpen) && (
               <div className="flex flex-col min-w-0">
-                <span className="font-heading text-sm font-black text-slate-900 leading-none truncate">
+                <span className="font-heading text-sm font-black text-white leading-none tracking-tight truncate">
                   Vireon Safety
                 </span>
-                <span className="text-[11px] text-emerald-700 font-extrabold tracking-wider uppercase mt-1 truncate">
+                <span className="text-[11px] text-emerald-200 dark:text-emerald-400 font-black tracking-widest uppercase mt-1.5 truncate">
                   Admin Console
                 </span>
               </div>
@@ -138,8 +138,8 @@ export function Sidebar() {
           <button
             onClick={toggle}
             id="sidebar-toggle-btn"
-            className="hidden md:flex w-7 h-7 rounded-xl bg-white border border-emerald-500/20 items-center justify-center
-                       text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 transition-all duration-200 shadow-sm flex-shrink-0"
+            className="hidden md:flex w-7 h-7 rounded-xl bg-emerald-800/80 dark:bg-slate-800 border border-emerald-500/40 items-center justify-center
+                       text-emerald-100 hover:text-white hover:bg-emerald-800 transition-all duration-200 shadow-sm flex-shrink-0 cursor-pointer"
             aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             <ChevronLeft className={cn('w-4 h-4 transition-transform duration-300', isCollapsed && 'rotate-180')} />
@@ -148,7 +148,7 @@ export function Sidebar() {
           {/* Mobile Close Button */}
           <button
             onClick={() => setMobileOpen(false)}
-            className="flex md:hidden w-8 h-8 rounded-xl bg-white border border-slate-200 items-center justify-center text-slate-600 hover:text-slate-900 shadow-xs"
+            className="flex md:hidden w-8 h-8 rounded-xl bg-emerald-800/80 dark:bg-slate-800 border border-emerald-500/40 items-center justify-center text-white hover:bg-emerald-800 shadow-xs cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -159,11 +159,11 @@ export function Sidebar() {
           {NAV_GROUPS.map((group) => (
             <div key={group.label}>
               {(!isCollapsed || isMobileOpen) && (
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-3 mb-2">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 px-3 mb-2">
                   {group.label}
                 </p>
               )}
-              <ul className="space-y-1">
+              <ul className="space-y-1.5">
                 {group.items.map((item) => {
                   const Icon = item.icon;
                   const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
@@ -178,18 +178,18 @@ export function Sidebar() {
                         className={cn(
                           'flex items-center gap-3.5 px-3.5 py-2.5 rounded-2xl text-sm font-semibold transition-all duration-200 relative',
                           isActive
-                            ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25 font-bold'
-                            : 'text-slate-600 hover:bg-emerald-50/70 hover:text-emerald-800'
+                            ? 'bg-emerald-600 dark:bg-emerald-700 text-white border-2 border-emerald-500 border-b-4 border-r-4 border-emerald-800 shadow-md font-black'
+                            : 'text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-slate-800 hover:text-emerald-800 dark:hover:text-emerald-400'
                         )}
                       >
-                        <Icon className={cn('w-5 h-5 flex-shrink-0', isActive ? 'text-white' : 'text-slate-500 group-hover:text-emerald-600')} />
+                        <Icon className={cn('w-5 h-5 flex-shrink-0', isActive ? 'text-white' : 'text-slate-500 dark:text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400')} />
 
                         {showFullLabel && (
                           <span className="truncate flex-1">{item.label}</span>
                         )}
 
                         {item.badge && showFullLabel && (
-                          <span className="ml-auto bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                          <span className="ml-auto bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
                             {item.badge}
                           </span>
                         )}
@@ -211,18 +211,16 @@ export function Sidebar() {
         </nav>
 
         {/* ── Footer / User Profile & Logout ── */}
-        <div className="flex-shrink-0 p-3 border-t border-emerald-500/10 bg-emerald-50/30 space-y-2">
+        <div className="flex-shrink-0 p-3 border-t border-emerald-500/10 dark:border-slate-800 bg-emerald-50/70 dark:bg-slate-950 space-y-2">
           {user && (
-            <div className={cn('flex items-center gap-3 p-2 rounded-2xl bg-white border border-emerald-500/15 shadow-xs', isCollapsed && !isMobileOpen && 'justify-center')}>
+            <div className={cn('flex items-center gap-3 p-2 rounded-2xl bg-white dark:bg-slate-900 border-2 border-emerald-500/20 dark:border-slate-800 border-b-4 border-r-4 shadow-sm', isCollapsed && !isMobileOpen && 'justify-center')}>
               <div className="w-8.5 h-8.5 rounded-xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 text-xs font-black shadow-xs">
                 {user.fullName ? user.fullName.charAt(0).toUpperCase() : 'A'}
               </div>
               {(!isCollapsed || isMobileOpen) && (
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-extrabold text-slate-900 truncate leading-tight">{user.fullName}</p>
-                  <p className="text-[10px] text-emerald-700 font-bold tracking-wide uppercase truncate mt-0.5">
-                    {user.role}
-                  </p>
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className="text-xs font-bold text-slate-900 dark:text-white truncate">{user.fullName}</span>
+                  <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 truncate">{user.email}</span>
                 </div>
               )}
             </div>

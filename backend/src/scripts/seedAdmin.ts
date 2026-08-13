@@ -19,9 +19,10 @@ async function seedAdmin() {
 
   console.log(`Connecting to MongoDB...`);
   await mongoose.connect(mongoUri, {
-    serverSelectionTimeoutMS: 15000,
-    connectTimeoutMS: 15000,
-    socketTimeoutMS: 45000,
+    serverSelectionTimeoutMS: 30000,
+    connectTimeoutMS: 30000,
+    socketTimeoutMS: 60000,
+    family: 4,
   });
   console.log(`Connected successfully.`);
 

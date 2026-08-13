@@ -96,9 +96,10 @@ async function seedTeachers() {
 
   console.log('⏳ Connecting to MongoDB Atlas to seed real teachers...');
   await mongoose.connect(uri, {
-    serverSelectionTimeoutMS: 15000,
-    connectTimeoutMS: 15000,
-    socketTimeoutMS: 45000,
+    serverSelectionTimeoutMS: 30000,
+    connectTimeoutMS: 30000,
+    socketTimeoutMS: 60000,
+    family: 4,
   });
 
   const passwordHash = await bcrypt.hash('VireonTeacher@2026', 10);
