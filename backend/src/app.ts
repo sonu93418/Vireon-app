@@ -52,7 +52,7 @@ const createApp = (): Application => {
   const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS ?? 'http://localhost:3000').split(',');
   app.use(
     cors({
-      origin: (origin, callback) => {
+      origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
         // Allow mobile apps (no origin header), localhost, and dev clients
         if (!origin || process.env.NODE_ENV !== 'production' || allowedOrigins.includes(origin)) {
           callback(null, true);
@@ -79,19 +79,19 @@ const createApp = (): Application => {
   app.use(
     morgan('combined', {
       stream: { write: (msg: string) => logger.http(msg.trim()) },
-      skip: (_req, res) => process.env.NODE_ENV === 'production' && res.statusCode < 400,
+      skip: (_req: express.Request, res: express.Response) => process.env.NODE_ENV === 'production' && res.statusCode < 400,
     })
   );
 
   // ─── HTTP Keep-Alive (reuse TCP connections from mobile clients) ─────────────
-  app.use((_req, res, next) => {
+  app.use((_req: express.Request, res: express.Response, next: express.NextFunction) => {
     res.setHeader('Connection', 'keep-alive');
     res.setHeader('Keep-Alive', 'timeout=30, max=100');
     next();
   });
 
   // ─── Health Check ────────────────────────────────────────────────────────────
-  app.get('/health', (_req, res) => {
+  app.get('/health', (_req: express.Request, res: express.Response) => {
     res.status(200).json({
       status: 'healthy',
       service: 'Vireon Safety Institute API',

@@ -67,7 +67,7 @@ export const uploadMiddleware = multer({
  */
 export const uploadImageMiddleware = multer({
   storage: memoryStorage,
-  fileFilter: (_req, file, cb) => {
+  fileFilter: (_req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
     if (ALLOWED_MIME_TYPES.IMAGE.includes(file.mimetype)) {
       cb(null, true);
     } else {
@@ -82,7 +82,7 @@ export const uploadImageMiddleware = multer({
  */
 export const uploadPdfMiddleware = multer({
   storage: memoryStorage,
-  fileFilter: (_req, file, cb) => {
+  fileFilter: (_req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
     if (ALLOWED_MIME_TYPES.PDF.includes(file.mimetype)) {
       cb(null, true);
     } else {
@@ -97,7 +97,7 @@ export const uploadPdfMiddleware = multer({
  */
 export const uploadVideoMiddleware = multer({
   storage: memoryStorage,
-  fileFilter: (_req, file, cb) => {
+  fileFilter: (_req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
     if (ALLOWED_MIME_TYPES.VIDEO.includes(file.mimetype)) {
       cb(null, true);
     } else {

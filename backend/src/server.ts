@@ -51,7 +51,7 @@ const bootstrap = async (): Promise<void> => {
     // ─── Graceful Shutdown ──────────────────────────────────────────────────
     const gracefulShutdown = (signal: string) => {
       logger.info(`\n📴 ${signal} received. Starting graceful shutdown...`);
-      server.close(async (err) => {
+      server.close(async (err?: Error) => {
         if (err) {
           logger.error('❌ Error during server close:', err);
           process.exit(1);
