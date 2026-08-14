@@ -26,6 +26,7 @@
     },
     "android": {
       "package": "com.vireon.safety",
+      "googleServicesFile": "./google-services.json",
       "usesCleartextTraffic": true,
       "backgroundColor": "#16A34A",
       "splash": {

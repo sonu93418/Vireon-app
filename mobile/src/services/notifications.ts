@@ -73,14 +73,19 @@ export const registerForPushNotifications = async (): Promise<string | null> => 
 
       const channelsToConfigure: Array<{ id: string; name: string; lightColor: string; vibrationPattern: number[] }> = [
         { id: 'vireon_default_v4', name: 'Vireon Notifications', lightColor: '#16A34A', vibrationPattern: [0, 250, 250, 250] },
+        { id: 'vireon_default_v3', name: 'Vireon Notifications', lightColor: '#16A34A', vibrationPattern: [0, 250, 250, 250] },
         { id: 'default', name: 'Vireon General Notifications', lightColor: '#16A34A', vibrationPattern: [0, 250, 250, 250] },
         { id: 'vireon_alerts_v4', name: 'Vireon Live Class & Exam Alerts', lightColor: '#DC2626', vibrationPattern: [0, 500, 250, 500] },
+        { id: 'vireon_alerts_v3', name: 'Vireon Live Class & Exam Alerts', lightColor: '#DC2626', vibrationPattern: [0, 500, 250, 500] },
         { id: 'vireon_alerts', name: 'Vireon Live Alerts', lightColor: '#DC2626', vibrationPattern: [0, 500, 250, 500] },
         { id: 'vireon_reminders_v4', name: 'Vireon Class Reminders', lightColor: '#2563EB', vibrationPattern: [0, 250, 250, 250] },
+        { id: 'vireon_reminders_v3', name: 'Vireon Class Reminders', lightColor: '#2563EB', vibrationPattern: [0, 250, 250, 250] },
         { id: 'vireon_reminders', name: 'Vireon Reminders', lightColor: '#2563EB', vibrationPattern: [0, 250, 250, 250] },
         { id: 'vireon_placements_v4', name: 'Vireon Placement & Hiring Drives', lightColor: '#D97706', vibrationPattern: [0, 400, 200, 400] },
+        { id: 'vireon_placements_v3', name: 'Vireon Placement & Hiring Drives', lightColor: '#D97706', vibrationPattern: [0, 400, 200, 400] },
         { id: 'vireon_placements', name: 'Vireon Placements', lightColor: '#D97706', vibrationPattern: [0, 400, 200, 400] },
         { id: 'vireon_courses_v4', name: 'Vireon Course & Learning Updates', lightColor: '#16A34A', vibrationPattern: [0, 250] },
+        { id: 'vireon_courses_v3', name: 'Vireon Course & Learning Updates', lightColor: '#16A34A', vibrationPattern: [0, 250] },
         { id: 'vireon_courses', name: 'Vireon Course Updates', lightColor: '#16A34A', vibrationPattern: [0, 250] },
       ];
 

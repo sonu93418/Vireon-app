@@ -125,6 +125,7 @@ export default function MobileRegisterScreen() {
       });
 
       const { tokens, user } = loginRes.data.data;
+      handleRegisterSuccess(tokens, user);
     } catch (err: unknown) {
       setLoading(false);
       const isNetworkErr = (err as any)?.code === 'ERR_NETWORK' || (err as Error)?.message?.includes('Network Error') || !(err as any)?.response;

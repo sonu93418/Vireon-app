@@ -91,14 +91,14 @@ export const signInWithGoogle = async (): Promise<GoogleAuthResult | null> => {
       idToken = (response as any)?.idToken ?? undefined;
     }
 
-    if (!userEmail) {
-      throw new Error('Google Sign-In response did not contain user email address');
+    if (!userEmail || !idToken) {
+      throw new Error('Google Sign-In response did not contain a verified ID token. Check the Android OAuth client SHA-1 configuration.');
     }
 
     console.log(`✅ Google Account selected: ${userEmail}`);
 
     return {
-      idToken: idToken ?? 'real_google_id_token_authenticated',
+      idToken,
       email: userEmail,
       fullName: userName ?? userEmail.split('@')[0],
       avatarUrl: userPhoto,
