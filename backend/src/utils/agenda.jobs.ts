@@ -89,15 +89,32 @@ export const registerAgendaJobs = async (agenda: Agenda): Promise<void> => {
           )
         );
 
-        // Store in-app notification
-        await NotificationModel.create({
-          title: '⏰ Class Reminder',
-          body: `${cls.title} starts in 30 minutes`,
-          type: NotificationType.CLASS_REMINDER,
-          dataPayload: { classId: classIdStr, zoomJoinUrl: cls.zoomJoinUrl ?? '' },
-          isSent: true,
-          sentAt: new Date(),
-        });
+        // Store per-attendee in-app notifications (scoped, not a global broadcast)
+        if (attendees.length > 0) {
+          await Promise.allSettled(
+            attendees.map((a) =>
+              NotificationModel.create({
+                recipientId: a._id,  // scoped to enrolled student only
+                title: '⏰ Class Reminder',
+                body: `${cls.title} starts in 30 minutes`,
+                type: NotificationType.CLASS_REMINDER,
+                dataPayload: { classId: classIdStr, zoomJoinUrl: cls.zoomJoinUrl ?? '' },
+                isSent: true,
+                sentAt: new Date(),
+              })
+            )
+          );
+        } else {
+          // Fallback: broadcast if no explicit attendees tracked
+          await NotificationModel.create({
+            title: '⏰ Class Reminder',
+            body: `${cls.title} starts in 30 minutes`,
+            type: NotificationType.CLASS_REMINDER,
+            dataPayload: { classId: classIdStr, zoomJoinUrl: cls.zoomJoinUrl ?? '' },
+            isSent: true,
+            sentAt: new Date(),
+          });
+        }
 
         // Mark as sent
         await ClassModel.findByIdAndUpdate(classIdStr, { reminderSent: true });

@@ -25,7 +25,6 @@ import {
   Award,
   CheckCheck,
   ChevronRight,
-  Sparkles,
   Trash2,
 } from 'lucide-react-native';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOW, FONT_SIZE } from '@/src/theme/tokens';
@@ -171,7 +170,6 @@ function formatTimeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 }
 
-import { scheduleTestLockScreenNotification } from '@/src/services/notifications';
 import { Alert } from 'react-native';
 
 export default function NotificationsScreen() {
@@ -179,25 +177,6 @@ export default function NotificationsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [readNotifs, setReadNotifs] = useState<Record<string, boolean>>({});
   const [deletedIds, setDeletedIds] = useState<Record<string, boolean>>({});
-  const [testScheduled, setTestScheduled] = useState(false);
-
-  const handleTestLockScreen = async () => {
-    setTestScheduled(true);
-    const success = await scheduleTestLockScreenNotification(5);
-    if (success) {
-      Alert.alert(
-        '⏰ Test Lock Screen Alert Scheduled!',
-        'Lock your phone screen NOW within 5 seconds!\n\nA high-priority notification with PUBLIC lock screen visibility will appear on your lock screen.',
-        [{ text: 'OK, Locking Now!' }]
-      );
-    } else {
-      Alert.alert(
-        '⚠️ Notification Permission Required',
-        'Please allow notification permissions in your phone Settings > Apps > Vireon > Notifications to see lock screen alerts.'
-      );
-    }
-    setTimeout(() => setTestScheduled(false), 6000);
-  };
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['notifications', 'mobile'],
@@ -338,35 +317,6 @@ export default function NotificationsScreen() {
           </TouchableOpacity>
         </View>
       </View>
-
-      {/* Lock Screen Test Banner */}
-      <TouchableOpacity
-        style={{
-          marginHorizontal: SPACING.base,
-          marginTop: SPACING.sm,
-          padding: 10,
-          backgroundColor: '#EFF6FF',
-          borderRadius: BORDER_RADIUS.lg,
-          borderWidth: 1,
-          borderColor: '#BFDBFE',
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-        onPress={handleTestLockScreen}
-        disabled={testScheduled}
-        activeOpacity={0.8}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
-          <Sparkles size={16} color="#2563EB" />
-          <Text style={{ fontSize: 11, fontWeight: '700', color: '#1E40AF' }}>
-            {testScheduled ? '⏰ Lock screen NOW within 5s...' : '⚡ Test Lock Screen Alert (5s Delay)'}
-          </Text>
-        </View>
-        <View style={{ backgroundColor: '#2563EB', paddingHorizontal: 10, paddingVertical: 4, borderRadius: BORDER_RADIUS.md }}>
-          <Text style={{ fontSize: 10, fontWeight: '800', color: '#FFF' }}>Test Now</Text>
-        </View>
-      </TouchableOpacity>
 
       {/* Filter Tabs */}
       <View style={styles.tabsRow}>

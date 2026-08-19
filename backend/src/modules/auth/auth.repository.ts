@@ -103,8 +103,10 @@ export class AuthRepository extends BaseRepository<IUserDocument> {
   }
 
   async removeAllRefreshTokens(userId: string): Promise<void> {
+    // Use $set and $inc as sibling operators — NOT nested — so tokenVersion truly increments
     await UserModel.findByIdAndUpdate(userId, {
-      $set: { refreshTokens: [], tokenVersion: { $inc: 1 } },
+      $set: { refreshTokens: [] },
+      $inc: { tokenVersion: 1 },
     });
   }
 

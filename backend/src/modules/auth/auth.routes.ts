@@ -19,6 +19,16 @@ import {
 } from '../../shared/schemas';
 import { z } from 'zod';
 
+// Inline validation schema for Google registration
+const registerGoogleSchema = z.object({
+  idToken: z.string().min(1, 'Google ID token is required'),
+  phone: z.string().regex(/^\d{10}$/, 'Phone must be a 10-digit number'),
+  fullName: z.string().min(2).max(100).trim().optional(),
+  role: z.string().optional(),
+  fcmToken: z.string().optional(),
+});
+
+
 const router = Router();
 const controller = new AuthController();
 
@@ -113,7 +123,8 @@ router.post('/login/phone', authRateLimiter, validate({ body: loginWithPhoneSche
  *         description: Invalid Google token
  */
 router.post('/login/google', authRateLimiter, validate({ body: loginWithGoogleSchema }), controller.loginWithGoogle);
-router.post('/register/google', authRateLimiter, controller.registerWithGoogle);
+// register/google — validate input to ensure idToken + phone are present and well-formed
+router.post('/register/google', authRateLimiter, validate({ body: registerGoogleSchema }), controller.registerWithGoogle);
 
 /**
  * @swagger
@@ -122,7 +133,8 @@ router.post('/register/google', authRateLimiter, controller.registerWithGoogle);
  *     tags: [Auth]
  *     summary: Refresh access token using refresh token
  */
-router.post('/refresh', validate({ body: refreshTokenSchema }), controller.refreshToken);
+// /refresh — rate limited to prevent refresh token brute-force attacks
+router.post('/refresh', authRateLimiter, validate({ body: refreshTokenSchema }), controller.refreshToken);
 
 /**
  * @swagger

@@ -375,12 +375,20 @@ router.post('/fcm-token', optionalAuthenticate, async (req: Request, res: Respon
     if (userId) {
       await UserModel.findByIdAndUpdate(userId, { $addToSet: { fcmTokens: fcmToken } });
       logger.info(`[FCM][TOKEN_REGISTER] ✅ Native FCM token registered for user ${userId} (${email || ''})`);
-    } else {
-      await UserModel.updateMany({ status: { $ne: 'SUSPENDED' } }, { $addToSet: { fcmTokens: fcmToken } });
-      logger.info(`[FCM][TOKEN_REGISTER] ✅ Native FCM token registered to active user records`);
+      return ResponseHandler.success(res, { success: true }, 'Native FCM token registered successfully');
     }
 
-    ResponseHandler.success(res, { success: true }, 'Native FCM token registered successfully');
+    // ─── Security: Do NOT assign token to all users when userId is unknown ───────
+    // Assigning to all users would pollute FCM token data and deliver all future
+    // broadcasts to unrecognized/anonymous devices. Require authentication first.
+    logger.warn('[FCM][TOKEN_REGISTER] ⚠️ Rejected FCM token registration — no authenticated user or resolvable email provided.');
+    return ResponseHandler.error(
+      res,
+      'FCM token registration requires an authenticated user. Please login first.',
+      400,
+      undefined,
+      'FCM_TOKEN_UNAUTHENTICATED'
+    );
   } catch (e) { next(e); }
 });
 
