@@ -3,6 +3,9 @@
     "name": "Vireon Safety Institute",
     "slug": "vireon-safety",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "vireon",
@@ -26,8 +29,9 @@
     },
     "android": {
       "package": "com.vireon.safety",
+      "versionCode": 1,
       "googleServicesFile": "./google-services.json",
-      "usesCleartextTraffic": true,
+      "usesCleartextTraffic": false,
       "backgroundColor": "#16A34A",
       "splash": {
         "image": "./assets/splash-icon.png",
@@ -37,7 +41,28 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#16A34A"
-      }
+      },
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.VIBRATE",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "vireonsafety.in"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "bundler": "metro",

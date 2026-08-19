@@ -1,4 +1,4 @@
-# EAS Build Exclude List — Drastically reduces upload tarball size from 71MB to 3MB
+# EAS Build Exclude List
 
 # Dependencies & Build Caches
 node_modules/
@@ -11,12 +11,23 @@ android/app/build/
 android/build/
 android/.cxx/
 android/app/.cxx/
+android/.kotlin/
+
+# Auto-generated Android res PNG files (rebuilt during prebuild)
+android/app/src/main/res/drawable-hdpi/
+android/app/src/main/res/drawable-mdpi/
+android/app/src/main/res/drawable-xhdpi/
+android/app/src/main/res/drawable-xxhdpi/
+android/app/src/main/res/drawable-xxxhdpi/
 
 # iOS Native Build Outputs & Caches
 ios/Pods/
 ios/build/
 *.xcworkspace
 *.xcodeproj
+
+# Lock files (regenerated on build server)
+package-lock.json
 
 # Temporary & Local Files
 *.log
