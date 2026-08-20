@@ -126,13 +126,20 @@ router.patch('/:id/role', async (req: Request, res: Response, next: NextFunction
 
 /**
  * DELETE /api/v1/users/:id
- * Delete user account
+ * Delete user account permanently from database
  */
 router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = await UserModel.findByIdAndDelete(req.params.id);
     if (!user) throw new NotFoundError('User not found');
-    ResponseHandler.success(res, null, 'User deleted successfully');
+
+    // Clean up any remaining OTP records for this user
+    if (user.email) {
+      const { OtpModel } = await import('../../models/misc.models');
+      await OtpModel.deleteMany({ identifier: user.email.toLowerCase() });
+    }
+
+    ResponseHandler.success(res, null, `User ${user.email || user.fullName} deleted permanently from database`);
   } catch (e) {
     next(e);
   }

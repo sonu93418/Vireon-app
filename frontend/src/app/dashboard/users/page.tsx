@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useReactTable, getCoreRowModel, flexRender, ColumnDef } from '@tanstack/react-table';
 import { useState } from 'react';
-import { Users, Search, UserCheck, UserX, ChevronLeft, ChevronRight, RefreshCw, Shield } from 'lucide-react';
+import { Users, Search, UserCheck, UserX, ChevronLeft, ChevronRight, RefreshCw, Shield, Trash2 } from 'lucide-react';
 import apiClient from '@/lib/api-client';
 import { formatDate, cn } from '@/lib/utils';
 
@@ -29,6 +29,7 @@ const STATUS_COLORS: Record<string, string> = {
 export default function UsersPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; user: User | null }>({ open: false, user: null });
   const queryClient = useQueryClient();
 
   const { data, isLoading, isFetching, refetch } = useQuery({
@@ -46,6 +47,14 @@ export default function UsersPage() {
     mutationFn: async ({ userId, status }: { userId: string; status: string }) =>
       apiClient.patch(`/users/${userId}/status`, { status }),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['users'] }),
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => apiClient.delete(`/users/${userId}`),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['users'] });
+      setDeleteConfirm({ open: false, user: null });
+    },
   });
 
   const columns: ColumnDef<User>[] = [
@@ -127,6 +136,14 @@ export default function UsersPage() {
               <UserCheck className="w-4 h-4" />
             </button>
           )}
+          <button
+            onClick={() => setDeleteConfirm({ open: true, user: row.original })}
+            className="p-1.5 rounded-xl hover:bg-red-50 text-slate-400 hover:text-red-600 border border-transparent hover:border-red-200 transition-all"
+            title="Delete User Permanently"
+            id={`delete-user-${row.original._id}`}
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
         </div>
       ),
     },
@@ -257,6 +274,62 @@ export default function UsersPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Delete Confirmation Modal ── */}
+      {deleteConfirm.open && deleteConfirm.user && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setDeleteConfirm({ open: false, user: null })}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-3xl shadow-2xl border border-red-100 p-6 w-full max-w-md mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-11 h-11 rounded-2xl bg-red-50 border border-red-200 flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-slate-900">Delete User Permanently</h3>
+                <p className="text-xs text-slate-500 font-medium">This action cannot be undone</p>
+              </div>
+            </div>
+
+            <div className="bg-red-50/60 rounded-2xl border border-red-100 p-4 mb-5">
+              <p className="text-sm text-slate-700 font-semibold">
+                Are you sure you want to permanently delete this user?
+              </p>
+              <div className="mt-3 space-y-1">
+                <p className="text-xs font-bold text-slate-800">
+                  {deleteConfirm.user.fullName || 'Unknown User'}
+                </p>
+                <p className="text-xs text-slate-500">{deleteConfirm.user.email}</p>
+                <p className="text-xs text-slate-500">{deleteConfirm.user.phone || 'No phone'}</p>
+              </div>
+              <p className="mt-3 text-[11px] text-red-600 font-bold">
+                ⚠ All user data, enrollments, and records will be permanently removed from the database.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setDeleteConfirm({ open: false, user: null })}
+                className="flex-1 py-2.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-all"
+                disabled={deleteUserMutation.isPending}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => deleteUserMutation.mutate(deleteConfirm.user!._id)}
+                disabled={deleteUserMutation.isPending}
+                className="flex-1 py-2.5 rounded-xl bg-red-600 text-xs font-bold text-white hover:bg-red-700 transition-all disabled:opacity-60 shadow-sm"
+                id="confirm-delete-user"
+              >
+                {deleteUserMutation.isPending ? 'Deleting...' : 'Delete Permanently'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </motion.div>
   );
 }
