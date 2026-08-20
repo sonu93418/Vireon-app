@@ -47,8 +47,8 @@ export class AuthService {
     this.repo = new AuthRepository();
   }
 
-  async register(input: RegisterInput): Promise<{ message: string }> {
-    const { fullName, email, phone, password, role } = input;
+  async register(input: RegisterInput & { fcmToken?: string }): Promise<AuthResult> {
+    const { fullName, email, phone, password, role, fcmToken } = input;
 
     // Check for existing user
     const existing = await this.repo.findOne({
@@ -75,7 +75,8 @@ export class AuthService {
     // Send welcome email asynchronously in background
     void sendWelcomeEmail(email, fullName).catch(() => { });
 
-    return { message: 'Registration successful. You can now log in.' };
+    // Auto-login: Generate tokens immediately so user doesn't need a separate login step
+    return this.generateAuthResult(user, fcmToken);
   }
 
   async verifyOtp(input: VerifyOtpInput): Promise<{ message: string }> {
@@ -183,6 +184,8 @@ export class AuthService {
       process.env.GOOGLE_ANDROID_CLIENT_ID,
     ].filter(Boolean) as string[];
 
+    logger.info(`🔍 [Google Auth] Allowed audiences for verification: ${allowedAudiences.join(', ') || 'NONE CONFIGURED'}`);
+
     // 1. Official Google OAuth2 Client Verification
     try {
       const { OAuth2Client } = require('google-auth-library');
@@ -194,7 +197,7 @@ export class AuthService {
       const payload = ticket.getPayload();
       if (!payload) throw new UnauthorizedError('Invalid Google ID token payload');
 
-      logger.info(`✅ [Google Auth] Token Verified via Google Auth Library for ${payload.email}`);
+      logger.info(`✅ [Google Auth] Token Verified via Google Auth Library for ${payload.email} (aud: ${payload.aud})`);
       return {
         sub: payload.sub,
         email: payload.email ?? '',
@@ -202,11 +205,16 @@ export class AuthService {
         name: payload.name,
         picture: payload.picture,
       };
-    } catch {
+    } catch (googleAuthErr: any) {
+      logger.warn(`⚠️ [Google Auth] OAuth2Client verification failed: ${googleAuthErr.message}`);
+      if (googleAuthErr.message?.includes('audience')) {
+        logger.warn(`⚠️ [Google Auth] AUDIENCE MISMATCH — Token audience does not match allowed audiences: [${allowedAudiences.join(', ')}]. Check GOOGLE_WEB_CLIENT_ID and GOOGLE_ANDROID_CLIENT_ID env vars.`);
+      }
+
       // 2. Secondary Strategy: Firebase Admin SDK ID Token Verification
       try {
         const firebaseToken = await admin.auth().verifyIdToken(idToken);
-        logger.info(`✅ [Google Auth] Token Verified via Firebase Admin for ${firebaseToken.email}`);
+        logger.info(`✅ [Google Auth] Token Verified via Firebase Admin for ${firebaseToken.email} (uid: ${firebaseToken.uid})`);
         return {
           sub: firebaseToken.uid,
           email: firebaseToken.email ?? '',
@@ -214,8 +222,10 @@ export class AuthService {
           name: firebaseToken.name,
           picture: firebaseToken.picture,
         };
-      } catch {
-        logger.error('❌ [Google Auth] Authorization Failed: Token verification failed on all strategies');
+      } catch (firebaseErr: any) {
+        logger.error(`❌ [Google Auth] Firebase Admin verification also failed: ${firebaseErr.message}`);
+        logger.error(`❌ [Google Auth] Authorization Failed: Token verification failed on ALL strategies.`);
+        logger.error(`❌ [Google Auth] Debug Info — Token prefix: ${idToken.substring(0, 30)}..., Allowed audiences: [${allowedAudiences.join(', ')}]`);
         throw new UnauthorizedError('Invalid or unverified Google ID token. Access denied.', 'INVALID_GOOGLE_TOKEN');
       }
     }

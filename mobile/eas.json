@@ -14,12 +14,13 @@
     "preview": {
       "distribution": "internal",
       "android": {
-        "buildType": "apk",
-        "gradleCommand": ":app:assembleRelease"
+        "buildType": "apk"
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://vireon-app.onrender.com/api/v1",
-        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "52937404971-e0vqiesg2fqjktgtaoba5n06fs5utdor.apps.googleusercontent.com"
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "52937404971-e0vqiesg2fqjktgtaoba5n06fs5utdor.apps.googleusercontent.com",
+        "EXPO_NO_DOCTOR": "1",
+        "EAS_SKIP_AUTO_FINGERPRINT": "1"
       }
     },
     "production": {
@@ -29,7 +30,9 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://vireon-app.onrender.com/api/v1",
-        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "52937404971-e0vqiesg2fqjktgtaoba5n06fs5utdor.apps.googleusercontent.com"
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "52937404971-e0vqiesg2fqjktgtaoba5n06fs5utdor.apps.googleusercontent.com",
+        "EXPO_NO_DOCTOR": "1",
+        "EAS_SKIP_AUTO_FINGERPRINT": "1"
       }
     }
   },

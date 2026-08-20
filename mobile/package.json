@@ -10,6 +10,8 @@
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
     "prebuild": "expo prebuild --clean",
+    "eas-build-pre-install": "node setup-google-services.js",
+    "eas-build-post-install": "node setup-google-services.js",
     "postinstall": "node -e \"const fs=require('fs'); const p='node_modules/react-native-worklets/plugin.js'; if(fs.existsSync('node_modules/react-native-worklets/plugin/index.js')) fs.writeFileSync(p, 'module.exports = require(\\'./plugin/index.js\\');');\""
   },
   "dependencies": {

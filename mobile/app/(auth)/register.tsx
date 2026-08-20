@@ -110,7 +110,8 @@ export default function MobileRegisterScreen() {
 
     setLoading(true);
     try {
-      await apiClient.post('/auth/register', {
+      // Register + auto-login: backend now returns tokens + user directly
+      const res = await apiClient.post('/auth/register', {
         fullName: cleanName,
         email: cleanEmail,
         phone: cleanPhone,
@@ -118,13 +119,7 @@ export default function MobileRegisterScreen() {
         role: 'STUDENT',
       });
 
-      // Auto-login after registration
-      const loginRes = await apiClient.post('/auth/login/email', {
-        email: cleanEmail,
-        password: cleanPassword,
-      });
-
-      const { tokens, user } = loginRes.data.data;
+      const { tokens, user } = res.data.data;
       handleRegisterSuccess(tokens, user);
     } catch (err: unknown) {
       setLoading(false);

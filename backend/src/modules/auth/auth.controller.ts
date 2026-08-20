@@ -17,7 +17,7 @@ export class AuthController {
   register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const result = await this.service.register(req.body as Parameters<AuthService['register']>[0]);
-      ResponseHandler.created(res, result, result.message);
+      ResponseHandler.created(res, result, 'Registration successful');
     } catch (error) {
       next(error);
     }
