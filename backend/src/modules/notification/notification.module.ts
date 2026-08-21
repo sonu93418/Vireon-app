@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { Router, Request, Response, NextFunction } from 'express';
-import { Model } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import { z } from 'zod';
 import { NotificationModel, INotificationDocument } from '../../models/notification.model';
 import { UserModel } from '../../models/user.model';
@@ -18,50 +18,85 @@ import { LOCK_SCREEN_TEMPLATES } from './notification.templates';
 
 class NotificationRepository extends BaseRepository<INotificationDocument> {
   constructor() { super(NotificationModel as Model<INotificationDocument>); }
+
+  private getObjectId(id: string) {
+    return mongoose.isValidObjectId(id) ? new mongoose.Types.ObjectId(id) : id;
+  }
+
   async findForUser(userId: string, query: Record<string, unknown>) {
+    const userObjId = this.getObjectId(userId);
     return this.findAll(
       {
-        $or: [{ recipientId: userId }, { recipientId: null }],
-        deletedByUsers: { $ne: userId },
+        $or: [
+          { recipientId: userObjId },
+          { recipientId: userId },
+          { recipientId: null },
+          { recipientId: { $exists: false } },
+        ],
+        deletedByUsers: { $nin: [userObjId, userId] },
       },
       query as Parameters<NotificationRepository['findAll']>[1]
     );
   }
+
   async markAllRead(userId: string): Promise<void> {
+    const userObjId = this.getObjectId(userId);
     await NotificationModel.updateMany(
       {
-        $or: [{ recipientId: userId }, { recipientId: null }],
+        $or: [
+          { recipientId: userObjId },
+          { recipientId: userId },
+          { recipientId: null },
+          { recipientId: { $exists: false } },
+        ],
         isRead: false,
-        deletedByUsers: { $ne: userId },
+        deletedByUsers: { $nin: [userObjId, userId] },
       },
       { isRead: true, readAt: new Date() }
     );
   }
+
   async getUnreadCount(userId: string): Promise<number> {
+    const userObjId = this.getObjectId(userId);
     return NotificationModel.countDocuments({
-      $or: [{ recipientId: userId }, { recipientId: null }],
+      $or: [
+        { recipientId: userObjId },
+        { recipientId: userId },
+        { recipientId: null },
+        { recipientId: { $exists: false } },
+      ],
       isRead: false,
-      deletedByUsers: { $ne: userId },
+      deletedByUsers: { $nin: [userObjId, userId] },
     });
   }
+
   async clearAllForUser(userId: string, isAdmin = false): Promise<void> {
     if (isAdmin) {
       await NotificationModel.deleteMany({});
     } else {
-      await NotificationModel.deleteMany({ recipientId: userId });
+      const userObjId = this.getObjectId(userId);
+      await NotificationModel.deleteMany({
+        $or: [{ recipientId: userObjId }, { recipientId: userId }],
+      });
       await NotificationModel.updateMany(
-        { recipientId: null, deletedByUsers: { $ne: userId } },
-        { $addToSet: { deletedByUsers: userId } }
+        {
+          $or: [{ recipientId: null }, { recipientId: { $exists: false } }],
+        },
+        { $addToSet: { deletedByUsers: userObjId } }
       );
     }
   }
+
   async deleteForUser(id: string, userId: string): Promise<void> {
     const notif = await NotificationModel.findById(id);
     if (!notif) return;
-    if (notif.recipientId && String(notif.recipientId) === userId) {
+    const userObjId = this.getObjectId(userId);
+    if (notif.recipientId && (String(notif.recipientId) === userId || String(notif.recipientId) === String(userObjId))) {
       await NotificationModel.findByIdAndDelete(id);
     } else {
-      await NotificationModel.findByIdAndUpdate(id, { $addToSet: { deletedByUsers: userId } });
+      await NotificationModel.findByIdAndUpdate(id, {
+        $addToSet: { deletedByUsers: userObjId },
+      });
     }
   }
 }

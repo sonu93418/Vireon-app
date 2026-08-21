@@ -26,11 +26,19 @@ import Animated, {
   useSharedValue,
   interpolate,
 } from 'react-native-reanimated';
-import { Shield, Award, ChevronRight, Video, BookOpen, Bell, Sparkles, FileText, GraduationCap, ShieldCheck, CheckCircle2, X } from 'lucide-react-native';
+import { Shield, Award, ChevronRight, Video, BookOpen, Bell, Sparkles, FileText, GraduationCap, ShieldCheck, CheckCircle2, X, Phone, MessageCircle, PhoneCall } from 'lucide-react-native';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOW, FONT_SIZE } from '@/src/theme/tokens';
 import apiClient, { getAccessToken, getUserProfileStorage, setUserProfileStorage } from '@/src/services/api';
 import { getCacheData, setCacheData } from '@/src/services/queryCache';
 import { RealConfettiCannon } from '@/src/components/RealConfettiCannon';
+import {
+  OFFICIAL_HELPLINES,
+  PRIMARY_PHONE,
+  makePhoneCall,
+  openWhatsApp,
+} from '@/src/constants/contact';
+
+const VSI_LOGO = require('@/assets/vsi_logo.png');
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH * 0.72;
@@ -46,7 +54,7 @@ const POSTERS = [
 ];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-interface Course { _id: string; title: string; code?: string; level: string; duration: number; durationType: string; feeAmount: number; thumbnailUrl?: string; isPlacementGuaranteed: boolean }
+interface Course { _id: string; title: string; code?: string; level: string; duration: number; durationType: string; thumbnailUrl?: string; isPlacementGuaranteed: boolean }
 interface Teacher { _id: string; designation: string; certifications: string[]; profileImageUrl?: string; localImage?: any; userId: { fullName: string; avatarUrl?: string } }
 interface ClassItem { _id: string; title: string; subject: string; scheduledAt: string; zoomJoinUrl: string; teacherId: { userId: { fullName: string } } }
 
@@ -336,13 +344,13 @@ function ClassCard({ item }: { item: ClassItem }) {
 }
 
 const DEFAULT_COURSES: Course[] = [
-  { _id: '1', code: 'DFIS-101', title: 'Diploma in Fire & Industrial Safety', level: 'DIPLOMA', duration: 12, durationType: 'MONTHS', feeAmount: 18500, isPlacementGuaranteed: true },
-  { _id: '2', code: 'ADIS-201', title: 'Advanced Diploma in Industrial Safety', level: 'ADVANCED_DIPLOMA', duration: 1, durationType: 'YEARS', feeAmount: 25000, isPlacementGuaranteed: true },
-  { _id: '3', code: 'PGDIS-301', title: 'PG Diploma in Industrial Safety (PGDIS)', level: 'PG_DIPLOMA', duration: 1, durationType: 'YEARS', feeAmount: 32000, isPlacementGuaranteed: true },
-  { _id: '4', code: 'IOSH-MSWS', title: 'IOSH (Managing Safely & Working Safely)', level: 'CERTIFICATION', duration: 3, durationType: 'WEEKS', feeAmount: 15000, isPlacementGuaranteed: true },
-  { _id: '5', code: 'OSHA-3040', title: 'OSHA 30-Hour & 40-Hour General Industry', level: 'CERTIFICATION', duration: 4, durationType: 'WEEKS', feeAmount: 14000, isPlacementGuaranteed: true },
-  { _id: '6', code: 'BTECH-FSE', title: 'B.Tech in Fire & Safety Engineering', level: 'BTECH', duration: 4, durationType: 'YEARS', feeAmount: 65000, isPlacementGuaranteed: true },
-  { _id: '7', code: 'MBA-SEHS', title: 'MBA in Safety & EHS Management', level: 'MBA', duration: 2, durationType: 'YEARS', feeAmount: 85000, isPlacementGuaranteed: true },
+  { _id: '1', code: 'DFIS-101', title: 'Diploma in Fire & Industrial Safety', level: 'DIPLOMA', duration: 12, durationType: 'MONTHS', isPlacementGuaranteed: true },
+  { _id: '2', code: 'ADIS-201', title: 'Advanced Diploma in Industrial Safety', level: 'ADVANCED_DIPLOMA', duration: 1, durationType: 'YEARS', isPlacementGuaranteed: true },
+  { _id: '3', code: 'PGDIS-301', title: 'PG Diploma in Industrial Safety (PGDIS)', level: 'PG_DIPLOMA', duration: 1, durationType: 'YEARS', isPlacementGuaranteed: true },
+  { _id: '4', code: 'IOSH-MSWS', title: 'IOSH (Managing Safely & Working Safely)', level: 'CERTIFICATION', duration: 3, durationType: 'WEEKS', isPlacementGuaranteed: true },
+  { _id: '5', code: 'OSHA-3040', title: 'OSHA 30-Hour & 40-Hour General Industry', level: 'CERTIFICATION', duration: 4, durationType: 'WEEKS', isPlacementGuaranteed: true },
+  { _id: '6', code: 'BTECH-FSE', title: 'B.Tech in Fire & Safety Engineering', level: 'BTECH', duration: 4, durationType: 'YEARS', isPlacementGuaranteed: true },
+  { _id: '7', code: 'MBA-SEHS', title: 'MBA in Safety & EHS Management', level: 'MBA', duration: 2, durationType: 'YEARS', isPlacementGuaranteed: true },
 ];
 
 // ─── Main Home Screen ─────────────────────────────────────────────────────────
@@ -668,8 +676,56 @@ export default function HomeScreen() {
           </View>
         )}
 
+        {/* ── Official Institute Admission Helplines ── */}
+        <View style={styles.section}>
+          <View style={[styles.helplineSectionCard, SHADOW.card]}>
+            <LinearGradient
+              colors={['#0D4A2B', '#15803D']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.helplineSectionHeader}
+            >
+              <Image source={VSI_LOGO} style={styles.helplineSectionLogo} resizeMode="contain" />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.helplineSectionTitle}>Official Admission Helplines</Text>
+                <Text style={styles.helplineSectionSub}>Connect with authorized course counselors</Text>
+              </View>
+            </LinearGradient>
+
+            <View style={styles.helplineCardBody}>
+              {OFFICIAL_HELPLINES.map((h) => (
+                <View key={h.id} style={styles.homeHelplineItem}>
+                  <View style={styles.homeHelplineInfo}>
+                    <Text style={styles.homeHelplineName}>{h.name}</Text>
+                    <Text style={styles.homeHelplineNumber}>{h.formattedPhone}</Text>
+                    <Text style={styles.homeHelplineRole}>{h.role}</Text>
+                  </View>
+                  <View style={styles.homeHelplineActions}>
+                    <TouchableOpacity
+                      style={styles.homeCallBtn}
+                      onPress={() => makePhoneCall(h.phone)}
+                      activeOpacity={0.8}
+                    >
+                      <Phone size={13} color="#16A34A" />
+                      <Text style={styles.homeCallText}>Call</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.homeWaBtn}
+                      onPress={() => openWhatsApp(h.phone, `Hello Vireon Safety Institute, I want to inquire about admissions and course details.`)}
+                      activeOpacity={0.8}
+                    >
+                      <MessageCircle size={13} color="#FFFFFF" />
+                      <Text style={styles.homeWaText}>WhatsApp</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
+
         {/* Bottom padding */}
-        <View style={{ height: 32 }} />
+        <View style={{ height: 40 }} />
       </AnimatedScrollView>
     </SafeAreaView>
   );
@@ -811,4 +867,104 @@ const styles = StyleSheet.create({
 
   // Skeleton
   skeleton: { backgroundColor: 'rgba(16,185,129,0.06)', height: 220 },
+
+  // Official Helplines Card Styles
+  helplineSectionCard: {
+    marginHorizontal: SPACING.base,
+    backgroundColor: '#FFFFFF',
+    borderRadius: BORDER_RADIUS.xl,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  helplineSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.md,
+  },
+  helplineSectionLogo: {
+    width: 38,
+    height: 38,
+  },
+  helplineSectionTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  helplineSectionSub: {
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.85)',
+    marginTop: 1,
+  },
+  helplineCardBody: {
+    padding: SPACING.md,
+    gap: 8,
+  },
+  homeHelplineItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F8FAFC',
+    padding: 10,
+    borderRadius: BORDER_RADIUS.lg,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  homeHelplineInfo: {
+    flex: 1,
+    paddingRight: SPACING.xs,
+  },
+  homeHelplineName: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  homeHelplineNumber: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#16A34A',
+    marginTop: 1,
+  },
+  homeHelplineRole: {
+    fontSize: 10,
+    color: '#64748B',
+    marginTop: 1,
+  },
+  homeHelplineActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  homeCallBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#16A34A',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: BORDER_RADIUS.md,
+  },
+  homeCallText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#16A34A',
+  },
+  homeWaBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#25D366',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: BORDER_RADIUS.md,
+  },
+  homeWaText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
 });

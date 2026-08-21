@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Linking,
   Platform,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -35,30 +36,45 @@ import {
   Camera,
   Globe,
   PhoneCall,
+  Phone,
+  MessageCircle,
   ExternalLink,
   Sparkles,
+  X,
+  Code2,
+  Heart,
+  Mail,
+  Cpu,
+  Terminal,
 } from 'lucide-react-native';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOW, FONT_SIZE } from '@/src/theme/tokens';
-import apiClient, { API_BASE_URL, clearTokens, getAccessToken, getUserProfileStorage, setUserProfileStorage } from '@/src/services/api';
+import apiClient, { API_BASE_URL, getAccessToken, clearTokens, getUserProfileStorage, setUserProfileStorage } from '@/src/services/api';
+import {
+  OFFICIAL_HELPLINES,
+  OFFICIAL_WEBSITE,
+  makePhoneCall,
+  openWhatsApp,
+} from '@/src/constants/contact';
+
+const VSI_LOGO = require('@/assets/vsi_logo.png');
 
 interface UserProfile {
   _id: string;
   fullName: string;
   email: string;
-  phone: string;
+  phone?: string;
   role: string;
   avatarUrl?: string;
   coverImageUrl?: string;
-  isEmailVerified: boolean;
-  status: string;
+  status?: string;
 }
-
-const OFFICIAL_WEBSITE = 'https://vireonsafetyinstitute.in/';
 
 export default function ProfileScreen() {
   const [token, setToken] = useState<string | undefined>(getAccessToken());
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [showHelplineModal, setShowHelplineModal] = useState(false);
+  const [showDevModal, setShowDevModal] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: user, refetch } = useQuery<UserProfile | null>({
@@ -106,54 +122,69 @@ export default function ProfileScreen() {
     ]);
   };
 
-  // Upload image to Cloudinary via native fetch API
+  // Upload image to Cloudinary via multipart upload
   const uploadImageToCloudinary = async (uri: string, fieldName: 'avatarUrl' | 'coverImageUrl') => {
     try {
       if (fieldName === 'avatarUrl') setUploadingAvatar(true);
       else setUploadingCover(true);
 
       const formData = new FormData();
-      const filename = uri.split('/').pop() || 'upload.jpg';
+      const filename = uri.split('/').pop() || (fieldName === 'avatarUrl' ? 'avatar.jpg' : 'cover.jpg');
       const match = /\.(\w+)$/.exec(filename);
       const ext = match ? match[1].toLowerCase() : 'jpeg';
       const mimeType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
 
-      // @ts-ignore - React Native FormData
+      // @ts-ignore - React Native FormData file object
       formData.append('file', {
         uri: Platform.OS === 'ios' ? uri.replace('file://', '') : uri,
         name: filename,
         type: mimeType,
       });
-      formData.append('folder', 'vireon/profiles');
+      formData.append('folder', fieldName === 'avatarUrl' ? 'vireon/avatars' : 'vireon/banners');
 
       let finalUrl = uri;
       const token = getAccessToken();
 
       try {
-        const response = await fetch(`${API_BASE_URL}/upload/image`, {
-          method: 'POST',
-          body: formData,
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        const uploadRes = await apiClient.post('/upload/image', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          timeout: 30000,
         });
 
-        if (response.ok) {
-          const resData = await response.json();
-          if (resData?.data?.secureUrl || resData?.data?.url) {
-            finalUrl = resData.data.secureUrl || resData.data.url;
-          }
+        const resData = uploadRes.data;
+        if (resData?.data?.secureUrl || resData?.data?.url) {
+          finalUrl = resData.data.secureUrl || resData.data.url;
         }
-      } catch {
-        // Native fetch fallback to uri
+      } catch (uploadErr) {
+        console.warn('⚠️ apiClient image upload error, trying fetch fallback:', uploadErr);
+        try {
+          const response = await fetch(`${API_BASE_URL}/upload/image`, {
+            method: 'POST',
+            body: formData,
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+
+          if (response.ok) {
+            const resData = await response.json();
+            if (resData?.data?.secureUrl || resData?.data?.url) {
+              finalUrl = resData.data.secureUrl || resData.data.url;
+            }
+          }
+        } catch {
+          // Native fetch fallback
+        }
       }
 
-      // Update User Profile in MongoDB / local storage
+      // Update User Profile in MongoDB
       if (token) {
         try {
           await apiClient.patch<{ data: UserProfile }>('/auth/me', {
             [fieldName]: finalUrl,
           });
-        } catch {
-          // Ignore patch error
+        } catch (patchErr) {
+          console.warn('⚠️ Failed to patch /auth/me with new avatarUrl:', patchErr);
         }
       }
 
@@ -164,12 +195,13 @@ export default function ProfileScreen() {
       await refetch();
 
       Alert.alert('Success', `${fieldName === 'avatarUrl' ? 'Profile Photo' : 'Cover Banner'} updated successfully!`);
-    } catch {
+    } catch (err: any) {
+      console.error('❌ Upload failed:', err);
       const fallbackUser = { ...(user ?? getUserProfileStorage()), [fieldName]: uri };
       setUserProfileStorage(fallbackUser);
       queryClient.setQueryData(['auth', 'me'], fallbackUser);
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
-      Alert.alert('Success', `${fieldName === 'avatarUrl' ? 'Profile Photo' : 'Cover Banner'} updated successfully!`);
+      Alert.alert('Success', `${fieldName === 'avatarUrl' ? 'Profile Photo' : 'Cover Banner'} updated!`);
     } finally {
       setUploadingAvatar(false);
       setUploadingCover(false);
@@ -238,9 +270,9 @@ export default function ProfileScreen() {
         { id: 'security', label: 'Security & 256-Bit SSL', icon: Lock, action: () => Alert.alert('Account Security', 'Protected by Vireon 256-bit SSL encryption.') },
         {
           id: 'help',
-          label: 'Support & Helpline',
+          label: 'Support & Helplines',
           icon: HelpCircle,
-          action: () => Alert.alert('Student Helpline', 'Vireon Safety Institute Hotline: +91 9876543210\nEmail: info@vireonsafety.in\nWebsite: https://vireonsafetyinstitute.in/'),
+          action: () => setShowHelplineModal(true),
         },
       ],
     },
@@ -414,11 +446,208 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         )}
 
+        {/* ── Aesthetic Developer Credits Card ── */}
+        <TouchableOpacity
+          style={[styles.devCreditCard, SHADOW.card]}
+          onPress={() => setShowDevModal(true)}
+          activeOpacity={0.88}
+        >
+          <LinearGradient
+            colors={['#0F172A', '#1E293B', '#0D4A2B']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.devCreditGrad}
+          >
+            <View style={styles.devAvatarHex}>
+              <Code2 size={20} color="#34D399" />
+            </View>
+
+            <View style={styles.devCreditTextWrap}>
+              <View style={styles.devBadgeRow}>
+                <View style={styles.devTag}>
+                  <Sparkles size={10} color="#FDE047" />
+                  <Text style={styles.devTagText}>LEAD ARCHITECT & DEVELOPER</Text>
+                </View>
+              </View>
+              <Text style={styles.devTitle}>Crafted & Developed by</Text>
+              <Text style={styles.devName}>Sonu Kumar Ray</Text>
+              <Text style={styles.devSub}>Full Stack Mobile & Cloud Systems Engineer • Tap to view profile ✨</Text>
+            </View>
+
+            <View style={styles.devHeartWrap}>
+              <Heart size={16} color="#EF4444" fill="#EF4444" />
+            </View>
+          </LinearGradient>
+        </TouchableOpacity>
+
         <View style={styles.footerVersion}>
           <Text style={styles.versionText}>Vireon Safety Institute • Official Mobile App v1.0.0</Text>
           <Text style={styles.versionSubtext}>https://vireonsafetyinstitute.in/</Text>
         </View>
       </ScrollView>
+
+      {/* ── Official Helplines Modal ── */}
+      <Modal
+        visible={showHelplineModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowHelplineModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHeaderLeft}>
+                <Image source={VSI_LOGO} style={styles.modalLogo} resizeMode="contain" />
+                <View>
+                  <Text style={styles.modalTitle}>Official Helplines</Text>
+                  <Text style={styles.modalSub}>Vireon Safety Institute Admissions</Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={styles.modalCloseBtn}
+                onPress={() => setShowHelplineModal(false)}
+                activeOpacity={0.8}
+              >
+                <X size={18} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalSectionLabel}>Connect directly with our counseling desks:</Text>
+
+            <View style={styles.modalHelplineList}>
+              {OFFICIAL_HELPLINES.map((helpline) => (
+                <View key={helpline.id} style={styles.modalHelplineCard}>
+                  <View style={styles.modalHelplineTextWrap}>
+                    <Text style={styles.modalHelplineName}>{helpline.name}</Text>
+                    <Text style={styles.modalHelplinePhone}>{helpline.formattedPhone}</Text>
+                    <Text style={styles.modalHelplineTiming}>{helpline.role} • {helpline.timing}</Text>
+                  </View>
+
+                  <View style={styles.modalActionButtons}>
+                    <TouchableOpacity
+                      style={styles.modalCallBtn}
+                      onPress={() => {
+                        setShowHelplineModal(false);
+                        makePhoneCall(helpline.phone);
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <Phone size={14} color="#16A34A" />
+                      <Text style={styles.modalCallText}>Call</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.modalWaBtn}
+                      onPress={() => {
+                        setShowHelplineModal(false);
+                        openWhatsApp(helpline.phone, 'Hello Vireon Safety Institute, I need assistance regarding admissions and student services.');
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <MessageCircle size={14} color="#FFFFFF" />
+                      <Text style={styles.modalWaText}>WhatsApp</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Developer Spotlight Modal ── */}
+      <Modal
+        visible={showDevModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowDevModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            {/* Modal Header */}
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHeaderLeft}>
+                <View style={styles.devModalAvatar}>
+                  <Text style={styles.devModalAvatarText}>SKR</Text>
+                </View>
+                <View>
+                  <Text style={styles.modalTitle}>Sonu Kumar Ray</Text>
+                  <Text style={styles.modalSub}>Lead Full Stack & Mobile Architect</Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={styles.modalCloseBtn}
+                onPress={() => setShowDevModal(false)}
+                activeOpacity={0.8}
+              >
+                <X size={18} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: 14 }}>
+              {/* Bio & Intro Card */}
+              <View style={styles.devBioCard}>
+                <View style={styles.devTag}>
+                  <Sparkles size={11} color="#FDE047" />
+                  <Text style={styles.devTagText}>ENGINEERING EXCELLENCE</Text>
+                </View>
+                <Text style={styles.devBioTitle}>Engineered for High Performance</Text>
+                <Text style={styles.devBioText}>
+                  Architected the complete Vireon Safety Institute mobile ecosystem, scalable backend microservices, real-time push notification pipelines, and multi-format document delivery systems.
+                </Text>
+              </View>
+
+              {/* Tech Stack Matrix */}
+              <Text style={styles.devSectionHeading}>Technology Architecture</Text>
+              <View style={styles.techPillGrid}>
+                {[
+                  'React Native 0.83',
+                  'Expo SDK 55',
+                  'TypeScript',
+                  'Node.js & Express',
+                  'MongoDB Mongoose',
+                  'Firebase Native FCM',
+                  'Google OAuth 2.0',
+                  'Cloudinary CDN',
+                  'Reanimated 4',
+                  'FlashList v2',
+                ].map((tech, i) => (
+                  <View key={i} style={styles.techPill}>
+                    <Cpu size={12} color="#16A34A" />
+                    <Text style={styles.techPillText}>{tech}</Text>
+                  </View>
+                ))}
+              </View>
+
+              {/* Interactive Contact Actions */}
+              <Text style={styles.devSectionHeading}>Get in Touch</Text>
+              <View style={styles.devActionsCol}>
+                <TouchableOpacity
+                  style={styles.devContactBtnEmail}
+                  onPress={() => {
+                    Linking.openURL('mailto:sonukumarray1009@gmail.com?subject=Vireon%20Safety%20Mobile%20App%20Inquiry').catch(() => {});
+                  }}
+                  activeOpacity={0.85}
+                >
+                  <Mail size={18} color="#FFFFFF" />
+                  <Text style={styles.devContactBtnEmailText}>sonukumarray1009@gmail.com</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.devContactBtnWa}
+                  onPress={() => {
+                    openWhatsApp('+918227894630', 'Hi Sonu, I am using the Vireon Safety Institute mobile application!');
+                  }}
+                  activeOpacity={0.85}
+                >
+                  <MessageCircle size={18} color="#FFFFFF" />
+                  <Text style={styles.devContactBtnWaText}>Chat with Developer on WhatsApp</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -486,4 +715,301 @@ const styles = StyleSheet.create({
   footerVersion: { alignItems: 'center', marginTop: 24 },
   versionText: { fontSize: 11, color: COLORS.textMuted, fontWeight: '700' },
   versionSubtext: { fontSize: 10, color: COLORS.success, fontWeight: '700', marginTop: 2 },
+
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.lg,
+    paddingBottom: SPACING.xl,
+    maxHeight: '85%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: SPACING.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  modalHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  modalLogo: {
+    width: 36,
+    height: 36,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  modalSub: {
+    fontSize: 11,
+    color: '#64748B',
+  },
+  modalCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalSectionLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#64748B',
+    marginTop: SPACING.md,
+    marginBottom: 8,
+  },
+  modalHelplineList: {
+    gap: 10,
+  },
+  modalHelplineCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: BORDER_RADIUS.lg,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  modalHelplineTextWrap: {
+    marginBottom: 8,
+  },
+  modalHelplineName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  modalHelplinePhone: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#16A34A',
+    marginTop: 1,
+  },
+  modalHelplineTiming: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  modalActionButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  modalCallBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 9,
+    borderRadius: BORDER_RADIUS.md,
+    borderWidth: 1.5,
+    borderColor: '#16A34A',
+    backgroundColor: '#FFFFFF',
+  },
+  modalCallText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#16A34A',
+  },
+  modalWaBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 9,
+    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: '#25D366',
+  },
+  modalWaText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+
+  // Developer Credit Card Styles
+  devCreditCard: {
+    marginVertical: SPACING.md,
+    borderRadius: BORDER_RADIUS.xl,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: '#34D399',
+  },
+  devCreditGrad: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    gap: 12,
+  },
+  devAvatarHex: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(52, 211, 153, 0.15)',
+    borderWidth: 1.5,
+    borderColor: '#34D399',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  devCreditTextWrap: {
+    flex: 1,
+  },
+  devBadgeRow: {
+    flexDirection: 'row',
+    marginBottom: 3,
+  },
+  devTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(253, 224, 71, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(253, 224, 71, 0.4)',
+    alignSelf: 'flex-start',
+  },
+  devTagText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#FDE047',
+    letterSpacing: 0.5,
+  },
+  devTitle: {
+    fontSize: 10,
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  devName: {
+    fontSize: 15,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
+  },
+  devSub: {
+    fontSize: 10,
+    color: '#94A3B8',
+    marginTop: 1,
+  },
+  devHeartWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Developer Spotlight Modal Styles
+  devModalAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#0D4A2B',
+    borderWidth: 2,
+    borderColor: '#34D399',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  devModalAvatarText: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#34D399',
+    letterSpacing: 0.5,
+  },
+  devBioCard: {
+    backgroundColor: '#0F172A',
+    borderRadius: BORDER_RADIUS.xl,
+    padding: 16,
+    marginBottom: SPACING.md,
+  },
+  devBioTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginTop: 6,
+    marginBottom: 4,
+  },
+  devBioText: {
+    fontSize: 12,
+    color: '#94A3B8',
+    lineHeight: 18,
+  },
+  devSectionHeading: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#0F172A',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  techPillGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: SPACING.lg,
+  },
+  techPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+  },
+  techPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#16A34A',
+  },
+  devActionsCol: {
+    gap: 10,
+    marginBottom: SPACING.lg,
+  },
+  devContactBtnEmail: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#0F172A',
+    paddingVertical: 13,
+    borderRadius: BORDER_RADIUS.lg,
+  },
+  devContactBtnEmailText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  devContactBtnWa: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#25D366',
+    paddingVertical: 13,
+    borderRadius: BORDER_RADIUS.lg,
+  },
+  devContactBtnWaText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
 });

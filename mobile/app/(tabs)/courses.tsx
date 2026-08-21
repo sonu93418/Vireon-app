@@ -14,9 +14,16 @@ import { getCacheData, setCacheData } from '@/src/services/queryCache';
 const LEVELS = ['All', 'DIPLOMA', 'ADVANCED_DIPLOMA', 'PG_DIPLOMA', 'CERTIFICATION', 'BSC', 'BTECH', 'MSC', 'MTECH', 'MBA'];
 
 interface Course {
-  _id: string; title: string; code?: string; level: string; duration: number; durationType: string;
-  feeAmount: number; shortDescription: string; isPlacementGuaranteed: boolean;
-  thumbnailUrl?: string; certifications: string[];
+  _id: string;
+  title: string;
+  code?: string;
+  level: string;
+  duration: number;
+  durationType: string;
+  shortDescription: string;
+  isPlacementGuaranteed: boolean;
+  thumbnailUrl?: string;
+  certifications: string[];
 }
 
 const COURSE_POSTERS: Record<string, any> = {
@@ -46,13 +53,13 @@ const getCoursePoster = (item: { code?: string; title?: string; thumbnailUrl?: s
 };
 
 const DEFAULT_COURSES: Course[] = [
-  { _id: '1', code: 'DFIS-101', title: 'Diploma in Fire & Industrial Safety', level: 'DIPLOMA', duration: 12, durationType: 'MONTHS', feeAmount: 18500, shortDescription: 'Govt & ISO 45001 Accredited 1-Year Diploma in Fire & Safety.', isPlacementGuaranteed: true, certifications: ['Govt Diploma'] },
-  { _id: '2', code: 'ADIS-201', title: 'Advanced Diploma in Industrial Safety', level: 'ADVANCED_DIPLOMA', duration: 1, durationType: 'YEARS', feeAmount: 25000, shortDescription: 'Advanced 1-Year Specialized Safety Engineering Diploma.', isPlacementGuaranteed: true, certifications: ['Advanced Diploma'] },
-  { _id: '3', code: 'PGDIS-301', title: 'PG Diploma in Industrial Safety (PGDIS)', level: 'PG_DIPLOMA', duration: 1, durationType: 'YEARS', feeAmount: 32000, shortDescription: 'Post Graduate Diploma recognized for Factory Act Compliance Officers.', isPlacementGuaranteed: true, certifications: ['PGDIS Diploma'] },
-  { _id: '4', code: 'IOSH-MSWS', title: 'IOSH (Managing Safely & Working Safely)', level: 'CERTIFICATION', duration: 3, durationType: 'WEEKS', feeAmount: 15000, shortDescription: 'UK Accredited Globally Recognized IOSH Safety Certificate.', isPlacementGuaranteed: true, certifications: ['IOSH UK'] },
-  { _id: '5', code: 'OSHA-3040', title: 'OSHA 30-Hour & 40-Hour General Industry', level: 'CERTIFICATION', duration: 4, durationType: 'WEEKS', feeAmount: 14000, shortDescription: 'US OSHA Standard 30 Hr / 40 Hr Certified Program.', isPlacementGuaranteed: true, certifications: ['OSHA US'] },
-  { _id: '6', code: 'BTECH-FSE', title: 'B.Tech in Fire & Safety Engineering', level: 'BTECH', duration: 4, durationType: 'YEARS', feeAmount: 65000, shortDescription: '4-Year AICTE Approved Engineering Degree in Fire & Safety.', isPlacementGuaranteed: true, certifications: ['AICTE B.Tech'] },
-  { _id: '7', code: 'MBA-SEHS', title: 'MBA in Safety & EHS Management', level: 'MBA', duration: 2, durationType: 'YEARS', feeAmount: 85000, shortDescription: '2-Year Executive MBA in Corporate Safety & EHS Leadership.', isPlacementGuaranteed: true, certifications: ['MBA Degree'] },
+  { _id: '1', code: 'DFIS-101', title: 'Diploma in Fire & Industrial Safety', level: 'DIPLOMA', duration: 12, durationType: 'MONTHS', shortDescription: 'Govt & ISO 45001 Accredited 1-Year Diploma in Fire & Safety.', isPlacementGuaranteed: true, certifications: ['Govt Diploma'] },
+  { _id: '2', code: 'ADIS-201', title: 'Advanced Diploma in Industrial Safety', level: 'ADVANCED_DIPLOMA', duration: 1, durationType: 'YEARS', shortDescription: 'Advanced 1-Year Specialized Safety Engineering Diploma.', isPlacementGuaranteed: true, certifications: ['Advanced Diploma'] },
+  { _id: '3', code: 'PGDIS-301', title: 'PG Diploma in Industrial Safety (PGDIS)', level: 'PG_DIPLOMA', duration: 1, durationType: 'YEARS', shortDescription: 'Post Graduate Diploma recognized for Factory Act Compliance Officers.', isPlacementGuaranteed: true, certifications: ['PGDIS Diploma'] },
+  { _id: '4', code: 'IOSH-MSWS', title: 'IOSH (Managing Safely & Working Safely)', level: 'CERTIFICATION', duration: 3, durationType: 'WEEKS', shortDescription: 'UK Accredited Globally Recognized IOSH Safety Certificate.', isPlacementGuaranteed: true, certifications: ['IOSH UK'] },
+  { _id: '5', code: 'OSHA-3040', title: 'OSHA 30-Hour & 40-Hour General Industry', level: 'CERTIFICATION', duration: 4, durationType: 'WEEKS', shortDescription: 'US OSHA Standard 30 Hr / 40 Hr Certified Program.', isPlacementGuaranteed: true, certifications: ['OSHA US'] },
+  { _id: '6', code: 'BTECH-FSE', title: 'B.Tech in Fire & Safety Engineering', level: 'BTECH', duration: 4, durationType: 'YEARS', shortDescription: '4-Year AICTE Approved Engineering Degree in Fire & Safety.', isPlacementGuaranteed: true, certifications: ['AICTE B.Tech'] },
+  { _id: '7', code: 'MBA-SEHS', title: 'MBA in Safety & EHS Management', level: 'MBA', duration: 2, durationType: 'YEARS', shortDescription: '2-Year Executive MBA in Corporate Safety & EHS Leadership.', isPlacementGuaranteed: true, certifications: ['MBA Degree'] },
 ];
 
 export default function CoursesScreen() {
@@ -71,20 +78,19 @@ export default function CoursesScreen() {
     retry: 1,
   });
 
-  const rawCourses = (data && Array.isArray(data.data) && data.data.length > 0) ? data.data : DEFAULT_COURSES;
+  const coursesList = data?.data && data.data.length > 0 ? data.data : DEFAULT_COURSES;
   const filteredCourses = selectedLevel === 'All'
-    ? rawCourses
-    : rawCourses.filter((c) =>
-        c.level.replace(/_/g, '').toLowerCase() === selectedLevel.replace(/_/g, '').toLowerCase()
-      );
-  const hasData = Boolean(data && Array.isArray(data.data) && data.data.length > 0);
+    ? coursesList
+    : coursesList.filter((c) => c.level === selectedLevel);
+
+  const hasData = filteredCourses.length > 0;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar style="dark" translucent animated />
       <View style={styles.header}>
-        <Text style={styles.pageTitle}>Our Courses</Text>
-        <Text style={styles.pageSubtitle}>Govt. certified industrial safety education</Text>
+        <Text style={styles.pageTitle}>Explore Courses</Text>
+        <Text style={styles.pageSubtitle}>Govt. recognized industrial safety & fire engineering degrees</Text>
       </View>
 
       {/* Level Filter */}
@@ -92,11 +98,12 @@ export default function CoursesScreen() {
         {LEVELS.map((level) => (
           <TouchableOpacity
             key={level}
-            onPress={() => setSelectedLevel(level)}
             style={[styles.filterChip, selectedLevel === level && styles.filterChipActive]}
+            onPress={() => setSelectedLevel(level)}
+            activeOpacity={0.7}
           >
             <Text style={[styles.filterChipText, selectedLevel === level && styles.filterChipTextActive]}>
-              {level.replace(/_/g, ' ')}
+              {level === 'All' ? 'All Programs' : level.replace(/_/g, ' ')}
             </Text>
           </TouchableOpacity>
         ))}
@@ -121,7 +128,6 @@ export default function CoursesScreen() {
                 onPress={() => router.push({ pathname: '/course/[id]', params: { id: item._id } } as any)}
                 activeOpacity={0.85}
               >
-                {/* Full-width Top Graphic Designer Course Poster Banner */}
                 <View style={styles.posterBannerWrap}>
                   <Image source={getCoursePoster(item)} style={styles.cardHeaderPoster} resizeMode="cover" />
                   <View style={styles.posterOverlayBadge}>
@@ -129,7 +135,6 @@ export default function CoursesScreen() {
                   </View>
                 </View>
 
-                {/* Card Body Details */}
                 <View style={styles.cardBody}>
                   <Text style={styles.courseTitle} numberOfLines={2}>{item.title}</Text>
                   <Text style={styles.courseDesc} numberOfLines={2}>{item.shortDescription}</Text>
@@ -154,12 +159,20 @@ export default function CoursesScreen() {
                       <Text style={styles.placementText}>100% Placement</Text>
                     </View>
                   )}
-                  <TouchableOpacity style={styles.brochureBtn}>
+                  <TouchableOpacity
+                    style={styles.brochureBtn}
+                    onPress={() => router.push({ pathname: '/course/[id]', params: { id: item._id } } as any)}
+                    activeOpacity={0.8}
+                  >
                     <Download size={12} color={COLORS.success} />
-                    <Text style={styles.brochureBtnText}>Brochure</Text>
+                    <Text style={styles.brochureBtnText}>Syllabus</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.applyBtn}>
-                    <Text style={styles.applyBtnText}>Apply Now</Text>
+                  <TouchableOpacity
+                    style={styles.applyBtn}
+                    onPress={() => router.push({ pathname: '/course/[id]', params: { id: item._id } } as any)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.applyBtnText}>Inquire Admission</Text>
                   </TouchableOpacity>
                 </View>
               </TouchableOpacity>

@@ -323,15 +323,54 @@ router.get('/my', authenticate, async (req: Request, res: Response, next: NextFu
  * /api/v1/upload/all:
  *   get:
  *     tags: [Upload]
- *     summary: Get all public uploads (PDFs, docs) visible to all authenticated users
+ *     summary: Get all public study resources (PDFs, docs, notes, PPTs, Excel, study materials) excluding user avatars/profiles
  */
 router.get('/all', optionalAuthenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const uploads = await UploadModel.find({ isDeleted: false })
+    const uploads = await UploadModel.find({
+      isDeleted: false,
+      folder: { $nin: ['vireon/avatars', 'vireon/profiles', 'vireon/banners'] },
+    })
       .sort({ createdAt: -1 })
-      .limit(100)
-      .select('-__v');
-    ResponseHandler.success(res, uploads, 'All resources fetched');
+      .limit(200)
+      .select('-__v')
+      .lean();
+
+    // Ensure format, originalName, and mimeType are sanitized for client apps
+    const formattedUploads = uploads.map((item) => {
+      const originalName = item.originalName || 'Study_Resource';
+      let format = item.format || '';
+      if (!format && originalName.includes('.')) {
+        format = originalName.split('.').pop()?.toLowerCase() || '';
+      }
+      if (!format) {
+        format = item.resourceType === 'raw' ? 'pdf' : (item.resourceType || 'doc');
+      }
+
+      return {
+        ...item,
+        format,
+        originalName,
+      };
+    });
+
+    ResponseHandler.success(res, formattedUploads, 'All resources fetched');
+  } catch (e) { next(e); }
+});
+
+// Alias for /materials
+router.get('/materials', optionalAuthenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const uploads = await UploadModel.find({
+      isDeleted: false,
+      folder: { $nin: ['vireon/avatars', 'vireon/profiles', 'vireon/banners'] },
+    })
+      .sort({ createdAt: -1 })
+      .limit(200)
+      .select('-__v')
+      .lean();
+
+    ResponseHandler.success(res, uploads, 'All materials fetched');
   } catch (e) { next(e); }
 });
 

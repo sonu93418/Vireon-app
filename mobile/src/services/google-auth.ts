@@ -52,6 +52,8 @@ export const configureGoogleSignIn = (): void => {
     GoogleSignin.configure({
       webClientId: WEB_CLIENT_ID,
       offlineAccess: false,
+      scopes: ['profile', 'email'],
+      forceCodeForRefreshToken: false,
     });
     isConfigured = true;
     if (__DEV__) {
@@ -96,10 +98,7 @@ export const signInWithGoogle = async (): Promise<GoogleAuthResult | null> => {
   }
 
   try {
-    // Ensure Google Play Services are available
-    await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-
-    // Ensure configured before sign-in attempt
+    // 1. Ensure configured first
     if (!isConfigured) {
       configureGoogleSignIn();
     }
@@ -109,6 +108,9 @@ export const signInWithGoogle = async (): Promise<GoogleAuthResult | null> => {
       Alert.alert('Google Sign-In Error', 'Google Sign-In could not be configured. Please check your app setup.');
       return null;
     }
+
+    // 2. Ensure Google Play Services are available
+    await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
 
     // FORCE GOOGLE ACCOUNT PICKER PROMPT: Clear cached session before signing in
     try {
@@ -201,14 +203,14 @@ export const signInWithGoogle = async (): Promise<GoogleAuthResult | null> => {
         // In development, show SHA-1 copy option + dev mock fallback
         return new Promise<GoogleAuthResult | null>((resolve) => {
           Alert.alert(
-            'Google Sign-In: SHA-1 Required',
-            `Google Play Services requires your Android SHA-1 fingerprint to be registered in Firebase Console.\n\nSHA-1:\n${ANDROID_DEBUG_SHA1}\n\nChoose an option below:`,
+            'Google Sign-In: Configuration Required',
+            `Google Play Services returned error 10 (DEVELOPER_ERROR).\n\nTo resolve this in Google Cloud Console / Firebase:\n1. Open Google Cloud Project 52937404971 (or Firebase Console)\n2. Add Android OAuth Client for 'com.vireon.safety'\n3. Add SHA-1:\n${ANDROID_DEBUG_SHA1}`,
             [
               {
                 text: '📋 Copy SHA-1',
                 onPress: async () => {
                   await Clipboard.setStringAsync(ANDROID_DEBUG_SHA1);
-                  Alert.alert('Copied!', 'SHA-1 copied to clipboard. Paste it into Firebase Console → Project Settings → Android App SHA fingerprints.');
+                  Alert.alert('Copied!', 'SHA-1 copied to clipboard. Paste it into Google Cloud Console → Credentials → Android OAuth Client.');
                   resolve(null);
                 },
               },
@@ -233,12 +235,31 @@ export const signInWithGoogle = async (): Promise<GoogleAuthResult | null> => {
           );
         });
       } else {
-        // In PRODUCTION builds, show a clear user-facing error — NO mock tokens!
-        Alert.alert(
-          'Google Sign-In Configuration Error',
-          'Google Sign-In is temporarily unavailable for this build. The app\'s signing certificate may not be registered.\n\nPlease contact support or try signing in with email and password.',
-        );
-        return null;
+        // In Preview/Production builds, show informative alert
+        return new Promise<GoogleAuthResult | null>((resolve) => {
+          Alert.alert(
+            'Google Sign-In Error',
+            `Google Play Services returned error 10 (DEVELOPER_ERROR).\n\nThe signing certificate (SHA-1) for this build is not registered in Google Cloud Console under package 'com.vireon.safety'.\n\nSHA-1:\n${ANDROID_DEBUG_SHA1}`,
+            [
+              {
+                text: '📋 Copy SHA-1',
+                onPress: async () => {
+                  await Clipboard.setStringAsync(ANDROID_DEBUG_SHA1);
+                  Alert.alert(
+                    'Copied!',
+                    'SHA-1 copied to clipboard. Add this SHA-1 to Google Cloud Console (Project 52937404971) under Android OAuth Client ID.',
+                  );
+                  resolve(null);
+                },
+              },
+              {
+                text: 'OK',
+                style: 'cancel',
+                onPress: () => resolve(null),
+              },
+            ],
+          );
+        });
       }
     }
 
