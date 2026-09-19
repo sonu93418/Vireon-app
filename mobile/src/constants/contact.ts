@@ -16,7 +16,7 @@ export interface OfficialHelpline {
 export const OFFICIAL_HELPLINES: OfficialHelpline[] = [
   {
     id: 'helpline_1',
-    name: 'Admission Helpline 1',
+    name: 'Admission Helpline',
     phone: '+918227894630',
     formattedPhone: '+91 82278 94630',
     role: 'Central Admissions & Verification Desk',
@@ -24,19 +24,11 @@ export const OFFICIAL_HELPLINES: OfficialHelpline[] = [
   },
   {
     id: 'helpline_2',
-    name: 'Academic Counseling 2',
+    name: 'Academic Counseling',
     phone: '+919560240966',
     formattedPhone: '+91 95602 40966',
     role: 'Course Advisor & Batch Enrollment',
     timing: '9:00 AM – 8:00 PM',
-  },
-  {
-    id: 'helpline_3',
-    name: 'Student Support & Placement 3',
-    phone: '+916392028525',
-    formattedPhone: '+91 63920 28525',
-    role: 'Corporate Placement & Career Desk',
-    timing: '10:00 AM – 7:00 PM',
   },
 ];
 
@@ -44,8 +36,6 @@ export const PRIMARY_PHONE = '+918227894630';
 export const PRIMARY_PHONE_DISPLAY = '+91 82278 94630';
 export const SECONDARY_PHONE = '+919560240966';
 export const SECONDARY_PHONE_DISPLAY = '+91 95602 40966';
-export const TERTIARY_PHONE = '+916392028525';
-export const TERTIARY_PHONE_DISPLAY = '+91 63920 28525';
 
 export const OFFICIAL_EMAIL = 'support@vireonsafety.in';
 export const OFFICIAL_WEBSITE = 'https://vireonsafetyinstitute.in/';

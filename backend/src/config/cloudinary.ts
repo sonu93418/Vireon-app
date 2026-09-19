@@ -18,6 +18,7 @@ export const configureCloudinary = (): void => {
       api_key: CLOUDINARY_API_KEY,
       api_secret: CLOUDINARY_API_SECRET,
       secure: true,
+      timeout: 120000,
     });
     logger.info('✅ Cloudinary configured successfully');
   } catch (error) {

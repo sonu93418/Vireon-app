@@ -48,12 +48,12 @@ export default function ResourcesPage() {
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['uploads', 'my'],
+    queryKey: ['uploads', 'all'],
     queryFn: async () => {
-      const res = await apiClient.get<{ data: UploadedFile[] }>('/upload/my');
+      const res = await apiClient.get<{ data: UploadedFile[] }>('/upload/all');
       return res.data;
     },
-    refetchInterval: 60000,
+    refetchInterval: 30000,
   });
 
   const uploadMutation = useMutation({
@@ -63,14 +63,31 @@ export default function ResourcesPage() {
       formData.append('file', file);
       formData.append('folder', uploadFolder);
 
-      const endpoint = file.type === 'application/pdf'
+      const fileName = file.name.toLowerCase();
+      const isPdf = file.type === 'application/pdf' || fileName.endsWith('.pdf');
+      const isImage = file.type.startsWith('image/') || /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(fileName);
+      const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|mov|avi)$/i.test(fileName);
+
+      const endpoint = isPdf
         ? '/upload/pdf'
-        : file.type.startsWith('image/')
+        : isImage
           ? '/upload/image'
-          : '/upload/document';
+          : isVideo
+            ? '/upload/video'
+            : '/upload/document';
 
       const res = await apiClient.post<{ data: UploadedFile }>(endpoint, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 180000,
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            if (percent < 100) {
+              setUploadProgress(`Uploading ${file.name} (${percent}%)...`);
+            } else {
+              setUploadProgress(`Processing ${file.name} on Cloudinary...`);
+            }
+          }
+        },
       });
       return res.data.data;
     },
@@ -83,7 +100,11 @@ export default function ResourcesPage() {
         type: 'COURSE_UPDATE',
       }).catch(() => {});
     },
-    onError: () => setUploadProgress(''),
+    onError: (err: any) => {
+      setUploadProgress('');
+      const msg = err?.response?.data?.message || err?.message || 'Unknown error occurred during upload';
+      alert('Upload Failed: ' + msg);
+    },
   });
 
   const deleteMutation = useMutation({

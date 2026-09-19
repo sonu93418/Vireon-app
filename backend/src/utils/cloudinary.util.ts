@@ -27,13 +27,16 @@ const uploadStream = (
   options: Record<string, unknown>
 ): Promise<UploadApiResponse> => {
   return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(options, (error, result) => {
-      if (error || !result) {
-        logger.error('❌ Cloudinary stream upload error:', error);
-        return reject(new InternalServerError('Cloudinary upload stream failed'));
+    const stream = cloudinary.uploader.upload_stream(
+      { timeout: 120000, ...options },
+      (error, result) => {
+        if (error || !result) {
+          logger.error('❌ Cloudinary stream upload error:', error);
+          return reject(new InternalServerError('Cloudinary upload stream failed'));
+        }
+        resolve(result);
       }
-      resolve(result);
-    });
+    );
     streamifier.createReadStream(buffer).pipe(stream);
   });
 };

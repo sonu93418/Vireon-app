@@ -40,7 +40,9 @@ const fileFilter = (
     ...ALLOWED_MIME_TYPES.DOCUMENT,
   ];
 
-  if (allAllowed.includes(file.mimetype)) {
+  const extMatch = /\.(pdf|docx?|xlsx?|csv|pptx?|zip|rar|jpe?g|png|webp|gif|svg|mp4|webm|mov|avi)$/i.test(file.originalname);
+
+  if (allAllowed.includes(file.mimetype) || extMatch) {
     cb(null, true);
   } else {
     cb(
@@ -68,7 +70,8 @@ export const uploadMiddleware = multer({
 export const uploadImageMiddleware = multer({
   storage: memoryStorage,
   fileFilter: (_req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-    if (ALLOWED_MIME_TYPES.IMAGE.includes(file.mimetype)) {
+    const isImage = ALLOWED_MIME_TYPES.IMAGE.includes(file.mimetype) || /\.(jpe?g|png|webp|gif|svg)$/i.test(file.originalname);
+    if (isImage) {
       cb(null, true);
     } else {
       cb(new BadRequestError(`Unsupported image format (${file.mimetype}). Allowed: JPEG, PNG, WebP, GIF, SVG.`));
@@ -83,7 +86,8 @@ export const uploadImageMiddleware = multer({
 export const uploadPdfMiddleware = multer({
   storage: memoryStorage,
   fileFilter: (_req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-    if (ALLOWED_MIME_TYPES.PDF.includes(file.mimetype)) {
+    const isPdf = ALLOWED_MIME_TYPES.PDF.includes(file.mimetype) || file.originalname.toLowerCase().endsWith('.pdf');
+    if (isPdf) {
       cb(null, true);
     } else {
       cb(new BadRequestError(`Unsupported file format (${file.mimetype}). Only PDF files allowed.`));
@@ -98,7 +102,8 @@ export const uploadPdfMiddleware = multer({
 export const uploadVideoMiddleware = multer({
   storage: memoryStorage,
   fileFilter: (_req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-    if (ALLOWED_MIME_TYPES.VIDEO.includes(file.mimetype)) {
+    const isVideo = ALLOWED_MIME_TYPES.VIDEO.includes(file.mimetype) || /\.(mp4|webm|mov|avi)$/i.test(file.originalname);
+    if (isVideo) {
       cb(null, true);
     } else {
       cb(new BadRequestError(`Unsupported video format (${file.mimetype}). Allowed: MP4, WebM, MOV, AVI.`));

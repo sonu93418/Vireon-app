@@ -270,7 +270,7 @@ export default function ProfileScreen() {
         { id: 'security', label: 'Security & 256-Bit SSL', icon: Lock, action: () => Alert.alert('Account Security', 'Protected by Vireon 256-bit SSL encryption.') },
         {
           id: 'help',
-          label: 'Support & Helplines',
+          label: 'Official Helplines',
           icon: HelpCircle,
           action: () => setShowHelplineModal(true),
         },

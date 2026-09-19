@@ -734,7 +734,7 @@ export default function CourseDetailScreen() {
 
             <Text style={styles.modalSectionLabel}>Choose an Admission Counselor to connect:</Text>
 
-            {/* List of 3 Official Helplines */}
+            {/* List of Official Helplines */}
             <View style={styles.modalHelplineList}>
               {OFFICIAL_HELPLINES.map((helpline) => (
                 <View key={helpline.id} style={styles.modalHelplineCard}>

@@ -52,7 +52,7 @@ export default function RootLayout() {
       if (fcmToken) void sendFcmTokenToServer(fcmToken);
     });
 
-    // App state prefetching on foreground focus
+    // App state prefetching on foreground focus 
     const subscription = AppState.addEventListener('change', (nextAppState) => {
       if (nextAppState === 'active') {
         void queryClient.prefetchQuery({
@@ -65,7 +65,7 @@ export default function RootLayout() {
         });
       }
     });
-
+// toatally  depend upon up skill 
     return () => {
       subscription.remove();
       if (notificationCleanup.current) {

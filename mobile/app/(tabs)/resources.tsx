@@ -348,16 +348,22 @@ export default function ResourcesScreen() {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['uploads', 'all'],
     queryFn: async () => {
-      const res = await apiClient.get<{ data: Resource[] }>('/upload/all');
-      if (res.data?.data && Array.isArray(res.data.data)) {
-        setCacheData('uploads_all', res.data.data);
+      try {
+        const res = await apiClient.get<{ data: Resource[] }>('/upload/all');
+        const list = res.data?.data;
+        if (Array.isArray(list)) {
+          setCacheData('uploads_all', list);
+          return list;
+        }
+        return [];
+      } catch (err) {
+        console.warn('⚠️ /upload/all fetch failed, using cached data if available:', err);
+        return getCacheData<Resource[]>('uploads_all') ?? [];
       }
-      return res.data.data;
     },
     initialData: () => getCacheData<Resource[]>('uploads_all') ?? undefined,
-    staleTime: 15 * 1000,
-    refetchInterval: 12 * 1000,
-    retry: 1,
+    staleTime: 5 * 1000,
+    refetchInterval: 8 * 1000,
   });
 
   const onRefresh = useCallback(async () => {
@@ -449,19 +455,38 @@ export default function ResourcesScreen() {
 
   const CATEGORIES = ['All', 'Syllabus', 'Study Notes', 'Safety Handbooks', 'Forms & Formats'];
 
-  const rawList = data && data.length > 0 ? data : DEFAULT_RESOURCES;
+  // Merge live uploaded files (at the top) with default reference documents
+  const liveItems = Array.isArray(data) ? data : [];
+  const rawList = [
+    ...liveItems,
+    ...DEFAULT_RESOURCES.filter(
+      (def) => !liveItems.some((live) => live.originalName === def.originalName || live._id === def._id)
+    ),
+  ];
+
   const filtered = rawList.filter((r) => {
     const folder = (r.folder || '').toLowerCase();
+    const name = (r.originalName || '').toLowerCase();
+
     // Exclude profile photos, avatars, and cover banners
     if (folder.includes('avatar') || folder.includes('profile') || folder.includes('banner')) {
       return false;
     }
 
-    // Category filter
-    if (selectedCategory === 'Syllabus' && !folder.includes('syllabus') && !folder.includes('syllabi')) return false;
-    if (selectedCategory === 'Study Notes' && !folder.includes('study_materials') && !folder.includes('document')) return false;
-    if (selectedCategory === 'Safety Handbooks' && !folder.includes('safety_docs')) return false;
-    if (selectedCategory === 'Forms & Formats' && !folder.includes('forms') && !folder.includes('certificate')) return false;
+    // Category filter: match across folder category and file title keywords
+    if (selectedCategory === 'Syllabus') {
+      const match = folder.includes('syllab') || name.includes('syllab') || name.includes('course');
+      if (!match) return false;
+    } else if (selectedCategory === 'Study Notes') {
+      const match = folder.includes('study') || folder.includes('doc') || folder.includes('material') || name.includes('note') || name.includes('study') || name.includes('prep') || name.includes('guide');
+      if (!match) return false;
+    } else if (selectedCategory === 'Safety Handbooks') {
+      const match = folder.includes('safety') || name.includes('safety') || name.includes('handbook') || name.includes('hira') || name.includes('drill');
+      if (!match) return false;
+    } else if (selectedCategory === 'Forms & Formats') {
+      const match = folder.includes('form') || folder.includes('cert') || name.includes('form') || name.includes('format') || name.includes('check') || name.includes('sheet');
+      if (!match) return false;
+    }
 
     // Search query filter
     if (search.trim()) {
@@ -469,7 +494,7 @@ export default function ResourcesScreen() {
       return (
         r.originalName.toLowerCase().includes(q) ||
         r.folder.toLowerCase().includes(q) ||
-        r.format.toLowerCase().includes(q)
+        (r.format && r.format.toLowerCase().includes(q))
       );
     }
     return true;

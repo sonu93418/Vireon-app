@@ -38,18 +38,23 @@ const saveUploadMetadata = async (
   folder: string,
   userId: string
 ) => {
+  const ext = file.originalname.includes('.')
+    ? file.originalname.split('.').pop()?.toLowerCase()
+    : undefined;
+  const format = result.format || ext || (result.resourceType === 'raw' ? 'pdf' : result.resourceType);
+
   return UploadModel.create({
     originalName: file.originalname,
     publicId: result.publicId,
     secureUrl: result.secureUrl,
     folder,
     resourceType: result.resourceType,
-    mimeType: file.mimetype,
+    mimeType: file.mimetype || 'application/octet-stream',
     bytes: result.bytes,
     width: result.width,
     height: result.height,
     duration: result.duration,
-    format: result.format,
+    format,
     uploadedBy: new mongoose.Types.ObjectId(userId),
   });
 };

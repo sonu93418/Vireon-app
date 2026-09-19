@@ -7,32 +7,31 @@ export const getCandidateApiUrls = (): string[] => {
   const candidates: string[] = [];
   const envUrl = process.env.EXPO_PUBLIC_API_URL;
 
-  if (envUrl && !(Platform.OS === 'android' && (envUrl.includes('localhost') || envUrl.includes('127.0.0.1')))) {
+  // In development (USB cable ADB reverse or Metro host): prioritize local backend
+  if (__DEV__) {
+    candidates.push('http://localhost:5000/api/v1');
+    candidates.push('http://127.0.0.1:5000/api/v1');
+
+    const hostUri = Constants.expoConfig?.hostUri ?? (Constants as any).experienceUrl ?? (Constants as any).manifest?.debuggerHost;
+    if (hostUri) {
+      const hostIp = hostUri.split(':')[0];
+      if (hostIp && hostIp !== 'localhost' && hostIp !== '127.0.0.1') {
+        candidates.push(`http://${hostIp}:5000/api/v1`);
+      }
+    }
+
+    if (Platform.OS === 'android') {
+      candidates.push('http://10.0.2.2:5000/api/v1');
+    }
+  }
+
+  // Configured environment URL
+  if (envUrl && !candidates.includes(envUrl)) {
     candidates.push(envUrl);
   }
 
   // Live Production Render API Backend
   candidates.push('https://vireon-app.onrender.com/api/v1');
-
-  // 1. Dynamic Metro host IP
-  const hostUri = Constants.expoConfig?.hostUri ?? (Constants as any).experienceUrl ?? (Constants as any).manifest?.debuggerHost;
-  if (hostUri) {
-    const hostIp = hostUri.split(':')[0];
-    if (hostIp && hostIp !== 'localhost' && hostIp !== '127.0.0.1') {
-      candidates.push(`http://${hostIp}:5000/api/v1`);
-    }
-  }
-
-  // 2. Android Emulator virtual host IP & Wi-Fi local subnet IP
-  if (Platform.OS === 'android') {
-    candidates.push('http://10.0.2.2:5000/api/v1');
-    candidates.push('http://10.78.118.148:5000/api/v1');
-    candidates.push('http://10.64.3.148:5000/api/v1');
-  }
-
-  // 3. Localhost fallbacks
-  candidates.push('http://localhost:5000/api/v1');
-  candidates.push('http://127.0.0.1:5000/api/v1');
 
   // De-duplicate candidates while preserving order
   return Array.from(new Set(candidates));
