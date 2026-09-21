@@ -7,11 +7,8 @@ export const getCandidateApiUrls = (): string[] => {
   const candidates: string[] = [];
   const envUrl = process.env.EXPO_PUBLIC_API_URL;
 
-  // In development (USB cable ADB reverse or Metro host): prioritize local backend
+  // In development (prioritize host network IP for Expo Go & physical devices):
   if (__DEV__) {
-    candidates.push('http://localhost:5000/api/v1');
-    candidates.push('http://127.0.0.1:5000/api/v1');
-
     const hostUri = Constants.expoConfig?.hostUri ?? (Constants as any).experienceUrl ?? (Constants as any).manifest?.debuggerHost;
     if (hostUri) {
       const hostIp = hostUri.split(':')[0];
@@ -20,9 +17,15 @@ export const getCandidateApiUrls = (): string[] => {
       }
     }
 
+    // Direct active local development LAN IP
+    candidates.push('http://10.173.33.148:5000/api/v1');
+
     if (Platform.OS === 'android') {
       candidates.push('http://10.0.2.2:5000/api/v1');
     }
+
+    candidates.push('http://localhost:5000/api/v1');
+    candidates.push('http://127.0.0.1:5000/api/v1');
   }
 
   // Configured environment URL

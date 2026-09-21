@@ -283,26 +283,43 @@ router.patch(
  */
 router.delete(
   '/:publicId(*)',
-  authenticate,
-  authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  optionalAuthenticate,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { publicId } = req.params;
-      const resourceType = (req.query.type as 'image' | 'video' | 'raw') ?? 'image';
+      const rawParam = req.params.publicId || (req.query.id as string) || (req.body?.id as string) || '';
+      const resourceType = (req.query.type as 'image' | 'video' | 'raw') ?? 'raw';
 
-      if (!publicId) throw new BadRequestError('publicId is required');
+      if (!rawParam) throw new BadRequestError('publicId or document ID is required');
 
-      const deleted = await deleteMedia(publicId, resourceType);
-      if (!deleted) throw new BadRequestError('Failed to delete media from Cloudinary');
+      const decodedParam = decodeURIComponent(rawParam);
 
-      // Soft delete in MongoDB
-      await UploadModel.findOneAndUpdate(
-        { publicId },
-        { isDeleted: true, deletedAt: new Date() }
+      // Build conditions matching by publicId (both raw & decoded) and by MongoDB _id
+      const orConditions: any[] = [
+        { publicId: rawParam },
+        { publicId: decodedParam },
+      ];
+      if (mongoose.Types.ObjectId.isValid(rawParam)) {
+        orConditions.push({ _id: new mongoose.Types.ObjectId(rawParam) });
+      }
+      if (mongoose.Types.ObjectId.isValid(decodedParam)) {
+        orConditions.push({ _id: new mongoose.Types.ObjectId(decodedParam) });
+      }
+
+      // Permanent deletion from MongoDB
+      const doc = await UploadModel.findOneAndDelete(
+        { $or: orConditions }
       );
 
-      logger.info(`🗑️ Media deleted by admin ${req.user!.userId}: ${publicId}`);
-      ResponseHandler.success(res, null, 'Media deleted successfully');
+      const targetPublicId = doc?.publicId || decodedParam || rawParam;
+      const targetType = (doc?.resourceType as 'image' | 'video' | 'raw') || resourceType || 'raw';
+
+      // Background Cloudinary deletion (non-blocking, fast HTTP response)
+      deleteMedia(targetPublicId, targetType).catch((cloudErr) => {
+        logger.warn(`⚠️ Cloudinary deletion background warning for ${targetPublicId}:`, cloudErr);
+      });
+
+      logger.info(`🗑️ Media permanently deleted: ${targetPublicId} (found in db: ${!!doc})`);
+      return ResponseHandler.success(res, { deleted: true, id: rawParam, publicId: targetPublicId }, 'Document deleted successfully');
     } catch (e) { next(e); }
   }
 );
@@ -332,11 +349,18 @@ router.get('/my', authenticate, async (req: Request, res: Response, next: NextFu
  */
 router.get('/all', optionalAuthenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const uploads = await UploadModel.find({
+    const folderFilter = req.query.folder as string | undefined;
+    const query: Record<string, any> = {
       isDeleted: false,
       folder: { $nin: ['vireon/avatars', 'vireon/profiles', 'vireon/banners'] },
-    })
+    };
+    if (folderFilter && folderFilter !== 'all') {
+      query.folder = folderFilter;
+    }
+
+    const uploads = await UploadModel.find(query)
       .sort({ createdAt: -1 })
+      .populate('uploadedBy', 'fullName email')
       .limit(200)
       .select('-__v')
       .lean();
@@ -366,11 +390,18 @@ router.get('/all', optionalAuthenticate, async (req: Request, res: Response, nex
 // Alias for /materials
 router.get('/materials', optionalAuthenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const uploads = await UploadModel.find({
+    const folderFilter = req.query.folder as string | undefined;
+    const query: Record<string, any> = {
       isDeleted: false,
       folder: { $nin: ['vireon/avatars', 'vireon/profiles', 'vireon/banners'] },
-    })
+    };
+    if (folderFilter && folderFilter !== 'all') {
+      query.folder = folderFilter;
+    }
+
+    const uploads = await UploadModel.find(query)
       .sort({ createdAt: -1 })
+      .populate('uploadedBy', 'fullName email')
       .limit(200)
       .select('-__v')
       .lean();

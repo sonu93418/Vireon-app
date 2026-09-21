@@ -37,6 +37,8 @@ import {
   makePhoneCall,
   openWhatsApp,
 } from '@/src/constants/contact';
+import { PLACED_STUDENTS } from '@/src/constants/placements';
+import { PlacementCard } from '@/src/components/PlacementCard';
 
 const VSI_LOGO = require('@/assets/vsi_logo.png');
 
@@ -586,7 +588,7 @@ export default function HomeScreen() {
 
             <TouchableOpacity
               style={[styles.shortcutItemGreen, SHADOW.card]}
-              onPress={() => router.push('/(tabs)/courses')}
+              onPress={() => router.push('/placements' as any)}
               activeOpacity={0.85}
             >
               <LinearGradient
@@ -647,6 +649,29 @@ export default function HomeScreen() {
             </View>
           );
         })()}
+
+        {/* ── Recent Placements & Hall of Fame ── */}
+        <View style={styles.section}>
+          <SectionHeader
+            title="Recent Placements"
+            subtitle="Our alumni placed in top industrial plants & MNCs"
+            onSeeAll={() => router.push('/placements' as any)}
+          />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.horizontalList}
+          >
+            {PLACED_STUDENTS.map((student) => (
+              <PlacementCard
+                key={student.id}
+                item={student}
+                variant="carousel"
+                onPress={() => router.push('/placements' as any)}
+              />
+            ))}
+          </ScrollView>
+        </View>
 
         {/* Industrial Trainers */}
         {(() => {

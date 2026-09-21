@@ -183,7 +183,8 @@ export const deleteMedia = async (
       resource_type: resourceType,
       invalidate: true,
     });
-    return (result as { result?: string }).result === 'ok';
+    const status = (result as { result?: string }).result;
+    return status === 'ok' || status === 'not found';
   } catch (error) {
     logger.error('❌ Cloudinary delete error:', error);
     return false;

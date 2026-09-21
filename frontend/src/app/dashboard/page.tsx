@@ -7,7 +7,8 @@ import axios from 'axios';
 import {
   Users, GraduationCap, BookOpen, Video, FileText,
   TrendingUp, TrendingDown, Activity, Calendar,
-  MessageSquare, BarChart3, Zap, Shield, RefreshCw
+  MessageSquare, BarChart3, Zap, Shield, RefreshCw,
+  Building2, MapPin, CheckCircle2, Award, Sparkles, Briefcase
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -60,6 +61,109 @@ const DEFAULT_DASHBOARD: DashboardData = {
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const ROLE_COLORS = { STUDENT: '#16A34A', FACULTY: '#3B82F6', ADMIN: '#F59E0B', SUPER_ADMIN: '#EF4444' };
+
+const PLACED_CANDIDATES = [
+  {
+    id: 'p-ravindra',
+    name: 'Ravindra Prasad',
+    salary: '₹30,000/month',
+    company: 'Staffing Pvt. Ltd',
+    location: 'Andhra Pradesh',
+    role: 'Lead Safety Officer',
+    image: '/placements/ravindra_prasad.jpg',
+    badge: '⭐ Highest Package',
+  },
+  {
+    id: 'p-ankit',
+    name: 'Ankit Kr Yadav',
+    salary: '₹18,000/month',
+    company: 'Solar Plant',
+    location: 'Maharashtra',
+    role: 'Solar EHS Supervisor',
+    image: '/placements/ankit_kr_yadav.jpg',
+    badge: 'Clean Energy',
+  },
+  {
+    id: 'p-vickey',
+    name: 'Vickey Kr Verma',
+    salary: '₹16,000/month',
+    company: 'Green stone Pvt. Ltd',
+    location: 'Bangalore',
+    role: 'Site Safety Inspector',
+    image: '/placements/vickey_kr_verma.jpg',
+    badge: 'MNC Site',
+  },
+  {
+    id: 'p-suraj',
+    name: 'Suraj kr Pandit',
+    salary: '₹18,000/month',
+    company: 'Solar Plant',
+    location: 'Maharashtra',
+    role: 'EHS Field Officer',
+    image: '/placements/suraj_kr_pandit.jpg',
+    badge: 'Renewable',
+  },
+  {
+    id: 'p-suman',
+    name: 'Suman Kumar',
+    salary: '₹23,000/month',
+    company: 'Tata Power',
+    location: 'Kalyan',
+    role: 'Power Plant Safety Officer',
+    image: '/placements/suman_kumar.jpg',
+    badge: '🏆 Tata Group',
+  },
+  {
+    id: 'p-rakesh',
+    name: 'Rakesh Rajak',
+    salary: '₹20,000/month',
+    company: 'EPI Gral',
+    location: 'Gujarat',
+    role: 'Industrial EHS Executive',
+    image: '/placements/rakesh_rajak.jpg',
+    badge: 'Heavy Industry',
+  },
+  {
+    id: 'p-kaushal',
+    name: 'Kaushal kr Yadav',
+    salary: '₹24,000/month',
+    company: 'Tata Motors',
+    location: 'Ahemdabad',
+    role: 'Automobile Safety Officer',
+    image: '/placements/kaushal_kr_yadav.jpg',
+    badge: '🏆 Tata Motors',
+  },
+  {
+    id: 'p-arjun',
+    name: 'Arjun Singh',
+    salary: '₹20,000/month',
+    company: 'Kirby Pvt. Ltd',
+    location: 'Gujarat',
+    role: 'PEB Safety Specialist',
+    image: '/placements/arjun_singh.jpg',
+    badge: 'Engineering',
+  },
+  {
+    id: 'p-anwar',
+    name: 'Anwar Ali',
+    salary: '₹18,000/month',
+    company: 'Torrent Pvt. Ltd',
+    location: 'Muradabad',
+    role: 'Process Safety Officer',
+    image: '/placements/anwar_ali.jpg',
+    badge: 'Power & Utility',
+  },
+  {
+    id: 'p-vicky',
+    name: 'Vicky Kr Yadav',
+    salary: '₹24,000/month',
+    company: 'Ravi Construction',
+    location: 'Surat',
+    role: 'Construction Safety Officer',
+    image: '/placements/vicky_kr_yadav.jpg',
+    badge: 'Infrastructure',
+  },
+];
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -313,6 +417,107 @@ export default function DashboardPage() {
           <div className="text-left sm:text-right flex-shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
             <div className="text-2xl font-heading font-black text-emerald-600">100%</div>
             <div className="text-xs font-bold text-slate-500">Placement Support</div>
+          </div>
+        </motion.div>
+
+        {/* ── Alumni Placement Hall of Fame Section ── */}
+        <motion.div variants={itemVariants} id="section-placements" className="bento-card col-span-1 sm:col-span-2 lg:col-span-4 p-6 bg-gradient-to-br from-white via-white to-emerald-50/30">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-200/80">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/20 flex-shrink-0">
+                <Award className="w-5 h-5 text-amber-300" />
+              </div>
+              <div>
+                <h2 className="text-lg font-black font-heading text-slate-900 flex items-center gap-2">
+                  Placement Hall of Fame
+                  <span className="bg-emerald-100 text-emerald-800 text-[11px] font-black px-2.5 py-0.5 rounded-full border border-emerald-300">
+                    100% Verified Placements
+                  </span>
+                </h2>
+                <p className="text-xs font-medium text-slate-500 mt-0.5">
+                  Recent institute alumni placed in top infrastructure, automotive, power, and solar corporations across India
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <span className="text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-xs">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                Highest: ₹30,000 / mo
+              </span>
+            </div>
+          </div>
+
+          {/* Grid of Framed Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {PLACED_CANDIDATES.map((student) => (
+              <div
+                key={student.id}
+                className="group relative rounded-2xl bg-white border-2 border-slate-200 hover:border-emerald-500/60 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col overflow-hidden"
+              >
+                {/* ── Top Bar (Clean, Outside Photo) ── */}
+                <div className="px-3 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between gap-1.5">
+                  <span className="bg-emerald-600 text-white text-[9.5px] font-black px-2 py-0.5 rounded-md flex items-center gap-1 shadow-xs">
+                    <CheckCircle2 className="w-3 h-3 text-white" />
+                    PLACED
+                  </span>
+                  {student.badge ? (
+                    <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-extrabold px-1.5 py-0.5 rounded-md truncate max-w-[120px]">
+                      {student.badge}
+                    </span>
+                  ) : (
+                    <span className="text-[9.5px] font-bold text-slate-400">Alumni</span>
+                  )}
+                </div>
+
+                {/* ── Photo Frame: 100% Clear View (No Text Overlap on Face/Helmet) ── */}
+                <div className="relative h-56 w-full bg-slate-900 overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={student.image}
+                    alt={student.name}
+                    className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 border-b border-black/10 pointer-events-none" />
+                </div>
+
+                {/* ── Dedicated Standout Salary Banner ── */}
+                <div className="mx-3 mt-3 p-2 bg-gradient-to-r from-emerald-50 to-green-50/80 border-1.5 border-emerald-300/80 rounded-xl flex items-center justify-between shadow-xs">
+                  <span className="text-[9.5px] font-black uppercase tracking-wider text-emerald-800">Monthly Salary</span>
+                  <span className="text-xs font-black text-emerald-700 flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    {student.salary}
+                  </span>
+                </div>
+
+                {/* ── Card Information Body ── */}
+                <div className="p-3.5 pt-2.5 flex-1 flex flex-col justify-between bg-white">
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <h4 className="font-heading text-sm font-black text-slate-900 truncate">
+                        {student.name}
+                      </h4>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                    </div>
+
+                    <div className="mt-2 space-y-1">
+                      <div className="flex items-center gap-1.5 text-xs text-slate-700 font-bold">
+                        <Building2 className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                        <span className="truncate">{student.company}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-semibold">
+                        <MapPin className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                        <span className="truncate">{student.location}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[10px]">
+                    <span className="text-slate-600 font-semibold truncate max-w-[130px]">{student.role}</span>
+                    <span className="text-emerald-700 font-bold">Verified</span>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </motion.div>
 

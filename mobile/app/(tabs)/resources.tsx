@@ -177,54 +177,6 @@ function getFileTypeMeta(item: Resource): FileTypeMeta {
   };
 }
 
-// ─── Fallback Resources ───────────────────────────────────────────────────────
-const DEFAULT_RESOURCES: Resource[] = [
-  {
-    _id: 'r-1',
-    originalName: 'OSHA 30-Hour General Industry Study Guide.pdf',
-    secureUrl: 'https://www.osha.gov/sites/default/files/publications/OSHA3990.pdf',
-    publicId: 'r-1',
-    mimeType: 'application/pdf',
-    bytes: 1024 * 512,
-    format: 'pdf',
-    folder: 'vireon/syllabus',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    _id: 'r-2',
-    originalName: 'Industrial Safety & Factories Act Handbook 2026.pdf',
-    secureUrl: 'https://www.ilo.org/wcmsp5/groups/public/---dgreports/---dcomm/documents/publication/wcms_301241.pdf',
-    publicId: 'r-2',
-    mimeType: 'application/pdf',
-    bytes: 1024 * 1024 * 2,
-    format: 'pdf',
-    folder: 'vireon/safety_docs',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    _id: 'r-3',
-    originalName: 'Hazard Identification & Risk Assessment (HIRA) Checklist.xlsx',
-    secureUrl: 'https://www.ilo.org/wcmsp5/groups/public/---dgreports/---dcomm/documents/publication/wcms_301241.pdf',
-    publicId: 'r-3',
-    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    bytes: 1024 * 250,
-    format: 'xlsx',
-    folder: 'vireon/forms',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    _id: 'r-4',
-    originalName: 'Fire Safety Drill & Emergency Action Plan.docx',
-    secureUrl: 'https://www.ilo.org/wcmsp5/groups/public/---dgreports/---dcomm/documents/publication/wcms_301241.pdf',
-    publicId: 'r-4',
-    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    bytes: 1024 * 480,
-    format: 'docx',
-    folder: 'vireon/study_materials',
-    createdAt: new Date().toISOString(),
-  },
-];
-
 function formatBytes(bytes: number): string {
   if (!bytes || bytes <= 0) return 'Document';
   if (bytes < 1024) return `${bytes} B`;
@@ -346,23 +298,25 @@ export default function ResourcesScreen() {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['uploads', 'all'],
+    queryKey: ['uploads', 'all_live_v2'],
     queryFn: async () => {
       try {
-        const res = await apiClient.get<{ data: Resource[] }>('/upload/all');
-        const list = res.data?.data;
-        if (Array.isArray(list)) {
-          setCacheData('uploads_all', list);
-          return list;
-        }
-        return [];
+        const res = await apiClient.get<any>('/upload/all');
+        const raw = res.data;
+        const list: Resource[] = Array.isArray(raw)
+          ? raw
+          : Array.isArray(raw?.data)
+            ? raw.data
+            : [];
+        // Keep persistent cache strictly in sync with live database
+        setCacheData('uploads_live_v2', list);
+        return list;
       } catch (err) {
-        console.warn('⚠️ /upload/all fetch failed, using cached data if available:', err);
-        return getCacheData<Resource[]>('uploads_all') ?? [];
+        console.warn('⚠️ /upload/all fetch failed, checking fresh cache:', err);
+        return getCacheData<Resource[]>('uploads_live_v2') ?? [];
       }
     },
-    initialData: () => getCacheData<Resource[]>('uploads_all') ?? undefined,
-    staleTime: 5 * 1000,
+    staleTime: 0,
     refetchInterval: 8 * 1000,
   });
 
@@ -453,16 +407,10 @@ export default function ResourcesScreen() {
     }
   };
 
-  const CATEGORIES = ['All', 'Syllabus', 'Study Notes', 'Safety Handbooks', 'Forms & Formats'];
+  const CATEGORIES = ['All', 'Syllabus', 'Study Notes', 'Safety Handbooks', 'Forms & Formats', 'Certificates'];
 
-  // Merge live uploaded files (at the top) with default reference documents
-  const liveItems = Array.isArray(data) ? data : [];
-  const rawList = [
-    ...liveItems,
-    ...DEFAULT_RESOURCES.filter(
-      (def) => !liveItems.some((live) => live.originalName === def.originalName || live._id === def._id)
-    ),
-  ];
+  // Pure live resources from database
+  const rawList: Resource[] = Array.isArray(data) ? data : [];
 
   const filtered = rawList.filter((r) => {
     const folder = (r.folder || '').toLowerCase();
@@ -475,16 +423,19 @@ export default function ResourcesScreen() {
 
     // Category filter: match across folder category and file title keywords
     if (selectedCategory === 'Syllabus') {
-      const match = folder.includes('syllab') || name.includes('syllab') || name.includes('course');
+      const match = folder.includes('syllab') || name.includes('syllab') || name.includes('course') || name.includes('curriculum');
       if (!match) return false;
     } else if (selectedCategory === 'Study Notes') {
-      const match = folder.includes('study') || folder.includes('doc') || folder.includes('material') || name.includes('note') || name.includes('study') || name.includes('prep') || name.includes('guide');
+      const match = folder.includes('study') || folder.includes('doc') || folder.includes('material') || name.includes('note') || name.includes('study') || name.includes('prep') || name.includes('guide') || name.includes('plan');
       if (!match) return false;
     } else if (selectedCategory === 'Safety Handbooks') {
-      const match = folder.includes('safety') || name.includes('safety') || name.includes('handbook') || name.includes('hira') || name.includes('drill');
+      const match = folder.includes('safety') || name.includes('safety') || name.includes('handbook') || name.includes('hira') || name.includes('drill') || name.includes('osha') || name.includes('act');
       if (!match) return false;
     } else if (selectedCategory === 'Forms & Formats') {
-      const match = folder.includes('form') || folder.includes('cert') || name.includes('form') || name.includes('format') || name.includes('check') || name.includes('sheet');
+      const match = folder.includes('form') || name.includes('form') || name.includes('format') || name.includes('check') || name.includes('sheet') || name.includes('enroll') || name.includes('checklist');
+      if (!match) return false;
+    } else if (selectedCategory === 'Certificates') {
+      const match = folder.includes('cert') || name.includes('cert') || name.includes('template');
       if (!match) return false;
     }
 
