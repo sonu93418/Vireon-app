@@ -446,36 +446,41 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         )}
 
-        {/* ── Aesthetic Developer Credits Card ── */}
+        {/* ── Professional Lead Architect & Developer Card ── */}
         <TouchableOpacity
           style={[styles.devCreditCard, SHADOW.card]}
           onPress={() => setShowDevModal(true)}
           activeOpacity={0.88}
         >
           <LinearGradient
-            colors={['#0F172A', '#1E293B', '#0D4A2B']}
+            colors={['#0B132B', '#111E38', '#0D3522']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.devCreditGrad}
           >
             <View style={styles.devAvatarHex}>
-              <Code2 size={20} color="#34D399" />
+              <Terminal size={18} color="#34D399" />
+              <View style={styles.devAvatarDot} />
             </View>
 
             <View style={styles.devCreditTextWrap}>
               <View style={styles.devBadgeRow}>
-                <View style={styles.devTag}>
-                  <Sparkles size={10} color="#FDE047" />
-                  <Text style={styles.devTagText}>LEAD ARCHITECT & DEVELOPER</Text>
+                <View style={styles.proSmallTag}>
+                  <View style={styles.proSmallTagDot} />
+                  <Text style={styles.proSmallTagText}>LEAD ARCHITECT</Text>
+                </View>
+                <View style={styles.proSmallTagSecondary}>
+                  <Code2 size={9} color="#94A3B8" />
+                  <Text style={styles.proSmallTagSecondaryText}>DEVELOPER</Text>
                 </View>
               </View>
-              <Text style={styles.devTitle}>Crafted & Developed by</Text>
               <Text style={styles.devName}>Sonu Kumar Ray</Text>
-              <Text style={styles.devSub}>Full Stack Mobile & Cloud Systems Engineer • Tap to view profile ✨</Text>
+              <Text style={styles.devSub}>Full Stack Mobile & Cloud Systems Engineer</Text>
+              <Text style={styles.devMetaText}>Tap to view technical credentials</Text>
             </View>
 
-            <View style={styles.devHeartWrap}>
-              <Heart size={16} color="#EF4444" fill="#EF4444" />
+            <View style={styles.devArrowWrap}>
+              <ChevronRight size={15} color="#34D399" />
             </View>
           </LinearGradient>
         </TouchableOpacity>
@@ -572,7 +577,13 @@ export default function ProfileScreen() {
                 </View>
                 <View>
                   <Text style={styles.modalTitle}>Sonu Kumar Ray</Text>
-                  <Text style={styles.modalSub}>Lead Full Stack & Mobile Architect</Text>
+                  <View style={styles.modalSubRow}>
+                    <View style={styles.proSmallTag}>
+                      <View style={styles.proSmallTagDot} />
+                      <Text style={styles.proSmallTagText}>LEAD ARCHITECT</Text>
+                    </View>
+                    <Text style={styles.modalSubText}>Full Stack & Mobile</Text>
+                  </View>
                 </View>
               </View>
               <TouchableOpacity
@@ -587,11 +598,13 @@ export default function ProfileScreen() {
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: 14 }}>
               {/* Bio & Intro Card */}
               <View style={styles.devBioCard}>
-                <View style={styles.devTag}>
-                  <Sparkles size={11} color="#FDE047" />
-                  <Text style={styles.devTagText}>ENGINEERING EXCELLENCE</Text>
+                <View style={styles.devBadgeRow}>
+                  <View style={styles.proSmallTag}>
+                    <Terminal size={10} color="#34D399" />
+                    <Text style={styles.proSmallTagText}>SYSTEM ARCHITECTURE</Text>
+                  </View>
                 </View>
-                <Text style={styles.devBioTitle}>Engineered for High Performance</Text>
+                <Text style={styles.devBioTitle}>Enterprise Systems & Mobile Architecture</Text>
                 <Text style={styles.devBioText}>
                   Architected the complete Vireon Safety Institute mobile ecosystem, scalable backend microservices, real-time push notification pipelines, and multi-format document delivery systems.
                 </Text>
@@ -844,8 +857,8 @@ const styles = StyleSheet.create({
     marginVertical: SPACING.md,
     borderRadius: BORDER_RADIUS.xl,
     overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: '#34D399',
+    borderWidth: 1,
+    borderColor: 'rgba(52, 211, 153, 0.3)',
   },
   devCreditGrad: {
     flexDirection: 'row',
@@ -856,43 +869,77 @@ const styles = StyleSheet.create({
   devAvatarHex: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(52, 211, 153, 0.15)',
+    borderRadius: 14,
+    backgroundColor: 'rgba(15, 23, 42, 0.95)',
     borderWidth: 1.5,
-    borderColor: '#34D399',
+    borderColor: 'rgba(52, 211, 153, 0.4)',
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
+  },
+  devAvatarDot: {
+    position: 'absolute',
+    bottom: -1,
+    right: -1,
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
+    backgroundColor: '#10B981',
+    borderWidth: 1.5,
+    borderColor: '#0B132B',
   },
   devCreditTextWrap: {
     flex: 1,
   },
   devBadgeRow: {
     flexDirection: 'row',
-    marginBottom: 3,
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
   },
-  devTag: {
+  proSmallTag: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(253, 224, 71, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
+    gap: 4.5,
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    paddingHorizontal: 7,
+    paddingVertical: 2.5,
+    borderRadius: 6,
     borderWidth: 1,
-    borderColor: 'rgba(253, 224, 71, 0.4)',
+    borderColor: 'rgba(52, 211, 153, 0.35)',
     alignSelf: 'flex-start',
   },
-  devTagText: {
+  proSmallTagDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: '#34D399',
+  },
+  proSmallTagText: {
     fontSize: 9,
     fontWeight: '800',
-    color: '#FDE047',
-    letterSpacing: 0.5,
+    color: '#34D399',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
   },
-  devTitle: {
-    fontSize: 10,
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontWeight: '600',
-    marginTop: 2,
+  proSmallTagSecondary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3.5,
+    backgroundColor: 'rgba(148, 163, 184, 0.1)',
+    paddingHorizontal: 6,
+    paddingVertical: 2.5,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.25)',
+    alignSelf: 'flex-start',
+  },
+  proSmallTagSecondaryText: {
+    fontSize: 8.5,
+    fontWeight: '700',
+    color: '#94A3B8',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
   },
   devName: {
     fontSize: 15,
@@ -901,17 +948,37 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   devSub: {
-    fontSize: 10,
-    color: '#94A3B8',
+    fontSize: 10.5,
+    color: '#CBD5E1',
+    fontWeight: '500',
     marginTop: 1,
   },
-  devHeartWrap: {
+  devMetaText: {
+    fontSize: 9.5,
+    color: '#64748B',
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  devArrowWrap: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    backgroundColor: 'rgba(52, 211, 153, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(52, 211, 153, 0.25)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  modalSubRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 3,
+  },
+  modalSubText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#64748B',
   },
 
   // Developer Spotlight Modal Styles

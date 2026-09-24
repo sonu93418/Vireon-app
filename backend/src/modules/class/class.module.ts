@@ -22,6 +22,7 @@ import { NotificationModel } from '../../models/notification.model';
 import { UserModel } from '../../models/user.model';
 import { getFirebaseMessaging } from '../../config/firebase';
 import { logger } from '../../config/logger';
+import { apiCache, bustCache } from '../../middlewares/cache.middleware';
 
 // ─── Repository ───────────────────────────────────────────────────────────────
 class ClassRepository extends BaseRepository<IClassDocument> {
@@ -150,16 +151,19 @@ class ClassService {
       logger.error('❌ Failed to send push for new scheduled class:', err);
     }
 
+    apiCache.invalidatePrefix('classes');
     return cls;
   }
   async update(id: string, data: Record<string, unknown>) {
     const updated = await this.repo.updateById(id, data);
     if (!updated) throw new NotFoundError('Class');
+    apiCache.invalidatePrefix('classes');
     return updated;
   }
   async updateStatus(id: string, data: Record<string, unknown>) {
     const updated = await this.repo.updateById(id, data);
     if (!updated) throw new NotFoundError('Class');
+    apiCache.invalidatePrefix('classes');
 
     if (data.status === ClassStatus.LIVE || data.status === 'LIVE') {
       try {
@@ -214,7 +218,12 @@ class ClassService {
 
     return updated;
   }
-  async delete(id: string) { await this.repo.softDeleteById(id); }
+  async delete(id: string) {
+    const deleted = await this.repo.deleteById(id);
+    if (!deleted) throw new NotFoundError('Class');
+    apiCache.invalidatePrefix('classes');
+    return deleted;
+  }
   async addAttendee(classId: string, userId: string) {
     return this.repo.updateById(classId, { $addToSet: { attendees: userId } });
   }
@@ -266,9 +275,9 @@ router.get('/today', ctrl.getToday);
 router.get('/upcoming', ctrl.getUpcoming);
 router.get('/:id', idValidate, ctrl.getById);
 router.post('/:id/join', authenticate, idValidate, ctrl.joinClass);
-router.post('/', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), validate({ body: createClassSchema }), ctrl.create);
-router.patch('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), idValidate, validate({ body: updateClassSchema }), ctrl.update);
-router.patch('/:id/status', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), idValidate, validate({ body: updateClassStatusSchema }), ctrl.updateStatus);
-router.delete('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), idValidate, ctrl.delete);
+router.post('/', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), validate({ body: createClassSchema }), bustCache('classes'), ctrl.create);
+router.patch('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), idValidate, validate({ body: updateClassSchema }), bustCache('classes'), ctrl.update);
+router.patch('/:id/status', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), idValidate, validate({ body: updateClassStatusSchema }), bustCache('classes'), ctrl.updateStatus);
+router.delete('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), idValidate, bustCache('classes'), ctrl.delete);
 
 export default router;
