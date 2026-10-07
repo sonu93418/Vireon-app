@@ -2,7 +2,7 @@
   "expo": {
     "name": "Vireon Safety Institute",
     "slug": "vireon-safety",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -29,7 +29,7 @@
     },
     "android": {
       "package": "com.vireon.safety",
-      "versionCode": 1,
+      "versionCode": 5,
       "googleServicesFile": "./google-services.json",
       "backgroundColor": "#16A34A",
       "splash": {
