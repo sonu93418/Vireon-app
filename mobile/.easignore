@@ -26,9 +26,6 @@ ios/build/
 *.xcworkspace
 *.xcodeproj
 
-# Lock files (regenerated on build server)
-package-lock.json
-
 # Temporary & Local Files
 *.log
 *.tmp
