@@ -60,7 +60,7 @@ const DEFAULT_CLASSES: ClassItem[] = [
     durationMinutes: 60,
     zoomJoinUrl: 'https://zoom.us/j/8921204921',
     status: 'LIVE',
-    teacherId: { designation: 'Director & Chief Safety Officer', userId: { fullName: 'Dr. Gagan Verma (Gagan Sir)' } },
+    teacherId: { designation: 'Director & Chief Safety Officer', userId: { fullName: 'Gagan Sir' } },
     courseId: { title: 'Diploma in Fire & Industrial Safety', code: 'DFIS-101' },
   },
   {

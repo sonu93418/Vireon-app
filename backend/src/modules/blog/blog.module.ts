@@ -10,6 +10,7 @@ import { ResponseHandler } from '../../core/response';
 import { NotFoundError } from '../../core/errors';
 import { authenticate, authorize, optionalAuthenticate } from '../../middlewares/auth.middleware';
 import { validate } from '../../middlewares/validate.middleware';
+import { bustCache } from '../../middlewares/cache.middleware';
 import { createBlogSchema, updateBlogSchema, paginationSchema, objectIdSchema } from '../../shared/schemas';
 import { UserRole } from '../../shared';
 
@@ -110,8 +111,8 @@ router.get('/', validate({ query: paginationSchema }), ctrl.getAll);
 router.get('/admin', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), validate({ query: paginationSchema }), ctrl.getAllAdmin);
 router.get('/slug/:slug', optionalAuthenticate, slugV, ctrl.getBySlug);
 router.post('/:id/bookmark', authenticate, idV, ctrl.toggleBookmark);
-router.post('/', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), validate({ body: createBlogSchema }), ctrl.create);
-router.patch('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), idV, validate({ body: updateBlogSchema }), ctrl.update);
-router.delete('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), idV, ctrl.delete);
+router.post('/', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), validate({ body: createBlogSchema }), bustCache('blogs'), ctrl.create);
+router.patch('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), idV, validate({ body: updateBlogSchema }), bustCache('blogs'), ctrl.update);
+router.delete('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), idV, bustCache('blogs'), ctrl.delete);
 
 export default router;

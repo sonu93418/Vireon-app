@@ -52,7 +52,7 @@ const DEFAULT_TEACHERS: Teacher[] = [
     rating: 4.9,
     isVerified: true,
     profileImageUrl: '/teacher_gagan.png',
-    userId: { fullName: 'Dr. Gagan Verma (Gagan Sir)', email: 'gagan@vireonsafety.in' },
+    userId: { fullName: 'Gagan Sir', email: 'gagan@vireonsafety.in' },
   },
   {
     _id: 't-prince',

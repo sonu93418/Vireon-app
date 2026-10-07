@@ -31,7 +31,6 @@
       "package": "com.vireon.safety",
       "versionCode": 1,
       "googleServicesFile": "./google-services.json",
-      "usesCleartextTraffic": false,
       "backgroundColor": "#16A34A",
       "splash": {
         "image": "./assets/splash-icon.png",
@@ -46,15 +45,18 @@
         "android.permission.INTERNET",
         "android.permission.VIBRATE",
         "android.permission.RECEIVE_BOOT_COMPLETED",
-        "android.permission.CAMERA",
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE"
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.CAMERA"
       ],
       "intentFilters": [
         {
           "action": "VIEW",
           "autoVerify": true,
           "data": [
+            {
+              "scheme": "https",
+              "host": "vireonsafetyinstitute.in"
+            },
             {
               "scheme": "https",
               "host": "vireonsafety.in"

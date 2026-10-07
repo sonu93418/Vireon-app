@@ -165,4 +165,13 @@ export class AuthController {
       next(error);
     }
   };
+
+  deleteAccount = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      await this.service.deleteAccount(req.user!.userId);
+      ResponseHandler.success(res, null, 'Account and associated data deleted permanently');
+    } catch (error) {
+      next(error);
+    }
+  };
 }

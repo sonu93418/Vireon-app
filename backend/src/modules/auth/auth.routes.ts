@@ -211,4 +211,16 @@ router.get('/me', authenticate, controller.me);
 router.patch('/me', authenticate, controller.updateProfile);
 router.patch('/profile', authenticate, controller.updateProfile);
 
+/**
+ * @swagger
+ * /api/v1/auth/delete-account:
+ *   delete:
+ *     tags: [Auth]
+ *     summary: Permanently delete authenticated user account and data (Google Play requirement)
+ *     security:
+ *       - BearerAuth: []
+ */
+router.delete('/delete-account', authenticate, controller.deleteAccount);
+router.delete('/me', authenticate, controller.deleteAccount);
+
 export default router;

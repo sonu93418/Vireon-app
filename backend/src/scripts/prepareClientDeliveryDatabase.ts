@@ -32,7 +32,7 @@ if (!MONGODB_URI) {
 // ── Real Teachers Seed Data (3 Teachers) ──────────────────────────────────
 const TEACHER_SEED_DATA = [
   {
-    fullName: 'Dr. Gagan Verma (Gagan Sir)',
+    fullName: 'Gagan Sir',
     email: 'gagan.verma@vireonsafety.in',
     phone: '9876543210',
     role: UserRole.FACULTY,

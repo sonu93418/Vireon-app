@@ -71,20 +71,19 @@ export const apiCache = new LRUCache(500);
 
 // ─── Build a deterministic cache key from the request ────────────────────────
 const buildCacheKey = (req: Request): string => {
-  const qs = new URLSearchParams(req.query as Record<string, string>).toString();
-  return `${req.method}:${req.path}${qs ? '?' + qs : ''}`;
+  return `${req.method}:${req.originalUrl || req.url || req.path}`;
 };
 
 // ─── Cache Middleware Factory ─────────────────────────────────────────────────
 /**
- * Creates a caching middleware for GET routes.
+ * Creates a caching middleware for public GET routes.
  * @param ttlSeconds Cache time-to-live in seconds
  * @param namespace Optional prefix for cache key grouping (used for invalidation)
  */
 export const cacheMiddleware = (ttlSeconds: number, namespace?: string) => {
   return (req: Request, res: Response, next: NextFunction): void => {
-    // Only cache GET requests
-    if (req.method !== 'GET') {
+    // Only cache unauthenticated GET requests (prevent caching user-specific data)
+    if (req.method !== 'GET' || req.headers.authorization) {
       next();
       return;
     }

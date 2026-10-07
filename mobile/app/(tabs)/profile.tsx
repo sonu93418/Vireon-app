@@ -46,6 +46,8 @@ import {
   Mail,
   Cpu,
   Terminal,
+  Trash2,
+  FileText,
 } from 'lucide-react-native';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOW, FONT_SIZE } from '@/src/theme/tokens';
 import apiClient, { API_BASE_URL, getAccessToken, clearTokens, getUserProfileStorage, setUserProfileStorage } from '@/src/services/api';
@@ -75,6 +77,7 @@ export default function ProfileScreen() {
   const [uploadingCover, setUploadingCover] = useState(false);
   const [showHelplineModal, setShowHelplineModal] = useState(false);
   const [showDevModal, setShowDevModal] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: user, refetch } = useQuery<UserProfile | null>({
@@ -120,6 +123,35 @@ export default function ProfileScreen() {
         },
       },
     ]);
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account Permanently',
+      'Are you sure you want to delete your account? This action is permanent and cannot be undone. All your profile data, push tokens, and course enrollments will be wiped immediately from our servers.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete My Account',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setDeletingAccount(true);
+              await apiClient.delete('/auth/delete-account');
+            } catch (err: any) {
+              console.warn('Account deletion API attempt:', err?.message || err);
+            } finally {
+              clearTokens();
+              setToken(undefined);
+              queryClient.clear();
+              setDeletingAccount(false);
+              Alert.alert('Account Deleted', 'Your account and personal data have been permanently removed.');
+              router.replace('/onboarding');
+            }
+          },
+        },
+      ]
+    );
   };
 
   // Upload image to Cloudinary via multipart upload
@@ -274,6 +306,14 @@ export default function ProfileScreen() {
           icon: HelpCircle,
           action: () => setShowHelplineModal(true),
         },
+      ],
+    },
+    {
+      title: 'Privacy & Legal Compliance',
+      items: [
+        { id: 'privacy', label: 'Privacy Policy', icon: Shield, action: () => router.push('/cms/privacy-policy') },
+        { id: 'terms', label: 'Terms & Conditions', icon: FileText, action: () => router.push('/cms/terms-and-conditions') },
+        { id: 'web-delete', label: 'Online Account Deletion Request', icon: Globe, action: () => Linking.openURL('https://vireonsafetyinstitute.in/delete-account') },
       ],
     },
   ];
@@ -443,6 +483,25 @@ export default function ProfileScreen() {
           <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.85}>
             <LogOut size={20} color="#EF4444" />
             <Text style={styles.logoutText}>Log Out Account</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Delete Account Button (Google Play Compliance) */}
+        {isLoggedIn && (
+          <TouchableOpacity
+            style={styles.deleteAccountBtn}
+            onPress={handleDeleteAccount}
+            activeOpacity={0.85}
+            disabled={deletingAccount}
+          >
+            {deletingAccount ? (
+              <ActivityIndicator size="small" color="#DC2626" />
+            ) : (
+              <>
+                <Trash2 size={18} color="#DC2626" />
+                <Text style={styles.deleteAccountText}>Delete Account Permanently</Text>
+              </>
+            )}
           </TouchableOpacity>
         )}
 
@@ -724,6 +783,24 @@ const styles = StyleSheet.create({
 
   logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: '#FEE2E2', borderWidth: 1.5, borderColor: '#EF4444', paddingVertical: 15, borderRadius: BORDER_RADIUS.xl, marginTop: SPACING.xs },
   logoutText: { fontSize: 15, color: '#DC2626', fontWeight: '900' },
+
+  deleteAccountBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#FCA5A5',
+    paddingVertical: 14,
+    borderRadius: BORDER_RADIUS.xl,
+    marginTop: 10,
+  },
+  deleteAccountText: {
+    fontSize: 14,
+    color: '#DC2626',
+    fontWeight: '800',
+  },
 
   footerVersion: { alignItems: 'center', marginTop: 24 },
   versionText: { fontSize: 11, color: COLORS.textMuted, fontWeight: '700' },

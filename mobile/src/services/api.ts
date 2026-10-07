@@ -40,7 +40,7 @@ export const getCandidateApiUrls = (): string[] => {
   return Array.from(new Set(candidates));
 };
 
-export let API_BASE_URL = getCandidateApiUrls()[0] || 'http://localhost:5000/api/v1';
+export let API_BASE_URL = getCandidateApiUrls()[0] || 'https://vireon-app.onrender.com/api/v1';
 
 export const updateActiveApiBaseUrl = (newUrl: string): void => {
   API_BASE_URL = newUrl;

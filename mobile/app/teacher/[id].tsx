@@ -44,7 +44,7 @@ const FALLBACK_TEACHERS: Record<string, TeacherDetail> = {
       experienceYears: 18,
       rating: 4.9,
       localImage: require('../../assets/teacher_gagan.png'),
-      userId: { fullName: 'Dr. Gagan Verma (Gagan Sir)', email: 'gagan@vireonsafety.in' },
+      userId: { fullName: 'Gagan Sir', email: 'gagan@vireonsafety.in' },
     },
     upcomingClasses: [],
   },

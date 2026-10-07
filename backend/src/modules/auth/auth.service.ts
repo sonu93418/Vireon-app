@@ -427,6 +427,18 @@ export class AuthService {
     return { message: 'OTP resent successfully' };
   }
 
+  async deleteAccount(userId: string): Promise<void> {
+    const user = await this.repo.findById(userId);
+    if (!user) throw new NotFoundError('User');
+
+    await this.repo.deleteById(userId);
+
+    if (user.email) {
+      const { OtpModel } = await import('../../models/misc.models');
+      await OtpModel.deleteMany({ identifier: user.email.toLowerCase() });
+    }
+  }
+
   private async generateAuthResult(user: IUserDocument, fcmToken?: string): Promise<AuthResult> {
     const userId = String(user._id);
 

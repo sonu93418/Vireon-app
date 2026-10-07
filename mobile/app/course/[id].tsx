@@ -620,7 +620,7 @@ export default function CourseDetailScreen() {
               {[
                 {
                   id: 't-gagan',
-                  name: 'Dr. Gagan Verma (Gagan Sir)',
+                  name: 'Gagan Sir',
                   role: 'Director & Chief Safety Officer',
                   exp: '18+ Years Exp • Ph.D in Industrial Safety',
                   img: require('@/assets/teacher_gagan.png'),

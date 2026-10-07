@@ -9,6 +9,7 @@ import { ResponseHandler } from '../../core/response';
 import { NotFoundError } from '../../core/errors';
 import { authenticate, authorize } from '../../middlewares/auth.middleware';
 import { validate } from '../../middlewares/validate.middleware';
+import { bustCache } from '../../middlewares/cache.middleware';
 import { createCourseSchema, updateCourseSchema, paginationSchema } from '../../shared/schemas';
 import { UserRole } from '../../shared';
 
@@ -122,8 +123,8 @@ router.get('/', validate({ query: paginationSchema }), ctrl.getAll);
 router.get('/popular', ctrl.getPopular);
 router.get('/slug/:slug', ctrl.getBySlug);
 router.get('/:id', ctrl.getById);
-router.post('/', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), validate({ body: createCourseSchema }), ctrl.create);
-router.patch('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), validate({ body: updateCourseSchema }), ctrl.update);
-router.delete('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), ctrl.delete);
+router.post('/', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), validate({ body: createCourseSchema }), bustCache('courses'), ctrl.create);
+router.patch('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), validate({ body: updateCourseSchema }), bustCache('courses'), ctrl.update);
+router.delete('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), bustCache('courses'), ctrl.delete);
 
 export default router;

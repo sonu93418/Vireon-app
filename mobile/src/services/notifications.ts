@@ -157,7 +157,7 @@ export const sendFcmTokenToServer = async (fcmToken: string): Promise<void> => {
       // Direct IP fallback retries if primary domain client fails
     }
 
-    const hostIps = ['10.78.118.148', '10.64.3.148', '10.0.2.2', 'localhost'];
+    const hostIps = __DEV__ ? ['10.0.2.2', 'localhost'] : [];
     for (const ip of hostIps) {
       try {
         await axios.post(`http://${ip}:5000/api/v1/notifications/fcm-token`, payload, { timeout: 4000 });

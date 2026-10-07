@@ -223,7 +223,7 @@ const DEFAULT_TEACHERS: Teacher[] = [
     designation: 'Director & Chief Safety Officer',
     certifications: ['Ph.D Safety', 'NEBOSH IGC'],
     localImage: require('../../assets/teacher_gagan.png'),
-    userId: { fullName: 'Dr. Gagan Verma (Gagan Sir)' },
+    userId: { fullName: 'Gagan Sir' },
   },
   {
     _id: 't-prince',

@@ -12,6 +12,7 @@ import { ResponseHandler } from '../../core/response';
 import { NotFoundError } from '../../core/errors';
 import { authenticate, authorize } from '../../middlewares/auth.middleware';
 import { validate } from '../../middlewares/validate.middleware';
+import { bustCache } from '../../middlewares/cache.middleware';
 import {
   createTeacherSchema,
   updateTeacherSchema,
@@ -123,9 +124,9 @@ const idValidate = validate({ params: z.object({ id: objectIdSchema }) });
 router.get('/', validate({ query: paginationSchema }), ctrl.getAll);
 router.get('/active', ctrl.getAllActive);
 router.get('/:id', idValidate, ctrl.getById);
-router.post('/', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), validate({ body: createTeacherSchema }), ctrl.create);
-router.patch('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), idValidate, validate({ body: updateTeacherSchema }), ctrl.update);
-router.patch('/:id/verify', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), idValidate, ctrl.verify);
-router.delete('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), idValidate, ctrl.delete);
+router.post('/', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), validate({ body: createTeacherSchema }), bustCache('teachers'), ctrl.create);
+router.patch('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), idValidate, validate({ body: updateTeacherSchema }), bustCache('teachers'), ctrl.update);
+router.patch('/:id/verify', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), idValidate, bustCache('teachers'), ctrl.verify);
+router.delete('/:id', authenticate, authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN), idValidate, bustCache('teachers'), ctrl.delete);
 
 export default router;

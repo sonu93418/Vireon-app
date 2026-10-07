@@ -43,8 +43,8 @@ const DEFAULT_CMS_PAGES: Record<string, { title: string; contentHtml: string; me
   },
   'privacy-policy': {
     title: 'Privacy Policy',
-    contentHtml: '<h2>Privacy Policy</h2><p>Your privacy is important to us. Vireon Safety Institute protects user data and ensures 256-bit SSL encrypted security across all academic and payment portals.</p>',
-    metaDescription: 'Read the Privacy Policy of Vireon Safety Institute.',
+    contentHtml: '<h2>Privacy Policy — Vireon Safety Institute</h2><p>Effective Date: January 1, 2025 | Package: com.vireon.safety</p><h3>1. Data We Collect</h3><p>Vireon Safety Institute collects your full name, email address, phone number, encrypted password hash, student role, profile photo, and device push notification tokens (FCM) to provide our educational and certification services.</p><h3>2. How We Use Data</h3><p>We use your data to authenticate your identity, provide access to registered industrial safety courses, send lecture and exam schedule reminders, issue verified ISO 45001 safety credentials, and provide admissions support.</p><h3>3. Data Sharing & Security</h3><p>We do not sell or rent user data. Data is securely processed via Google Firebase (notifications), Cloudinary (media), and encrypted MongoDB Atlas clusters with 256-bit encryption in transit (HTTPS/TLS 1.3) and at rest.</p><h3>4. Account & Data Deletion</h3><p>You can permanently delete your account and personal data at any time directly in the app (Profile &gt; Privacy &amp; Account &gt; Delete Account) or online at https://vireonsafetyinstitute.in/delete-account. Data is purged within 48 hours.</p><h3>5. Contact Us</h3><p>Questions? Contact our Data Protection Officer at support@vireonsafety.in or call +91 82278 94630.</p>',
+    metaDescription: 'Read the official comprehensive Privacy Policy of Vireon Safety Institute.',
   },
   'refund-policy': {
     title: 'Refund & Cancellation Policy',
