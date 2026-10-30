@@ -2,7 +2,7 @@
   "expo": {
     "name": "Vireon Safety Institute",
     "slug": "vireon-safety",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -29,7 +29,7 @@
     },
     "android": {
       "package": "com.vireon.safety",
-      "versionCode": 5,
+      "versionCode": 6,
       "googleServicesFile": "./google-services.json",
       "backgroundColor": "#16A34A",
       "splash": {
@@ -82,7 +82,17 @@
           "mode": "production"
         }
       ],
-      "@react-native-google-signin/google-signin"
+      "@react-native-google-signin/google-signin",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "extraProguardRules": "-keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod\n-keepattributes SourceFile,LineNumberTable\n-keep class com.facebook.react.turbomodule.** { *; }\n-keep class com.facebook.react.bridge.JavaScriptModule { *; }\n-keep class com.facebook.react.bridge.NativeModule { *; }\n-keepclassmembers class * extends com.facebook.react.bridge.NativeModule { <methods>; }\n-keepclassmembers class * { @com.facebook.react.bridge.ReactMethod *; @com.facebook.react.bridge.ReactProp *; @com.facebook.react.bridge.ReactPropGroup *; }\n-keep class com.facebook.react.defaults.** { *; }\n-keep class com.facebook.react.ReactHost { *; }\n-keep class com.facebook.react.ReactNativeHost { *; }\n-keep class com.facebook.react.bridge.ReactMarker { *; }\n-keep @com.facebook.proguard.annotations.DoNotStrip class * { *; }\n-keepclassmembers class * { @com.facebook.proguard.annotations.DoNotStrip *; }\n-keepclassmembers class * { native <methods>; }\n-keep class com.swmansion.reanimated.** { *; }\n-keepclassmembers class com.swmansion.reanimated.** { *; }\n-keep class com.swmansion.worklets.** { *; }\n-keepclassmembers class com.swmansion.worklets.** { *; }\n-keep class com.swmansion.gesturehandler.** { *; }\n-keep class com.swmansion.rnscreens.** { *; }\n-keepclassmembers class com.swmansion.rnscreens.** { *; }\n-keep class com.horcrux.svg.** { *; }\n-keep class com.tencent.mmkv.** { *; }\n-keep class com.mrousavy.mmkv.** { *; }\n-keep class com.reactnativegooglesignin.** { *; }\n-keep class com.google.android.gms.auth.api.signin.** { *; }\n-keep class com.google.android.gms.common.api.** { *; }\n-keepclassmembers class com.google.android.gms.common.api.** { *; }\n-keep class com.google.firebase.** { *; }\n-keep class expo.modules.notifications.** { *; }\n-keep class expo.modules.av.** { *; }\n-keep class com.google.android.exoplayer2.** { *; }\n-keep interface com.google.android.exoplayer2.** { *; }\n-keep class expo.modules.** { *; }\n-keep @expo.modules.core.interfaces.DoNotStrip class * { *; }\n-keepclassmembers class * { @expo.modules.core.interfaces.DoNotStrip *; }\n-keep class * extends expo.modules.kotlin.modules.Module\n-keep class * implements expo.modules.kotlin.records.Record { *; }\n-keep class * extends expo.modules.kotlin.sharedobjects.SharedObject\n-keep class * implements expo.modules.kotlin.views.ExpoView { *; }\n-dontwarn javax.annotation.**\n-dontwarn org.checkerframework.**\n-dontwarn com.google.firebase.ktx.Firebase\n-dontwarn expo.modules.core.interfaces.services.KeepAwakeManager"
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
